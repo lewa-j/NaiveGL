@@ -10,6 +10,7 @@ constexpr int gl_max_texture_mtx = 2;
 
 //max possible is 32, cause of enabled_* type
 constexpr int gl_max_user_clip_planes = 6;
+constexpr int gl_max_lights = 8;
 
 
 struct gl_processed_vertex
@@ -65,6 +66,33 @@ struct gl_state
 		glm::vec4 color{ 0,0,0,1 };
 		glm::vec4 tex_coord{ 1,1,1,1 };
 	} raster_pos;
+	bool lighting_enabled = false;
+	bool front_face_ccw = true;
+	struct material {
+		glm::vec4 ambient;
+		glm::vec4 diffuse;
+		glm::vec4 specular;
+		glm::vec4 emission;
+		float shininess = 0.0f;
+	} materials[2]; // front and back
+	uint32_t enabled_lights = 0;
+	struct light {
+		glm::vec4 ambient;
+		glm::vec4 diffuse;
+		glm::vec4 specular;
+		glm::vec4 position;
+		glm::vec3 spot_direction;
+		float spot_exponent = 0.0f;
+		float spot_cutoff = 180.0f;
+		float attenuation[3]{ 1,0,0 };//const, linear, quad
+	} lights[gl_max_lights];
+	glm::vec4 light_model_ambient;
+	bool light_model_local_viewer = false;
+	bool light_model_two_side = false;
+	bool color_material = false;
+	int color_material_face = GL_FRONT_AND_BACK;
+	int color_material_mode = GL_AMBIENT_AND_DIFFUSE;
+	bool shade_model_flat = false;
 
 	void init(int window_w, int window_h);
 	void destroy();
@@ -74,9 +102,11 @@ struct gl_state
 	const glm::mat4 &get_projection();
 	const glm::mat4 &get_mtx_texture();
 	glm::vec3 get_eye_normal();
+	glm::vec4 get_vertex_color(const glm::vec4 &vertex_object, const glm::vec4 &vertex_view, bool front_face);
 	glm::vec4 get_vertex_texcoord(const glm::vec4 &v_object, const glm::vec4 &v_eye);
 	glm::vec3 get_window_coords(glm::vec3 device_coords);
 	bool clip_point(const glm::vec4 &v_eye, const glm::vec4 &v_clip);
+	void update_color_material();
 };
 
 gl_state *gl_current_state();

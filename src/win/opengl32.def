@@ -162,6 +162,21 @@ EXPORTS
 	glRasterPos4iv
 	glRasterPos4fv
 	glRasterPos4dv
+	glFrontFace
+	glColorMaterial
+	glShadeModel
+	glMateriali
+	glMaterialf
+	glMaterialiv
+	glMaterialfv
+	glLighti
+	glLightf
+	glLightiv
+	glLightfv
+	glLightModelf
+	glLightModeli
+	glLightModeliv
+	glLightModelfv
 
 	glAlphaFunc
 	glBlendFunc
@@ -180,7 +195,6 @@ EXPORTS
 	glPolygonMode
 	glReadBuffer
 	glReadPixels
-	glShadeModel
 	glTexEnvf
 	glTexImage2D
 	glTexParameterf

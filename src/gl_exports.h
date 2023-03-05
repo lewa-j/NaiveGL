@@ -185,7 +185,22 @@ EXPORT void APIENTRY glRasterPos4iv(const GLint *v);
 EXPORT void APIENTRY glRasterPos4fv(const GLfloat *v);
 EXPORT void APIENTRY glRasterPos4dv(const GLdouble *v);
 
+EXPORT void APIENTRY glFrontFace(GLenum mode);
+EXPORT void APIENTRY glColorMaterial(GLenum face, GLenum mode);
 EXPORT void APIENTRY glShadeModel(GLenum mode);
+EXPORT void APIENTRY glMateriali(GLenum face, GLenum pname, GLint param);
+EXPORT void APIENTRY glMaterialf(GLenum face, GLenum pname, GLfloat param);
+EXPORT void APIENTRY glMaterialiv(GLenum face, GLenum pname, const GLint *params);
+EXPORT void APIENTRY glMaterialfv(GLenum face, GLenum pname, const GLfloat *params);
+EXPORT void APIENTRY glLighti(GLenum light, GLenum pname, GLint param);
+EXPORT void APIENTRY glLightf(GLenum light, GLenum pname, GLfloat param);
+EXPORT void APIENTRY glLightiv(GLenum light, GLenum pname, const GLint *params);
+EXPORT void APIENTRY glLightfv(GLenum light, GLenum pname, const GLfloat *params);
+EXPORT void APIENTRY glLightModeli(GLenum pname, GLint param);
+EXPORT void APIENTRY glLightModelf(GLenum pname, GLfloat param);
+EXPORT void APIENTRY glLightModeliv(GLenum pname, const GLint *params);
+EXPORT void APIENTRY glLightModelfv(GLenum pname, const GLfloat *params);
+
 EXPORT void APIENTRY glCullFace(GLenum mode);
 EXPORT void APIENTRY glPolygonMode(GLenum face, GLenum mode);
 EXPORT void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels);

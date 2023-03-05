@@ -62,6 +62,9 @@
     <ClCompile Include="gl_pixels.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gl_lighting.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="win\opengl32.def">

@@ -47,10 +47,12 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 		return;
 	}
 
+	bool front_face = true;//TODO
+
 	glm::vec4 v_object(x, y, z, w);
 	gs->vertex.position = gs->get_modelview() * v_object;
 	gs->vertex.tex_coord = gs->get_vertex_texcoord(v_object, gs->vertex.position);
-	gs->vertex.color = gs->current_color;
+	gs->vertex.color = gs->get_vertex_color(v_object, gs->vertex.position, front_face);
 	gs->vertex.clip = gs->get_projection() * gs->vertex.position;
 
 	if (gs->begin_primitive_mode == GL_TRIANGLES || gs->begin_primitive_mode == GL_QUADS || gs->begin_primitive_mode == GL_POLYGON)
@@ -260,6 +262,9 @@ void APIENTRY glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 	if (!gs) return;
 
 	gs->current_color = glm::vec4(red, green, blue, alpha);
+
+	if (gs->color_material)
+		gs->update_color_material();
 }
 
 void APIENTRY glColor4b(GLbyte red, GLbyte green, GLbyte blue, GLbyte alpha)			{ glColor4f(GLtof(red), GLtof(green), GLtof(blue), GLtof(alpha)); }

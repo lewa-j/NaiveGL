@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "gl_exports.h"
 
-EXPORT void APIENTRY glShadeModel(GLenum mode) {}
 EXPORT void APIENTRY glCullFace(GLenum mode) {}
 EXPORT void APIENTRY glPolygonMode(GLenum face, GLenum mode) {}
 EXPORT void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels) {}

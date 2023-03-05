@@ -52,6 +52,43 @@ void gl_state::init(int window_w, int window_h)
 	raster_pos.valid = true;
 	raster_pos.color = glm::vec4{ 0,0,0,1 };
 	raster_pos.tex_coord = glm::vec4{ 1,1,1,1 };
+
+	lighting_enabled = false;
+	front_face_ccw = true;
+	for (int i = 0; i < 2; i++)
+	{
+		materials[i].ambient = glm::vec4(0.2f, 0.2f, 0.2f, 1);
+		materials[i].diffuse = glm::vec4(0.8f, 0.8f, 0.8f, 1);
+		materials[i].specular = glm::vec4(0, 0, 0, 1);
+		materials[i].emission = glm::vec4(0, 0, 0, 1);
+		materials[i].shininess = 0.0f;
+	}
+	enabled_lights = 0;
+	for (int i = 0; i < gl_max_lights; i++)
+	{
+		lights[i].ambient = glm::vec4(0, 0, 0, 1);
+		lights[i].diffuse = glm::vec4(0, 0, 0, 1);
+		lights[i].specular = glm::vec4(0, 0, 0, 1);
+		lights[i].position = glm::vec4(0, 0, 1, 0);
+		lights[i].spot_direction = glm::vec3(0, 0, -1);
+		lights[i].spot_exponent = 0.0f;
+		lights[i].spot_cutoff = 180.0f;
+		lights[i].attenuation[0] = 1.0f;//const
+		lights[i].attenuation[1] = 0.0f;//linear
+		lights[i].attenuation[2] = 0.0f;//quad
+	}
+	lights[0].diffuse = glm::vec4(1, 1, 1, 1);
+	lights[0].specular = glm::vec4(1, 1, 1, 1);
+
+	light_model_ambient = glm::vec4(0.2f, 0.2f, 0.2f, 1);
+	light_model_local_viewer = false;
+	light_model_two_side = false;
+
+	color_material = false;
+	color_material_face = GL_FRONT_AND_BACK;
+	color_material_mode = GL_AMBIENT_AND_DIFFUSE;
+
+	shade_model_flat = false;
 }
 
 void gl_state::destroy()
@@ -75,6 +112,21 @@ void APIENTRY glEnable(GLenum cap)
 	else if (cap >= GL_CLIP_PLANE0 && cap < (GL_CLIP_PLANE0 + gl_max_user_clip_planes))
 	{
 		gs->enabled_clipplanes |= (1 << (cap - GL_CLIP_PLANE0));
+	}
+	else if (cap == GL_LIGHTING)
+	{
+		gs->lighting_enabled = true;
+	}
+	else if (cap >= GL_LIGHT0 && cap < (GL_LIGHT0 + gl_max_lights))
+	{
+		gs->enabled_lights |= (1 << (cap - GL_LIGHT0));
+	}
+	else if (cap == GL_COLOR_MATERIAL)
+	{
+		bool old = gs->color_material;
+		gs->color_material = true;
+		if (!old)
+			gs->update_color_material();
 	}
 	else
 	{
@@ -100,6 +152,18 @@ void APIENTRY glDisable(GLenum cap)
 	else if (cap >= GL_CLIP_PLANE0 && cap < (GL_CLIP_PLANE0 + gl_max_user_clip_planes))
 	{
 		gs->enabled_clipplanes &= ~(1 << (cap - GL_CLIP_PLANE0));
+	}
+	else if (cap == GL_LIGHTING)
+	{
+		gs->lighting_enabled = false;
+	}
+	else if (cap >= GL_LIGHT0 && cap < (GL_LIGHT0 + gl_max_lights))
+	{
+		gs->enabled_lights &= ~(1 << (cap - GL_LIGHT0));
+	}
+	else if (cap == GL_COLOR_MATERIAL)
+	{
+		gs->color_material = false;
 	}
 	else
 	{
