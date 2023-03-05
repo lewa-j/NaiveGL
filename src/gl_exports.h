@@ -1,26 +1,15 @@
 #pragma once
+#include "gl_types.h"
 #include <stdint.h>
 
 #define EXPORT __declspec(dllexport) extern
 #define APIENTRY __stdcall
 
-typedef unsigned int GLenum;
-typedef unsigned char GLboolean;
-typedef unsigned int GLbitfield;
-typedef int8_t GLbyte;
-typedef uint8_t GLubyte;
-typedef int16_t GLshort;
-typedef uint16_t GLushort;
-typedef int GLint;
-typedef unsigned int GLuint;
-typedef int GLsizei;
-typedef float GLfloat;
-typedef double GLdouble;
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
+EXPORT GLenum APIENTRY glGetError();
 EXPORT void APIENTRY glEnable(GLenum cap);
 EXPORT void APIENTRY glDisable(GLenum cap);
 EXPORT void APIENTRY glBegin(GLenum mode);

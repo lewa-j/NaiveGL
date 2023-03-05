@@ -42,29 +42,6 @@ EXPORT void APIENTRY glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfl
 EXPORT void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels) {}
 EXPORT void APIENTRY glGetFloatv(GLenum pname, GLfloat *data) {}
 EXPORT void APIENTRY glGetIntegerv(GLenum pname, GLint *data) {}
-
-#define GL_VENDOR 0x1F00
-#define GL_RENDERER 0x1F01
-#define GL_VERSION 0x1F02
-#define GL_EXTENSIONS 0x1F03
-
-EXPORT const char *APIENTRY glGetString(GLenum name)
-{
-	switch (name)
-	{
-	case GL_VENDOR:
-		return "lewa_j";
-	case GL_RENDERER:
-		return "NaiveGL";
-	case GL_VERSION:
-		return "1.0.0";
-	case GL_EXTENSIONS:
-		return "";
-	default:
-		return "";
-	}
-}
-
 EXPORT void APIENTRY glFinish(void) {}
 EXPORT void APIENTRY glHint(GLenum target, GLenum mode) {}
 
