@@ -1,14 +1,113 @@
 LIBRARY "opengl32.dll"
 EXPORTS
-	glAlphaFunc
+	glGetError
 	glBegin
+	glEnd
+	glEdgeFlag
+	glEdgeFlagv
+	glVertex2d
+	glVertex2dv
+	glVertex2f
+	glVertex2fv
+	glVertex2i
+	glVertex2iv
+	glVertex2s
+	glVertex2sv
+	glVertex3d
+	glVertex3dv
+	glVertex3f
+	glVertex3fv
+	glVertex3i
+	glVertex3iv
+	glVertex3s
+	glVertex3sv
+	glVertex4d
+	glVertex4dv
+	glVertex4f
+	glVertex4fv
+	glVertex4i
+	glVertex4iv
+	glVertex4s
+	glVertex4sv
+	glTexCoord1d
+	glTexCoord1dv
+	glTexCoord1f
+	glTexCoord1fv
+	glTexCoord1i
+	glTexCoord1iv
+	glTexCoord1s
+	glTexCoord1sv
+	glTexCoord2d
+	glTexCoord2dv
+	glTexCoord2f
+	glTexCoord2fv
+	glTexCoord2i
+	glTexCoord2iv
+	glTexCoord2s
+	glTexCoord2sv
+	glTexCoord3d
+	glTexCoord3dv
+	glTexCoord3f
+	glTexCoord3fv
+	glTexCoord3i
+	glTexCoord3iv
+	glTexCoord3s
+	glTexCoord3sv
+	glTexCoord4d
+	glTexCoord4dv
+	glTexCoord4f
+	glTexCoord4fv
+	glTexCoord4i
+	glTexCoord4iv
+	glTexCoord4s
+	glTexCoord4sv
+	glNormal3b
+	glNormal3bv
+	glNormal3d
+	glNormal3dv
+	glNormal3f
+	glNormal3fv
+	glNormal3i
+	glNormal3iv
+	glNormal3s
+	glNormal3sv
+	glColor3b
+	glColor3bv
+	glColor3d
+	glColor3dv
+	glColor3f
+	glColor3fv
+	glColor3i
+	glColor3iv
+	glColor3s
+	glColor3sv
+	glColor3ub
+	glColor3ubv
+	glColor3ui
+	glColor3uiv
+	glColor3us
+	glColor3usv
+	glColor4b
+	glColor4bv
+	glColor4d
+	glColor4dv
+	glColor4f
+	glColor4fv
+	glColor4i
+	glColor4iv
+	glColor4s
+	glColor4sv
+	glColor4ub
+	glColor4ubv
+	glColor4ui
+	glColor4uiv
+	glColor4us
+	glColor4usv
+
+	glAlphaFunc
 	glBlendFunc
 	glClear
 	glClearColor
-	glColor3f
-	glColor3ubv
-	glColor4f
-	glColor4fv
 	glCullFace
 	glDepthFunc
 	glDepthMask
@@ -16,7 +115,6 @@ EXPORTS
 	glDisable
 	glDrawBuffer
 	glEnable
-	glEnd
 	glFinish
 	glFrustum
 	glGetError
@@ -36,14 +134,10 @@ EXPORTS
 	glRotatef
 	glScalef
 	glShadeModel
-	glTexCoord2f
 	glTexEnvf
 	glTexImage2D
 	glTexParameterf
 	glTranslatef
-	glVertex2f
-	glVertex3f
-	glVertex3fv
 	glViewport
 ;1.1
 	glBindTexture

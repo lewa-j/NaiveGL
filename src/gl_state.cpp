@@ -5,6 +5,14 @@
 void gl_state::init()
 {
 	error_bits = 0;
+
+	begin_primitive_mode = -1;
+	begin_vertex_count = 0;
+	vertex = { glm::vec4(0, 0, 0, 1), glm::vec4(0, 0, 0, 1), glm::vec4(1, 1, 1, 1), glm::vec4(0, 0, 0, 1), true };
+	edge_flag = true;
+	current_tex_coord = glm::vec4(0, 0, 0, 1);
+	current_normal = glm::vec3(0, 0, 1);
+	current_color = glm::vec4(1, 1, 1, 1);
 }
 
 void gl_state::destroy()

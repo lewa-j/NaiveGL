@@ -3,16 +3,6 @@
 
 EXPORT void APIENTRY glEnable(GLenum cap) {}
 EXPORT void APIENTRY glDisable(GLenum cap) {}
-EXPORT void APIENTRY glBegin(GLenum mode) {}
-EXPORT void APIENTRY glEnd() {}
-EXPORT void APIENTRY glVertex2f(GLfloat x, GLfloat y) {}
-EXPORT void APIENTRY glVertex3f(GLfloat x, GLfloat y, GLfloat z) {}
-EXPORT void APIENTRY glVertex3fv(const GLfloat *v) {}
-EXPORT void APIENTRY glTexCoord2f(GLfloat s, GLfloat t) {}
-EXPORT void APIENTRY glColor3f(GLfloat red, GLfloat green, GLfloat blue) {}
-EXPORT void APIENTRY glColor3ubv(const GLubyte *v) {}
-EXPORT void APIENTRY glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {}
-EXPORT void APIENTRY glColor4fv(const GLfloat *v) {}
 EXPORT void APIENTRY glDepthRange(GLdouble n, GLdouble f) {}
 EXPORT void APIENTRY glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {}
 EXPORT void APIENTRY glMatrixMode(GLenum mode) {}
