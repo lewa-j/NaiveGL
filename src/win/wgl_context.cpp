@@ -30,7 +30,7 @@ EXPORT HGLRC APIENTRY wglCreateContext(HDC device_context)
 {
 	wgl_context *rc = new wgl_context;
 	rc->device_context = device_context;
-	rc->state.init();
+	rc->state.init(640, 480);
 
 	return (HGLRC)rc;
 }
@@ -175,6 +175,22 @@ EXPORT PROC APIENTRY wglGetProcAddress(LPCSTR func_name)
 		X(glRectdv)
 		X(glDepthRange)
 		X(glViewport)
+		X(glMatrixMode)
+		X(glLoadMatrixd)
+		X(glLoadMatrixf)
+		X(glMultMatrixd)
+		X(glMultMatrixf)
+		X(glLoadIdentity)
+		X(glRotated)
+		X(glRotatef)
+		X(glTranslated)
+		X(glTranslatef)
+		X(glScaled)
+		X(glScalef)
+		X(glFrustum)
+		X(glOrtho)
+		X(glPushMatrix)
+		X(glPopMatrix)
 
 		X(glGetString)
 		X(glGetIntegerv)

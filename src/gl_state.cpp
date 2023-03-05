@@ -2,7 +2,7 @@
 #include "gl_state.h"
 #include "gl_exports.h"
 
-void gl_state::init()
+void gl_state::init(int window_w, int window_h)
 {
 	error_bits = 0;
 
@@ -13,6 +13,22 @@ void gl_state::init()
 	current_tex_coord = glm::vec4(0, 0, 0, 1);
 	current_normal = glm::vec3(0, 0, 1);
 	current_color = glm::vec4(1, 1, 1, 1);
+
+	viewport.width = window_w;
+	viewport.height = window_h;
+	viewport.center_x = window_w / 2;
+	viewport.center_y = window_h / 2;
+	viewport.dnear = 0;
+	viewport.dfar = 1;
+
+	matrix_mode = GL_MODELVIEW;
+	modelview_sp = 0;
+	projection_sp = 0;
+	texture_mtx_sp = 0;
+	modelview_stack[0] = glm::mat4(1);
+	projection_stack[0] = glm::mat4(1);
+	texture_mtx_stack[0] = glm::mat4(1);
+
 }
 
 void gl_state::destroy()

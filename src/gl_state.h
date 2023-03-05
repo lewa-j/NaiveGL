@@ -2,6 +2,11 @@
 #include "gl_types.h"
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
+#include <glm/mat4x4.hpp>
+
+constexpr int gl_max_viewmodel_mtx = 32;
+constexpr int gl_max_projection_mtx = 2;
+constexpr int gl_max_texture_mtx = 2;
 
 struct gl_processed_vertex
 {
@@ -33,7 +38,15 @@ struct gl_state
 		float dnear;
 	} viewport;
 
-	void init();
+	GLenum matrix_mode = GL_MODELVIEW;
+	glm::mat4 modelview_stack[gl_max_viewmodel_mtx];
+	int modelview_sp = 0;
+	glm::mat4 projection_stack[gl_max_projection_mtx];
+	int projection_sp = 0;
+	glm::mat4 texture_mtx_stack[gl_max_texture_mtx];
+	int texture_mtx_sp = 0;
+
+	void init(int window_w, int window_h);
 	void destroy();
 
 	glm::vec3 get_window_coords(glm::vec3 device_coords);

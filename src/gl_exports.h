@@ -131,18 +131,25 @@ EXPORT void APIENTRY glRectdv(const GLdouble *v1, const GLdouble *v2);
 EXPORT void APIENTRY glDepthRange(GLdouble n, GLdouble f);
 EXPORT void APIENTRY glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
 
-EXPORT void APIENTRY glEnable(GLenum cap);
-EXPORT void APIENTRY glDisable(GLenum cap);
 EXPORT void APIENTRY glMatrixMode(GLenum mode);
+EXPORT void APIENTRY glLoadMatrixd(const GLdouble *m);
 EXPORT void APIENTRY glLoadMatrixf(const GLfloat *m);
+EXPORT void APIENTRY glMultMatrixd(const GLdouble *m);
+EXPORT void APIENTRY glMultMatrixf(const GLfloat *m);
 EXPORT void APIENTRY glLoadIdentity(void);
+EXPORT void APIENTRY glRotated(GLdouble angle, GLdouble x, GLdouble y, GLdouble z);
 EXPORT void APIENTRY glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z);
+EXPORT void APIENTRY glTranslated(GLdouble x, GLdouble y, GLdouble z);
 EXPORT void APIENTRY glTranslatef(GLfloat x, GLfloat y, GLfloat z);
+EXPORT void APIENTRY glScaled(GLdouble x, GLdouble y, GLdouble z);
 EXPORT void APIENTRY glScalef(GLfloat x, GLfloat y, GLfloat z);
 EXPORT void APIENTRY glFrustum(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
 EXPORT void APIENTRY glOrtho(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar);
 EXPORT void APIENTRY glPushMatrix();
 EXPORT void APIENTRY glPopMatrix();
+
+EXPORT void APIENTRY glEnable(GLenum cap);
+EXPORT void APIENTRY glDisable(GLenum cap);
 EXPORT void APIENTRY glShadeModel(GLenum mode);
 EXPORT void APIENTRY glCullFace(GLenum mode);
 EXPORT void APIENTRY glPolygonMode(GLenum face, GLenum mode);

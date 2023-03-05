@@ -111,6 +111,24 @@ EXPORTS
 	glRectiv
 	glRectfv
 	glRectdv
+	glDepthRange
+	glViewport
+	glMatrixMode
+	glLoadMatrixd
+	glLoadMatrixf
+	glMultMatrixd
+	glMultMatrixf
+	glLoadIdentity
+	glRotated
+	glRotatef
+	glTranslated
+	glTranslatef
+	glScaled
+	glScalef
+	glFrustum
+	glOrtho
+	glPushMatrix
+	glPopMatrix
 
 	glAlphaFunc
 	glBlendFunc
@@ -119,34 +137,22 @@ EXPORTS
 	glCullFace
 	glDepthFunc
 	glDepthMask
-	glDepthRange
 	glDisable
 	glDrawBuffer
 	glEnable
 	glFinish
-	glFrustum
 	glGetError
 	glGetFloatv
 	glGetIntegerv
 	glGetString
 	glHint
-	glLoadIdentity
-	glLoadMatrixf
-	glMatrixMode
-	glOrtho
 	glPolygonMode
-	glPopMatrix
-	glPushMatrix
 	glReadBuffer
 	glReadPixels
-	glRotatef
-	glScalef
 	glShadeModel
 	glTexEnvf
 	glTexImage2D
 	glTexParameterf
-	glTranslatef
-	glViewport
 ;1.1
 	glBindTexture
 	glTexSubImage2D
