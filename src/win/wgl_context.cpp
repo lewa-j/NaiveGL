@@ -1,14 +1,15 @@
 #include "pch.h"
+#include "gl_exports.h"
 
 #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
 #include <windows.h>
-
-#define EXPORT __declspec(dllexport)
 
 struct wgl_context
 {
 	HDC device_context;
 };
+
+constexpr int pixel_format_count = 1;
 
 extern "C" {
 
@@ -33,7 +34,27 @@ EXPORT BOOL APIENTRY wglMakeCurrent(HDC device_context, HGLRC rendering_context)
 
 EXPORT PROC APIENTRY wglGetProcAddress(LPCSTR func_name)
 {
-	return nullptr;
+#define X(name) \
+	{#name, (PROC)name},
+
+	static struct { const char *n; PROC pfn; } funcs[]{
+		X(glGetString)
+		X(glGetIntegerv)
+		{nullptr, nullptr}
+	};
+#undef X
+
+	PROC r = nullptr;
+	for (int i = 0; funcs[i].n; i++)
+	{
+		if (!strcmp(func_name, funcs[i].n))
+		{
+			r = funcs[i].pfn;
+			break;
+		}
+	}
+
+	return r;
 }
 
 EXPORT HDC APIENTRY wglGetCurrentDC(void)
@@ -60,7 +81,15 @@ EXPORT BOOL WINAPI wglSetPixelFormat(HDC device_context, int pixel_format, const
 
 EXPORT int WINAPI wglDescribePixelFormat(HDC device_context, int pixel_format, UINT size, PPIXELFORMATDESCRIPTOR descriptor)
 {
-	return 1;
+	if (!descriptor)
+		return pixel_format_count;
+
+	*descriptor = { 0 };
+	descriptor->nSize = sizeof(PIXELFORMATDESCRIPTOR);
+	descriptor->nVersion = 1;
+	descriptor->dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
+
+	return pixel_format_count;
 }
 
 EXPORT BOOL WINAPI wglSwapBuffers(HDC device_context)

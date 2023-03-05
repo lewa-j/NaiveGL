@@ -1,25 +1,7 @@
 #include "pch.h"
-#include <stdint.h>
+#include "gl_exports.h"
 
-#define EXPORT __declspec(dllexport) extern
-#define APIENTRY __stdcall
-
-typedef unsigned int GLenum;
-typedef unsigned char GLboolean;
-typedef unsigned int GLbitfield;
-typedef int8_t GLbyte;
-typedef uint8_t GLubyte;
-typedef int16_t GLshort;
-typedef uint16_t GLushort;
-typedef int GLint;
-typedef unsigned int GLuint;
-typedef int GLsizei;
-typedef float GLfloat;
-typedef double GLdouble;
-
-extern "C" {
-
-EXPORT void APIENTRY glEnable(GLenum cap){}
+EXPORT void APIENTRY glEnable(GLenum cap) {}
 EXPORT void APIENTRY glDisable(GLenum cap) {}
 EXPORT void APIENTRY glBegin(GLenum mode) {}
 EXPORT void APIENTRY glEnd() {}
@@ -59,7 +41,30 @@ EXPORT void APIENTRY glClear(GLbitfield mask) {}
 EXPORT void APIENTRY glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha) {}
 EXPORT void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels) {}
 EXPORT void APIENTRY glGetFloatv(GLenum pname, GLfloat *data) {}
-EXPORT const char *APIENTRY glGetString(GLenum name) { return "?"; }
+EXPORT void APIENTRY glGetIntegerv(GLenum pname, GLint *data) {}
+
+#define GL_VENDOR 0x1F00
+#define GL_RENDERER 0x1F01
+#define GL_VERSION 0x1F02
+#define GL_EXTENSIONS 0x1F03
+
+EXPORT const char *APIENTRY glGetString(GLenum name)
+{
+	switch (name)
+	{
+	case GL_VENDOR:
+		return "lewa_j";
+	case GL_RENDERER:
+		return "NaiveGL";
+	case GL_VERSION:
+		return "1.0.0";
+	case GL_EXTENSIONS:
+		return "";
+	default:
+		return "";
+	}
+}
+
 EXPORT void APIENTRY glFinish(void) {}
 EXPORT void APIENTRY glHint(GLenum target, GLenum mode) {}
 
@@ -67,5 +72,3 @@ EXPORT void APIENTRY glHint(GLenum target, GLenum mode) {}
 EXPORT void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels) {}
 EXPORT void APIENTRY glBindTexture(GLenum target, GLuint texture) {}
 //!!!!!!!!!!!!!!!!!!
-
-}
