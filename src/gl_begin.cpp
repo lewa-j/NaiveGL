@@ -285,3 +285,20 @@ void APIENTRY glColor3uiv(const GLuint* v)	{ glColor4f(GLtof(v[0]), GLtof(v[1]),
 void APIENTRY glColor3fv(const GLfloat* v)	{ glColor4f(v[0], v[1], v[2], 1); }
 void APIENTRY glColor3dv(const GLdouble* v)	{ glColor4f(v[0], v[1], v[2], 1); }
 
+void APIENTRY glRectf(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2)
+{
+	glBegin(GL_POLYGON);
+	glVertex2f(x1, y1);
+	glVertex2f(x2, y1);
+	glVertex2f(x2, y2);
+	glVertex2f(x1, y2);
+	glEnd();
+}
+
+void APIENTRY glRectd(GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2)	{ glRectf(x1, y1, x2, y2); }
+void APIENTRY glRecti(GLint x1, GLint y1, GLint x2, GLint y2)				{ glRectf(x1, y1, x2, y2); }
+void APIENTRY glRects(GLshort x1, GLshort y1, GLshort x2, GLshort y2)		{ glRectf(x1, y1, x2, y2); }
+void APIENTRY glRectdv(const GLdouble* v1, const GLdouble* v2)		{ glRectf(v1[0], v1[1], v2[0], v2[1]); }
+void APIENTRY glRectfv(const GLfloat* v1, const GLfloat* v2)		{ glRectf(v1[0], v1[1], v2[0], v2[1]); }
+void APIENTRY glRectiv(const GLint* v1, const GLint* v2)			{ glRectf(v1[0], v1[1], v2[0], v2[1]); }
+void APIENTRY glRectsv(const GLshort* v1, const GLshort* v2)		{ glRectf(v1[0], v1[1], v2[0], v2[1]); }

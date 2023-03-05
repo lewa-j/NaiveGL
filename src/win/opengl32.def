@@ -103,6 +103,14 @@ EXPORTS
 	glColor4uiv
 	glColor4us
 	glColor4usv
+	glRects
+	glRecti
+	glRectf
+	glRectd
+	glRectsv
+	glRectiv
+	glRectfv
+	glRectdv
 
 	glAlphaFunc
 	glBlendFunc

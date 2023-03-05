@@ -119,6 +119,15 @@ EXPORT void APIENTRY glColor4uiv(const GLuint *v);
 EXPORT void APIENTRY glColor4us(GLushort red, GLushort green, GLushort blue, GLushort alpha);
 EXPORT void APIENTRY glColor4usv(const GLushort *v);
 
+EXPORT void APIENTRY glRects(GLshort x1, GLshort y1, GLshort x2, GLshort y2);
+EXPORT void APIENTRY glRecti(GLint x1, GLint y1, GLint x2, GLint y2);
+EXPORT void APIENTRY glRectf(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2);
+EXPORT void APIENTRY glRectd(GLdouble x1, GLdouble y1, GLdouble x2, GLdouble y2);
+EXPORT void APIENTRY glRectsv(const GLshort *v1, const GLshort *v2);
+EXPORT void APIENTRY glRectiv(const GLint *v1, const GLint *v2);
+EXPORT void APIENTRY glRectfv(const GLfloat *v1, const GLfloat *v2);
+EXPORT void APIENTRY glRectdv(const GLdouble *v1, const GLdouble *v2);
+
 EXPORT void APIENTRY glEnable(GLenum cap);
 EXPORT void APIENTRY glDisable(GLenum cap);
 EXPORT void APIENTRY glDepthRange(GLdouble n, GLdouble f);
