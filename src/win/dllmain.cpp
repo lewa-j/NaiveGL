@@ -16,15 +16,3 @@ BOOL APIENTRY DllMain( HMODULE hModule, DWORD  ul_reason_for_call, LPVOID lpRese
 	}
 	return TRUE;
 }
-
-#define EXPORT __declspec(dllexport)
-
-EXPORT HGLRC APIENTRY wglCreateContext(HDC device_context)
-{
-	return 0;
-}
-
-EXPORT BOOL APIENTRY wglDeleteContext(HGLRC rendering_context)
-{
-	return 1;
-}
