@@ -158,6 +158,8 @@ EXPORT void APIENTRY glTexGeniv(GLenum coord, GLenum pname, const GLint *params)
 EXPORT void APIENTRY glTexGenfv(GLenum coord, GLenum pname, const GLfloat *params);
 EXPORT void APIENTRY glTexGendv(GLenum coord, GLenum pname, const GLdouble *params);
 
+EXPORT void APIENTRY glClipPlane(GLenum plane, const GLdouble *equation);
+
 EXPORT void APIENTRY glShadeModel(GLenum mode);
 EXPORT void APIENTRY glCullFace(GLenum mode);
 EXPORT void APIENTRY glPolygonMode(GLenum face, GLenum mode);

@@ -65,6 +65,13 @@ inline float GLtof(GLfloat v) { return v; }
 #define GL_OBJECT_LINEAR 0x2401
 #define GL_SPHERE_MAP 0x2402
 
+#define GL_CLIP_PLANE0 0x3000
+#define GL_CLIP_PLANE1 0x3001
+#define GL_CLIP_PLANE2 0x3002
+#define GL_CLIP_PLANE3 0x3003
+#define GL_CLIP_PLANE4 0x3004
+#define GL_CLIP_PLANE5 0x3005
+
 #define GL_VENDOR 0x1F00
 #define GL_RENDERER 0x1F01
 #define GL_VERSION 0x1F02

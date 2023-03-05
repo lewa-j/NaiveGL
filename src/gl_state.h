@@ -8,6 +8,10 @@ constexpr int gl_max_viewmodel_mtx = 32;
 constexpr int gl_max_projection_mtx = 2;
 constexpr int gl_max_texture_mtx = 2;
 
+//max possible is 32, cause of enabled_* type
+constexpr int gl_max_user_clip_planes = 6;
+
+
 struct gl_processed_vertex
 {
 	glm::vec4 position;
@@ -54,6 +58,8 @@ struct gl_state
 		glm::vec4 eye_plane;
 		glm::vec4 object_plane;
 	} texgen[4];
+	glm::vec4 clipplanes[gl_max_user_clip_planes];
+	uint32_t enabled_clipplanes = 0;
 
 	void init(int window_w, int window_h);
 	void destroy();

@@ -42,6 +42,10 @@ void gl_state::init(int window_w, int window_h)
 	texgen[1].eye_plane = glm::vec4(0, 1, 0, 0);
 	texgen[0].object_plane = glm::vec4(1, 0, 0, 0);
 	texgen[1].object_plane = glm::vec4(0, 1, 0, 0);
+
+	enabled_clipplanes = 0;
+	for (int i = 0; i < gl_max_user_clip_planes; i++)
+		clipplanes[i] = glm::vec4(0);
 }
 
 void gl_state::destroy()
@@ -61,6 +65,10 @@ void APIENTRY glEnable(GLenum cap)
 	else if (cap >= GL_TEXTURE_GEN_S && cap <= GL_TEXTURE_GEN_Q)
 	{
 		gs->texgen[cap - GL_TEXTURE_GEN_S].enabled = true;
+	}
+	else if (cap >= GL_CLIP_PLANE0 && cap < (GL_CLIP_PLANE0 + gl_max_user_clip_planes))
+	{
+		gs->enabled_clipplanes |= (1 << (cap - GL_CLIP_PLANE0));
 	}
 	else
 	{
@@ -82,6 +90,10 @@ void APIENTRY glDisable(GLenum cap)
 	else if (cap >= GL_TEXTURE_GEN_S && cap <= GL_TEXTURE_GEN_Q)
 	{
 		gs->texgen[cap - GL_TEXTURE_GEN_S].enabled = false;
+	}
+	else if (cap >= GL_CLIP_PLANE0 && cap < (GL_CLIP_PLANE0 + gl_max_user_clip_planes))
+	{
+		gs->enabled_clipplanes &= ~(1 << (cap - GL_CLIP_PLANE0));
 	}
 	else
 	{
