@@ -3,8 +3,6 @@
 
 EXPORT void APIENTRY glEnable(GLenum cap) {}
 EXPORT void APIENTRY glDisable(GLenum cap) {}
-EXPORT void APIENTRY glDepthRange(GLdouble n, GLdouble f) {}
-EXPORT void APIENTRY glViewport(GLint x, GLint y, GLsizei width, GLsizei height) {}
 EXPORT void APIENTRY glMatrixMode(GLenum mode) {}
 EXPORT void APIENTRY glLoadMatrixf(const GLfloat *m) {}
 EXPORT void APIENTRY glLoadIdentity(void) {}

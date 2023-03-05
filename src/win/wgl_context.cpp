@@ -173,6 +173,8 @@ EXPORT PROC APIENTRY wglGetProcAddress(LPCSTR func_name)
 		X(glRectiv)
 		X(glRectfv)
 		X(glRectdv)
+		X(glDepthRange)
+		X(glViewport)
 
 		X(glGetString)
 		X(glGetIntegerv)

@@ -128,10 +128,11 @@ EXPORT void APIENTRY glRectiv(const GLint *v1, const GLint *v2);
 EXPORT void APIENTRY glRectfv(const GLfloat *v1, const GLfloat *v2);
 EXPORT void APIENTRY glRectdv(const GLdouble *v1, const GLdouble *v2);
 
-EXPORT void APIENTRY glEnable(GLenum cap);
-EXPORT void APIENTRY glDisable(GLenum cap);
 EXPORT void APIENTRY glDepthRange(GLdouble n, GLdouble f);
 EXPORT void APIENTRY glViewport(GLint x, GLint y, GLsizei width, GLsizei height);
+
+EXPORT void APIENTRY glEnable(GLenum cap);
+EXPORT void APIENTRY glDisable(GLenum cap);
 EXPORT void APIENTRY glMatrixMode(GLenum mode);
 EXPORT void APIENTRY glLoadMatrixf(const GLfloat *m);
 EXPORT void APIENTRY glLoadIdentity(void);

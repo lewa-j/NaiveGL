@@ -2,7 +2,6 @@
 #include "gl_state.h"
 #include "gl_exports.h"
 
-
 void gl_emit_point(gl_processed_vertex &vertex) {}
 void gl_emit_line(gl_processed_vertex &v0, gl_processed_vertex &v1) {}
 void gl_emit_triangle(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2) {}

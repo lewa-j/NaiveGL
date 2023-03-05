@@ -108,6 +108,7 @@
     <ClCompile Include="gl_begin.cpp" />
     <ClCompile Include="gl_export.cpp" />
     <ClCompile Include="gl_state.cpp" />
+    <ClCompile Include="gl_viewport.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader>Create</PrecompiledHeader>
     </ClCompile>

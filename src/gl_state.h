@@ -24,8 +24,19 @@ struct gl_state
 	glm::vec3 current_normal;
 	glm::vec4 current_color;
 
+	struct {
+		int width;
+		int height;
+		int center_x;
+		int center_y;
+		float dfar;
+		float dnear;
+	} viewport;
+
 	void init();
 	void destroy();
+
+	glm::vec3 get_window_coords(glm::vec3 device_coords);
 };
 
 gl_state *gl_current_state();
@@ -34,3 +45,10 @@ gl_state *gl_current_state();
 #define gl_set_error_a(e, a) gl_set_error_a_(e, a, __FUNCTION__)
 void gl_set_error_(GLenum error, const char *func);
 void gl_set_error_a_(GLenum error, GLenum arg, const char *func);
+
+#define VALIDATE_NOT_BEGIN_MODE \
+if (gs->begin_primitive_mode != -1)\
+{\
+	gl_set_error(GL_INVALID_OPERATION);\
+	return;\
+}
