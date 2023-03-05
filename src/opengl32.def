@@ -1,0 +1,4 @@
+LIBRARY "opengl32.dll"
+EXPORTS
+	wglCreateContext
+	wglDeleteContext
