@@ -47,6 +47,24 @@ inline float GLtof(GLfloat v) { return v; }
 
 #define GL_NORMALIZE 0x0BA1
 
+#define GL_TEXTURE_GEN_S 0x0C60
+#define GL_TEXTURE_GEN_T 0x0C61
+#define GL_TEXTURE_GEN_R 0x0C62
+#define GL_TEXTURE_GEN_Q 0x0C63
+
+#define GL_S 0x2000
+#define GL_T 0x2001
+#define GL_R 0x2002
+#define GL_Q 0x2003
+
+#define GL_TEXTURE_GEN_MODE 0x2500
+#define GL_OBJECT_PLANE 0x2501
+#define GL_EYE_PLANE 0x2502
+
+#define GL_EYE_LINEAR 0x2400
+#define GL_OBJECT_LINEAR 0x2401
+#define GL_SPHERE_MAP 0x2402
+
 #define GL_VENDOR 0x1F00
 #define GL_RENDERER 0x1F01
 #define GL_VERSION 0x1F02

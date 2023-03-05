@@ -30,6 +30,18 @@ void gl_state::init(int window_w, int window_h)
 	texture_mtx_stack[0] = glm::mat4(1);
 
 	normalize = false;
+
+	for (int i = 0; i < 4; i++)
+	{
+		texgen[i].enabled = false;
+		texgen[i].mode = GL_EYE_LINEAR;
+		texgen[i].eye_plane = glm::vec4(0, 0, 0, 0);
+		texgen[i].object_plane = glm::vec4(0, 0, 0, 0);
+	}
+	texgen[0].eye_plane = glm::vec4(1, 0, 0, 0);
+	texgen[1].eye_plane = glm::vec4(0, 1, 0, 0);
+	texgen[0].object_plane = glm::vec4(1, 0, 0, 0);
+	texgen[1].object_plane = glm::vec4(0, 1, 0, 0);
 }
 
 void gl_state::destroy()

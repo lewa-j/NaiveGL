@@ -3,9 +3,24 @@
 #include "gl_exports.h"
 #include <glm/gtc/matrix_transform.hpp>
 
+const glm::mat4 &gl_state::get_modelview()
+{
+	return modelview_stack[modelview_sp];
+}
+
 glm::mat4 gl_state::get_inv_modelview()
 {
 	return glm::inverse(modelview_stack[modelview_sp]);
+}
+
+const glm::mat4 &gl_state::get_projection()
+{
+	return projection_stack[projection_sp];
+}
+
+const glm::mat4 &gl_state::get_mtx_texture()
+{
+	return texture_mtx_stack[texture_mtx_sp];
 }
 
 static int &get_current_mtx_sp(gl_state *gs)

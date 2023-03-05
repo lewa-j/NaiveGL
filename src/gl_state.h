@@ -48,11 +48,22 @@ struct gl_state
 
 	bool normalize = false;
 
+	struct texGen {
+		bool enabled = false;
+		GLenum mode = GL_EYE_LINEAR;
+		glm::vec4 eye_plane;
+		glm::vec4 object_plane;
+	} texgen[4];
+
 	void init(int window_w, int window_h);
 	void destroy();
 
+	const glm::mat4 &get_modelview();
 	glm::mat4 get_inv_modelview();
+	const glm::mat4 &get_projection();
+	const glm::mat4 &get_mtx_texture();
 	glm::vec3 get_eye_normal();
+	glm::vec4 get_vertex_texcoord(const glm::vec4 &vertex_object, const glm::vec4 &vertex_eye);
 	glm::vec3 get_window_coords(glm::vec3 device_coords);
 };
 

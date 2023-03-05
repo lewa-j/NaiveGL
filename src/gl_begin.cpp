@@ -48,9 +48,10 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 	}
 
 	glm::vec4 v_object(x, y, z, w);
-	gs->vertex.position = v_object;
-	gs->vertex.tex_coord = gs->current_tex_coord;
-	gs->vertex.color = gs->vertex.position;
+	gs->vertex.position = gs->get_modelview() * v_object;
+	gs->vertex.tex_coord = gs->get_vertex_texcoord(v_object, gs->vertex.position);
+	gs->vertex.color = gs->current_color;
+	gs->vertex.clip = gs->get_projection() * gs->vertex.position;
 
 	if (gs->begin_primitive_mode == GL_TRIANGLES || gs->begin_primitive_mode == GL_QUADS || gs->begin_primitive_mode == GL_POLYGON)
 		gs->vertex.edge = gs->edge_flag;

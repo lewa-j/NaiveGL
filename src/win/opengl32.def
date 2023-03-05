@@ -131,6 +131,12 @@ EXPORTS
 	glPopMatrix
 	glEnable
 	glDisable
+	glTexGeni
+	glTexGenf
+	glTexGend
+	glTexGeniv
+	glTexGenfv
+	glTexGendv
 
 	glAlphaFunc
 	glBlendFunc
