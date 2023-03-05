@@ -58,6 +58,10 @@ void APIENTRY glEnable(GLenum cap)
 	{
 		gs->normalize = true;
 	}
+	else if (cap >= GL_TEXTURE_GEN_S && cap <= GL_TEXTURE_GEN_Q)
+	{
+		gs->texgen[cap - GL_TEXTURE_GEN_S].enabled = true;
+	}
 	else
 	{
 		gl_set_error_a(GL_INVALID_ENUM, cap);
@@ -74,6 +78,10 @@ void APIENTRY glDisable(GLenum cap)
 	if (cap == GL_NORMALIZE)
 	{
 		gs->normalize = false;
+	}
+	else if (cap >= GL_TEXTURE_GEN_S && cap <= GL_TEXTURE_GEN_Q)
+	{
+		gs->texgen[cap - GL_TEXTURE_GEN_S].enabled = false;
 	}
 	else
 	{
