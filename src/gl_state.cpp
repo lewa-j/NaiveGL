@@ -46,6 +46,12 @@ void gl_state::init(int window_w, int window_h)
 	enabled_clipplanes = 0;
 	for (int i = 0; i < gl_max_user_clip_planes; i++)
 		clipplanes[i] = glm::vec4(0);
+
+	raster_pos.coords = glm::vec4{ 0,0,0,1 };
+	raster_pos.distance = 0;
+	raster_pos.valid = true;
+	raster_pos.color = glm::vec4{ 0,0,0,1 };
+	raster_pos.tex_coord = glm::vec4{ 1,1,1,1 };
 }
 
 void gl_state::destroy()

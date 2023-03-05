@@ -160,6 +160,31 @@ EXPORT void APIENTRY glTexGendv(GLenum coord, GLenum pname, const GLdouble *para
 
 EXPORT void APIENTRY glClipPlane(GLenum plane, const GLdouble *equation);
 
+EXPORT void APIENTRY glRasterPos2s(GLshort x, GLshort y);
+EXPORT void APIENTRY glRasterPos2i(GLint x, GLint y);
+EXPORT void APIENTRY glRasterPos2f(GLfloat x, GLfloat y);
+EXPORT void APIENTRY glRasterPos2d(GLdouble x, GLdouble y);
+EXPORT void APIENTRY glRasterPos2sv(const GLshort *v);
+EXPORT void APIENTRY glRasterPos2iv(const GLint *v);
+EXPORT void APIENTRY glRasterPos2fv(const GLfloat *v);
+EXPORT void APIENTRY glRasterPos2dv(const GLdouble *v);
+EXPORT void APIENTRY glRasterPos3s(GLshort x, GLshort y, GLshort z);
+EXPORT void APIENTRY glRasterPos3i(GLint x, GLint y, GLint z);
+EXPORT void APIENTRY glRasterPos3f(GLfloat x, GLfloat y, GLfloat z);
+EXPORT void APIENTRY glRasterPos3d(GLdouble x, GLdouble y, GLdouble z);
+EXPORT void APIENTRY glRasterPos3sv(const GLshort *v);
+EXPORT void APIENTRY glRasterPos3iv(const GLint *v);
+EXPORT void APIENTRY glRasterPos3fv(const GLfloat *v);
+EXPORT void APIENTRY glRasterPos3dv(const GLdouble *v);
+EXPORT void APIENTRY glRasterPos4s(GLshort x, GLshort y, GLshort z, GLshort w);
+EXPORT void APIENTRY glRasterPos4i(GLint x, GLint y, GLint z, GLint w);
+EXPORT void APIENTRY glRasterPos4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w);
+EXPORT void APIENTRY glRasterPos4d(GLdouble x, GLdouble y, GLdouble z, GLdouble w);
+EXPORT void APIENTRY glRasterPos4sv(const GLshort *v);
+EXPORT void APIENTRY glRasterPos4iv(const GLint *v);
+EXPORT void APIENTRY glRasterPos4fv(const GLfloat *v);
+EXPORT void APIENTRY glRasterPos4dv(const GLdouble *v);
+
 EXPORT void APIENTRY glShadeModel(GLenum mode);
 EXPORT void APIENTRY glCullFace(GLenum mode);
 EXPORT void APIENTRY glPolygonMode(GLenum face, GLenum mode);

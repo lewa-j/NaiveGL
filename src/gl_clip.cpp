@@ -2,6 +2,28 @@
 #include "gl_state.h"
 #include "gl_exports.h"
 
+bool gl_state::clip_point(const glm::vec4 &v_eye, const glm::vec4 &v_clip)
+{
+	if (v_clip.x < -v_clip.w || v_clip.x > v_clip.w ||
+		v_clip.y < -v_clip.w || v_clip.y > v_clip.w ||
+		v_clip.z < -v_clip.w || v_clip.z > v_clip.w)
+		return false;
+
+	if (!enabled_clipplanes)
+		return true;
+
+	for (int i = 0; i < gl_max_user_clip_planes; i++)
+	{
+		if (!(enabled_clipplanes & (1 << i)))
+			continue;
+
+		if (dot(clipplanes[i], v_eye) < 0)
+			return false;
+	}
+
+	return true;
+}
+
 void APIENTRY glClipPlane(GLenum plane, const GLdouble *equation)
 {
 	gl_state *gs = gl_current_state();

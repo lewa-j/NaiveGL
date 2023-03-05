@@ -109,6 +109,7 @@
     <ClCompile Include="gl_clip.cpp" />
     <ClCompile Include="gl_export.cpp" />
     <ClCompile Include="gl_matrix_stack.cpp" />
+    <ClCompile Include="gl_pixels.cpp" />
     <ClCompile Include="gl_state.cpp" />
     <ClCompile Include="gl_texgen.cpp" />
     <ClCompile Include="gl_viewport.cpp" />

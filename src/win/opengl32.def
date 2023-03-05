@@ -138,6 +138,30 @@ EXPORTS
 	glTexGenfv
 	glTexGendv
 	glClipPlane
+	glRasterPos2s
+	glRasterPos2i
+	glRasterPos2f
+	glRasterPos2d
+	glRasterPos2sv
+	glRasterPos2iv
+	glRasterPos2fv
+	glRasterPos2dv
+	glRasterPos3s
+	glRasterPos3i
+	glRasterPos3f
+	glRasterPos3d
+	glRasterPos3sv
+	glRasterPos3iv
+	glRasterPos3fv
+	glRasterPos3dv
+	glRasterPos4s
+	glRasterPos4i
+	glRasterPos4f
+	glRasterPos4d
+	glRasterPos4sv
+	glRasterPos4iv
+	glRasterPos4fv
+	glRasterPos4dv
 
 	glAlphaFunc
 	glBlendFunc

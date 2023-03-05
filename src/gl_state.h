@@ -32,7 +32,6 @@ struct gl_state
 	glm::vec4 current_tex_coord;
 	glm::vec3 current_normal;
 	glm::vec4 current_color;
-
 	struct {
 		int width;
 		int height;
@@ -51,7 +50,6 @@ struct gl_state
 	int texture_mtx_sp = 0;
 
 	bool normalize = false;
-
 	struct texGen {
 		bool enabled = false;
 		GLenum mode = GL_EYE_LINEAR;
@@ -60,6 +58,13 @@ struct gl_state
 	} texgen[4];
 	glm::vec4 clipplanes[gl_max_user_clip_planes];
 	uint32_t enabled_clipplanes = 0;
+	struct {
+		glm::vec4 coords{ 0,0,0,1 }; //window xyz, clip w
+		float distance = 0;
+		bool valid = true;
+		glm::vec4 color{ 0,0,0,1 };
+		glm::vec4 tex_coord{ 1,1,1,1 };
+	} raster_pos;
 
 	void init(int window_w, int window_h);
 	void destroy();
@@ -69,8 +74,9 @@ struct gl_state
 	const glm::mat4 &get_projection();
 	const glm::mat4 &get_mtx_texture();
 	glm::vec3 get_eye_normal();
-	glm::vec4 get_vertex_texcoord(const glm::vec4 &vertex_object, const glm::vec4 &vertex_eye);
+	glm::vec4 get_vertex_texcoord(const glm::vec4 &v_object, const glm::vec4 &v_eye);
 	glm::vec3 get_window_coords(glm::vec3 device_coords);
+	bool clip_point(const glm::vec4 &v_eye, const glm::vec4 &v_clip);
 };
 
 gl_state *gl_current_state();
