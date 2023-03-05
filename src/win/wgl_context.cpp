@@ -191,6 +191,8 @@ EXPORT PROC APIENTRY wglGetProcAddress(LPCSTR func_name)
 		X(glOrtho)
 		X(glPushMatrix)
 		X(glPopMatrix)
+		X(glEnable)
+		X(glDisable)
 
 		X(glGetString)
 		X(glGetIntegerv)

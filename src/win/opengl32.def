@@ -129,6 +129,8 @@ EXPORTS
 	glOrtho
 	glPushMatrix
 	glPopMatrix
+	glEnable
+	glDisable
 
 	glAlphaFunc
 	glBlendFunc
@@ -137,9 +139,7 @@ EXPORTS
 	glCullFace
 	glDepthFunc
 	glDepthMask
-	glDisable
 	glDrawBuffer
-	glEnable
 	glFinish
 	glGetError
 	glGetFloatv

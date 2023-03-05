@@ -150,6 +150,7 @@ EXPORT void APIENTRY glPopMatrix();
 
 EXPORT void APIENTRY glEnable(GLenum cap);
 EXPORT void APIENTRY glDisable(GLenum cap);
+
 EXPORT void APIENTRY glShadeModel(GLenum mode);
 EXPORT void APIENTRY glCullFace(GLenum mode);
 EXPORT void APIENTRY glPolygonMode(GLenum face, GLenum mode);

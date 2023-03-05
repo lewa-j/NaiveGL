@@ -46,9 +46,13 @@ struct gl_state
 	glm::mat4 texture_mtx_stack[gl_max_texture_mtx];
 	int texture_mtx_sp = 0;
 
+	bool normalize = false;
+
 	void init(int window_w, int window_h);
 	void destroy();
 
+	glm::mat4 get_inv_modelview();
+	glm::vec3 get_eye_normal();
 	glm::vec3 get_window_coords(glm::vec3 device_coords);
 };
 

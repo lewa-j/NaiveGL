@@ -29,10 +29,45 @@ void gl_state::init(int window_w, int window_h)
 	projection_stack[0] = glm::mat4(1);
 	texture_mtx_stack[0] = glm::mat4(1);
 
+	normalize = false;
 }
 
 void gl_state::destroy()
 {
+}
+
+void APIENTRY glEnable(GLenum cap)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (cap == GL_NORMALIZE)
+	{
+		gs->normalize = true;
+	}
+	else
+	{
+		gl_set_error_a(GL_INVALID_ENUM, cap);
+		return;
+	}
+}
+
+void APIENTRY glDisable(GLenum cap)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (cap == GL_NORMALIZE)
+	{
+		gs->normalize = false;
+	}
+	else
+	{
+		gl_set_error_a(GL_INVALID_ENUM, cap);
+		return;
+	}
 }
 
 const char *APIENTRY glGetString(GLenum name)

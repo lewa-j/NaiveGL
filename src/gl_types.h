@@ -45,6 +45,8 @@ inline float GLtof(GLfloat v) { return v; }
 #define GL_PROJECTION 0x1701
 #define GL_TEXTURE 0x1702
 
+#define GL_NORMALIZE 0x0BA1
+
 #define GL_VENDOR 0x1F00
 #define GL_RENDERER 0x1F01
 #define GL_VERSION 0x1F02

@@ -3,6 +3,11 @@
 #include "gl_exports.h"
 #include <glm/gtc/matrix_transform.hpp>
 
+glm::mat4 gl_state::get_inv_modelview()
+{
+	return glm::inverse(modelview_stack[modelview_sp]);
+}
+
 static int &get_current_mtx_sp(gl_state *gs)
 {
 	if (gs->matrix_mode == GL_MODELVIEW)
