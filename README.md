@@ -6,6 +6,7 @@ Work in progress towards 1.0 conformance
 
 ## Done
 
+* minimal WGL implementaion
 
 ## TODO
 

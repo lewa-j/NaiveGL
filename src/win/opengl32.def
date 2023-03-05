@@ -53,3 +53,8 @@ EXPORTS
 	wglGetCurrentDC
 	wglGetProcAddress
 	wglMakeCurrent
+;internal
+	wglChoosePixelFormat
+	wglSetPixelFormat
+	wglDescribePixelFormat
+	wglSwapBuffers
