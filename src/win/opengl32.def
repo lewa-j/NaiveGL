@@ -211,5 +211,6 @@ EXPORTS
 ;internal
 	wglChoosePixelFormat
 	wglSetPixelFormat
+	wglGetPixelFormat
 	wglDescribePixelFormat
 	wglSwapBuffers

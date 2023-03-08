@@ -13,6 +13,7 @@ struct wgl_context
 
 thread_local wgl_context* current_context = nullptr;
 thread_local HDC current_hdc = nullptr;
+thread_local int current_pixel_format = 1;
 
 constexpr int pixel_format_count = 1;
 
@@ -58,6 +59,9 @@ EXPORT BOOL APIENTRY wglMakeCurrent(HDC device_context, HGLRC rendering_context)
 
 EXPORT PROC APIENTRY wglGetProcAddress(LPCSTR func_name)
 {
+	if (!current_context)
+		return nullptr;
+
 #define X(name) \
 	{#name, (PROC)name},
 
@@ -277,7 +281,13 @@ EXPORT int WINAPI wglChoosePixelFormat(HDC device_context, const PIXELFORMATDESC
 
 EXPORT BOOL WINAPI wglSetPixelFormat(HDC device_context, int pixel_format, const PIXELFORMATDESCRIPTOR *descriptor)
 {
+	current_pixel_format = pixel_format;
 	return 1;
+}
+
+EXPORT int WINAPI wglGetPixelFormat(HDC device_context)
+{
+	return current_pixel_format;
 }
 
 EXPORT int WINAPI wglDescribePixelFormat(HDC device_context, int pixel_format, UINT size, PPIXELFORMATDESCRIPTOR descriptor)
