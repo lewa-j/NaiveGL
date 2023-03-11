@@ -186,13 +186,6 @@ if (pname != GL_LIGHT_MODEL_LOCAL_VIEWER && pname != GL_LIGHT_MODEL_TWO_SIDE && 
 	return;\
 }
 
-#define VALIDATE_FACE \
-if (face != GL_FRONT && face != GL_BACK && face != GL_FRONT_AND_BACK)\
-{\
-	gl_set_error_a(GL_INVALID_ENUM, face);\
-	return;\
-}
-
 void APIENTRY glColorMaterial(GLenum face, GLenum mode)
 {
 	gl_state *gs = gl_current_state();

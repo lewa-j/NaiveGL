@@ -114,6 +114,17 @@ inline float GLtof(GLfloat v) { return v; }
 #define GL_FLAT 0x1D00
 #define GL_SMOOTH 0x1D01
 
+#define GL_POINT_SMOOTH 0x0B10
+#define GL_LINE_SMOOTH 0x0B20
+#define GL_LINE_STIPPLE 0x0B24
+#define GL_POLYGON_SMOOTH 0x0B41
+#define GL_CULL_FACE 0x0B44
+#define GL_POLYGON_STIPPLE 0x0B42
+
+#define GL_POINT 0x1B00
+#define GL_LINE 0x1B01
+#define GL_FILL 0x1B02
+
 #define GL_VENDOR 0x1F00
 #define GL_RENDERER 0x1F01
 #define GL_VERSION 0x1F02

@@ -201,8 +201,13 @@ EXPORT void APIENTRY glLightModelf(GLenum pname, GLfloat param);
 EXPORT void APIENTRY glLightModeliv(GLenum pname, const GLint *params);
 EXPORT void APIENTRY glLightModelfv(GLenum pname, const GLfloat *params);
 
+EXPORT void APIENTRY glPointSize(GLfloat size);
+EXPORT void APIENTRY glLineWidth(GLfloat width);
+EXPORT void APIENTRY glLineStipple(GLint factor, GLushort pattern);
 EXPORT void APIENTRY glCullFace(GLenum mode);
+EXPORT void APIENTRY glPolygonStipple(const GLubyte *mask);
 EXPORT void APIENTRY glPolygonMode(GLenum face, GLenum mode);
+
 EXPORT void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels);
 EXPORT void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param);
 EXPORT void APIENTRY glTexEnvf(GLenum target, GLenum pname, GLfloat param);

@@ -177,12 +177,17 @@ EXPORTS
 	glLightModeli
 	glLightModeliv
 	glLightModelfv
+	glPointSize
+	glLineWidth
+	glLineStipple
+	glCullFace
+	glPolygonStipple
+	glPolygonMode
 
 	glAlphaFunc
 	glBlendFunc
 	glClear
 	glClearColor
-	glCullFace
 	glDepthFunc
 	glDepthMask
 	glDrawBuffer
@@ -192,7 +197,6 @@ EXPORTS
 	glGetIntegerv
 	glGetString
 	glHint
-	glPolygonMode
 	glReadBuffer
 	glReadPixels
 	glTexEnvf

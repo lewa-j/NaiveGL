@@ -103,6 +103,20 @@ struct gl_state
 	int color_material_mode = GL_AMBIENT_AND_DIFFUSE;
 	bool shade_model_flat = false;
 
+	float point_size = 1.0f;
+	bool point_smooth = false;
+	float line_width = 1.0f;
+	bool line_smooth = false;
+	bool line_stipple = false;
+	int line_stipple_factor = 1;
+	uint16_t line_stipple_pattern = 0xFFFF;
+	bool polygon_smooth = false;
+	bool cull_face = false;
+	GLenum cull_face_mode = GL_BACK;
+	bool polygon_stipple = false;
+	uint32_t polygon_stipple_mask[32];
+	GLenum polygon_mode[2]{ GL_FILL,GL_FILL };//front and back
+
 	void init(int window_w, int window_h);
 	void destroy();
 
@@ -125,9 +139,21 @@ gl_state *gl_current_state();
 void gl_set_error_(GLenum error, const char *func);
 void gl_set_error_a_(GLenum error, GLenum arg, const char *func);
 
+void gl_emit_point(gl_processed_vertex &vertex);
+void gl_emit_line(gl_processed_vertex &v0, gl_processed_vertex &v1);
+void gl_emit_triangle(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2);
+void gl_emit_quad(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2, gl_processed_vertex &v3);
+
 #define VALIDATE_NOT_BEGIN_MODE \
 if (gs->begin_primitive_mode != -1)\
 {\
 	gl_set_error(GL_INVALID_OPERATION);\
+	return;\
+}
+
+#define VALIDATE_FACE \
+if (face != GL_FRONT && face != GL_BACK && face != GL_FRONT_AND_BACK)\
+{\
+	gl_set_error_a(GL_INVALID_ENUM, face);\
 	return;\
 }

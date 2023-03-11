@@ -89,6 +89,21 @@ void gl_state::init(int window_w, int window_h)
 	color_material_mode = GL_AMBIENT_AND_DIFFUSE;
 
 	shade_model_flat = false;
+
+	point_size = 1.0f;
+	point_smooth = false;
+	line_width = 1.0f;
+	line_smooth = false;
+	line_stipple = false;
+	line_stipple_factor = 1;
+	line_stipple_pattern = 0xFFFF;
+	polygon_smooth = false;
+	cull_face = false;
+	cull_face_mode = GL_BACK;
+	polygon_stipple = false;
+	memset(polygon_stipple_mask, 0xFFFFFFFF, sizeof(polygon_stipple_mask));
+	polygon_mode[0] = GL_FILL;
+	polygon_mode[1] = GL_FILL;
 }
 
 void gl_state::destroy()
@@ -128,6 +143,30 @@ void APIENTRY glEnable(GLenum cap)
 		if (!old)
 			gs->update_color_material();
 	}
+	else if (cap == GL_POINT_SMOOTH)
+	{
+		gs->point_smooth = true;
+	}
+	else if (cap == GL_LINE_SMOOTH)
+	{
+		gs->line_smooth = true;
+	}
+	else if (cap == GL_LINE_STIPPLE)
+	{
+		gs->line_stipple = true;
+	}
+	else if (cap == GL_POLYGON_SMOOTH)
+	{
+		gs->polygon_smooth = true;
+	}
+	else if (cap == GL_POLYGON_STIPPLE)
+	{
+		gs->line_stipple = true;
+	}
+	else if (cap == GL_CULL_FACE)
+	{
+		gs->cull_face = true;
+	}
 	else
 	{
 		gl_set_error_a(GL_INVALID_ENUM, cap);
@@ -164,6 +203,30 @@ void APIENTRY glDisable(GLenum cap)
 	else if (cap == GL_COLOR_MATERIAL)
 	{
 		gs->color_material = false;
+	}
+	else if (cap == GL_POINT_SMOOTH)
+	{
+		gs->point_smooth = false;
+	}
+	else if (cap == GL_LINE_SMOOTH)
+	{
+		gs->line_smooth = false;
+	}
+	else if (cap == GL_LINE_STIPPLE)
+	{
+		gs->line_stipple = false;
+	}
+	else if (cap == GL_POLYGON_SMOOTH)
+	{
+		gs->polygon_smooth = false;
+	}
+	else if (cap == GL_POLYGON_STIPPLE)
+	{
+		gs->line_stipple = false;
+	}
+	else if (cap == GL_CULL_FACE)
+	{
+		gs->cull_face = false;
 	}
 	else
 	{
