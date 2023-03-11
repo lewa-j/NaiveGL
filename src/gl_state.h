@@ -12,6 +12,15 @@ constexpr int gl_max_texture_mtx = 2;
 constexpr int gl_max_user_clip_planes = 6;
 constexpr int gl_max_lights = 8;
 
+struct gl_framebuffer
+{
+	int width = 0;
+	int height = 0;
+	bool doublebuffer = false;
+	uint8_t *color = nullptr;
+	uint16_t *depth = nullptr;
+	uint8_t *stencil = nullptr;
+};
 
 struct gl_processed_vertex
 {

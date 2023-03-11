@@ -9,6 +9,11 @@ struct wgl_context
 {
 	HDC device_context = 0;
 	gl_state state;
+	gl_framebuffer framebuffer;
+
+	BITMAPINFO bitmap_info;
+	HBITMAP bitmap = 0;
+	HDC bitmap_dc = 0;
 };
 
 thread_local wgl_context* current_context = nullptr;
@@ -31,7 +36,44 @@ EXPORT HGLRC APIENTRY wglCreateContext(HDC device_context)
 {
 	wgl_context *rc = new wgl_context;
 	rc->device_context = device_context;
-	rc->state.init(640, 480);
+
+	int w = 640;
+	int h = 480;
+	int depth = 0;//16
+	int stencil = 0;//8
+	bool doublebuffer = true;
+	HWND win = WindowFromDC(device_context);
+	if (win)
+	{
+		RECT rect{ 0 };
+		GetClientRect(win, &rect);
+		w = rect.right - rect.left;
+		h = rect.bottom - rect.top;
+	}
+
+	BITMAPINFOHEADER &bmih = rc->bitmap_info.bmiHeader;
+	bmih.biSize = sizeof(BITMAPINFOHEADER);
+	bmih.biWidth = w;
+	bmih.biHeight = h;
+	bmih.biPlanes = 1;
+	bmih.biBitCount = 32;
+	bmih.biCompression = BI_RGB;
+	rc->bitmap_dc = CreateCompatibleDC(device_context);
+	rc->bitmap = CreateDIBSection(device_context, &rc->bitmap_info, DIB_RGB_COLORS, (void **)&rc->framebuffer.color, 0, 0);
+	if (rc->bitmap)
+		SelectObject(rc->bitmap_dc, rc->bitmap);
+
+	rc->framebuffer.width = w;
+	rc->framebuffer.height = h;
+	rc->framebuffer.doublebuffer = doublebuffer;
+	rc->framebuffer.depth = nullptr;
+	rc->framebuffer.stencil = nullptr;
+	if (depth)
+		rc->framebuffer.depth = new uint16_t[w * h];
+	if (stencil)
+		rc->framebuffer.stencil = new uint8_t[w * h];
+
+	rc->state.init(w, h);
 
 	return (HGLRC)rc;
 }
@@ -45,6 +87,12 @@ EXPORT BOOL APIENTRY wglDeleteContext(HGLRC rendering_context)
 			current_context = nullptr;
 
 		rc->state.destroy();
+		delete[] rc->framebuffer.depth;
+		delete[] rc->framebuffer.stencil;
+
+		DeleteObject(rc->bitmap);
+		DeleteDC(rc->bitmap_dc);
+
 		delete rc;
 	}
 	return 1;
@@ -326,6 +374,10 @@ EXPORT int WINAPI wglDescribePixelFormat(HDC device_context, int pixel_format, U
 
 EXPORT BOOL WINAPI wglSwapBuffers(HDC device_context)
 {
+	if (current_context && current_context->bitmap_dc)
+	{
+		BitBlt(device_context, 0, 0, current_context->framebuffer.width, current_context->framebuffer.height, current_context->bitmap_dc, 0, 0, SRCCOPY);
+	}
 	return 1;
 }
 
