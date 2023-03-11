@@ -33,6 +33,8 @@ struct gl_processed_vertex
 
 struct gl_state
 {
+	gl_framebuffer *framebuffer;
+
 	uint32_t error_bits = 0;
 	int begin_primitive_mode = -1;
 	int begin_vertex_count = 0;

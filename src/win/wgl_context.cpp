@@ -73,6 +73,7 @@ EXPORT HGLRC APIENTRY wglCreateContext(HDC device_context)
 	if (stencil)
 		rc->framebuffer.stencil = new uint8_t[w * h];
 
+	rc->state.framebuffer = &rc->framebuffer;
 	rc->state.init(w, h);
 
 	return (HGLRC)rc;
