@@ -15,8 +15,8 @@ void APIENTRY glDepthRange(GLdouble n, GLdouble f)
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
 
-	gs->viewport.dnear = glm::clamp(n, 0.0, 1.0);
-	gs->viewport.dfar = glm::clamp(f, 0.0, 1.0);
+	gs->viewport.dnear = (float)glm::clamp(n, 0.0, 1.0);
+	gs->viewport.dfar = (float)glm::clamp(f, 0.0, 1.0);
 }
 
 void APIENTRY glViewport(GLint x, GLint y, GLsizei width, GLsizei height)

@@ -92,10 +92,10 @@ void gl_emit_fragment(gl_state *gs, int x, int y, gl_frag_data &data)
 		return;
 
 	int i = (fb.width * y + x) * 4;
-	fb.color[i] = data.color.b * 0xFF;
-	fb.color[i + 1] = data.color.g * 0xFF;
-	fb.color[i + 2] = data.color.r * 0xFF;
-	fb.color[i + 3] = data.color.a * 0xFF;
+	fb.color[i]     = uint8_t(data.color.b * 0xFF);
+	fb.color[i + 1] = uint8_t(data.color.g * 0xFF);
+	fb.color[i + 2] = uint8_t(data.color.r * 0xFF);
+	fb.color[i + 3] = uint8_t(data.color.a * 0xFF);
 }
 
 void gl_emit_point(gl_processed_vertex &vertex)
@@ -115,7 +115,7 @@ void gl_emit_point(gl_processed_vertex &vertex)
 
 	if (!gs->point_smooth)
 	{
-		int w = round(gs->point_size);//TODO clamp to max
+		int w = (int)round(gs->point_size);//TODO clamp to max
 		w = w < 1 ? 1 : w;
 		glm::ivec2 ic(floor(win_c + (w & 1 ? 0 : 0.5f)));//add half pixel when size is even. then truncate to int
 		if (w == 1)

@@ -2,7 +2,9 @@
 #include "gl_types.h"
 #include <stdint.h>
 
+#undef EXPORT
 #define EXPORT __declspec(dllexport) extern
+#undef APIENTRY
 #define APIENTRY __stdcall
 
 #ifdef __cplusplus

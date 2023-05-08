@@ -134,9 +134,9 @@ void APIENTRY glScalef(GLfloat x, GLfloat y, GLfloat z)
 	dst = glm::scale(dst, glm::vec3(x, y, z));
 }
 
-void APIENTRY glRotated(GLdouble angle, GLdouble x, GLdouble y, GLdouble z) { glRotatef(angle, x, y, z); }
-void APIENTRY glTranslated(GLdouble x, GLdouble y, GLdouble z) { glTranslatef(x, y, z); }
-void APIENTRY glScaled(GLdouble x, GLdouble y, GLdouble z) { glScalef(x, y, z); }
+void APIENTRY glRotated(GLdouble angle, GLdouble x, GLdouble y, GLdouble z) { glRotatef((GLfloat)angle, (GLfloat)x, (GLfloat)y, (GLfloat)z); }
+void APIENTRY glTranslated(GLdouble x, GLdouble y, GLdouble z) { glTranslatef((GLfloat)x, (GLfloat)y, (GLfloat)z); }
+void APIENTRY glScaled(GLdouble x, GLdouble y, GLdouble z) { glScalef((GLfloat)x, (GLfloat)y, (GLfloat)z); }
 
 void APIENTRY glFrustum(GLdouble left, GLdouble right, GLdouble bottom, GLdouble top, GLdouble zNear, GLdouble zFar)
 {

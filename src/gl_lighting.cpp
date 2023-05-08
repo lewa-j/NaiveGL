@@ -50,7 +50,7 @@ glm::vec4 gl_state::get_vertex_color(const glm::vec4 &vertex_object, const glm::
 		}
 		glm::vec3 h = glm::normalize(light_model_local_viewer ? (VP - glm::normalize(glm::vec3(vertex_view))) : (VP + glm::vec3(0, 0, 1)));
 		float NdotL = glm::max(0.0f, glm::dot(normal, VP));
-		float f = (NdotL != 0) ? 1 : 0;
+		float f = (NdotL != 0) ? 1.0f : 0.0f;
 		r += att * spot * (m.ambient * l.ambient
 			+ NdotL * m.diffuse * l.diffuse
 			+ f * glm::pow(glm::max(0.0f, glm::dot(normal, h)), m.shininess) * m.specular * l.specular);
@@ -218,7 +218,7 @@ void APIENTRY glMaterialf(GLenum face, GLenum pname, GLfloat param)
 	if (pname == GL_SHININESS)
 		set_material_shininess(gs, face, param);
 }
-void APIENTRY glMateriali(GLenum face, GLenum pname, GLint param) { glMaterialf(face, pname, param); }
+void APIENTRY glMateriali(GLenum face, GLenum pname, GLint param) { glMaterialf(face, pname, (GLfloat)param); }
 
 void APIENTRY glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
 {
@@ -241,7 +241,7 @@ void APIENTRY glMaterialiv(GLenum face, GLenum pname, const GLint *params)
 	VALIDATE_MAT_PNAME_V;
 
 	if (pname == GL_SHININESS)
-		set_material_shininess(gs, face, params[0]);
+		set_material_shininess(gs, face, (GLfloat)params[0]);
 	else
 		set_material_color(gs, face, pname, glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])));
 }
@@ -284,7 +284,7 @@ void APIENTRY glLightf(GLenum light, GLenum pname, GLfloat param)
 		l.attenuation[pname - GL_CONSTANT_ATTENUATION] = param;
 	}
 }
-void APIENTRY glLighti(GLenum light, GLenum pname, GLint param) { glLightf(light, pname, param); }
+void APIENTRY glLighti(GLenum light, GLenum pname, GLint param) { glLightf(light, pname, (GLfloat)param); }
 
 static void gl_light_color(gl_state::light &l, GLenum pname, glm::vec4 param)
 {
@@ -314,7 +314,7 @@ void gl_lightv(GLenum light, GLenum pname, const T *params)
 	else if (pname == GL_SPOT_DIRECTION)
 		l.spot_direction = glm::mat3(gs->get_modelview()) * glm::vec3(params[0], params[1], params[2]);
 	else
-		glLightf(light, pname, params[0]);
+		glLightf(light, pname, (GLfloat)params[0]);
 }
 void APIENTRY glLightfv(GLenum light, GLenum pname, const GLfloat *params) { gl_lightv(light, pname, params); }
 void APIENTRY glLightiv(GLenum light, GLenum pname, const GLint *params) { gl_lightv(light, pname, params); }
@@ -335,7 +335,7 @@ void APIENTRY glLightModelf(GLenum pname, GLfloat param)
 	else if (pname == GL_LIGHT_MODEL_TWO_SIDE)
 		gs->light_model_two_side = (param != 0);
 }
-void APIENTRY glLightModeli(GLenum pname, GLint param) { glLightModelf(pname, param); }
+void APIENTRY glLightModeli(GLenum pname, GLint param) { glLightModelf(pname, (GLfloat)param); }
 
 template<typename T>
 void APIENTRY gl_lightModelv(GLenum pname, const T *params)

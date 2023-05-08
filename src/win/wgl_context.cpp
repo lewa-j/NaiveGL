@@ -1,9 +1,10 @@
 #include "pch.h"
-#include "gl_exports.h"
 #include "gl_state.h"
 
 #define WIN32_LEAN_AND_MEAN // Exclude rarely-used stuff from Windows headers
 #include <windows.h>
+
+#include "gl_exports.h"
 
 struct wgl_context
 {

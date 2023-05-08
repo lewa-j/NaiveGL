@@ -21,6 +21,7 @@ inline float GLtof(GLshort v) { return float(2 * v + 1) / 0xFFFF; }
 inline float GLtof(GLuint v) { return float(v) / 0xFFFFFFFF; }
 inline float GLtof(GLint v) { return float(2 * v + 1) / 0xFFFFFFFF; }
 inline float GLtof(GLfloat v) { return v; }
+inline float GLtof(GLdouble v) { return (float)v; }
 
 #define GL_NO_ERROR 0
 #define GL_INVALID_ENUM 0x0500
