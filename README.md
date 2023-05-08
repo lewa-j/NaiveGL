@@ -15,4 +15,5 @@ Work in progress towards 1.0 conformance
 ## Acknowledgments
 
 specification [OpenGL](https://registry.khronos.org/OpenGL/specs/gl/glspec10.pdf)
+
 generated headers [glad](https://github.com/Dav1dde/glad)
