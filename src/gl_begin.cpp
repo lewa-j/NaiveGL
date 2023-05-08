@@ -45,70 +45,71 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 	bool front_face = true;//TODO
 
 	glm::vec4 v_object(x, y, z, w);
-	gs->vertex.position = gs->get_modelview() * v_object;
-	gs->vertex.tex_coord = gs->get_vertex_texcoord(v_object, gs->vertex.position);
-	gs->vertex.color = gs->get_vertex_color(v_object, gs->vertex.position, front_face);
-	gs->vertex.clip = gs->get_projection() * gs->vertex.position;
+	gl_processed_vertex vertex;
+	vertex.position = gs->get_modelview() * v_object;
+	vertex.tex_coord = gs->get_vertex_texcoord(v_object, vertex.position);
+	vertex.color = gs->get_vertex_color(v_object, vertex.position, front_face);
+	vertex.clip = gs->get_projection() * vertex.position;
 
 	if (gs->begin_primitive_mode == GL_TRIANGLES || gs->begin_primitive_mode == GL_QUADS || gs->begin_primitive_mode == GL_POLYGON)
-		gs->vertex.edge = gs->edge_flag;
+		vertex.edge = gs->edge_flag;
 	else
-		gs->vertex.edge = true;
+		vertex.edge = true;
 
 	switch (gs->begin_primitive_mode)
 	{
 	case GL_POINTS:
-		gl_emit_point(gs->vertex);
+		gl_emit_point(vertex);
 		break;
 	case GL_LINES:
 		if (gs->begin_vertex_count & 1)
-			gl_emit_line(gs->last_vertices[0], gs->vertex);
+			gl_emit_line(gs->last_vertices[0], vertex);
 		else
-			gs->last_vertices[0] = gs->vertex;
+			gs->last_vertices[0] = vertex;
 		break;
 	case GL_LINE_LOOP:
 		if (!gs->begin_vertex_count)
-			gs->last_vertices[1] = gs->vertex;// save first to loop back later
+			gs->last_vertices[1] = vertex;// save first to loop back later
 		[[fallthrough]];
 	case GL_LINE_STRIP:
 		if (gs->begin_vertex_count)
-			gl_emit_line(gs->last_vertices[0], gs->vertex);
-		gs->last_vertices[0] = gs->vertex;
+			gl_emit_line(gs->last_vertices[0], vertex);
+		gs->last_vertices[0] = vertex;
 		break;
 	case GL_TRIANGLES:
 		if (gs->begin_vertex_count < 2)
 		{
-			gs->last_vertices[gs->begin_vertex_count] = gs->vertex;
+			gs->last_vertices[gs->begin_vertex_count] = vertex;
 		}
 		else
 		{
-			gl_emit_triangle(gs->last_vertices[0], gs->last_vertices[1], gs->vertex);
+			gl_emit_triangle(gs->last_vertices[0], gs->last_vertices[1], vertex);
 			gs->begin_vertex_count = -1;
 		}
 		break;
 	case GL_TRIANGLE_STRIP:
 		if (gs->begin_vertex_count >= 2)
-			gl_emit_triangle(gs->last_vertices[0], gs->last_vertices[1], gs->vertex);
-		gs->last_vertices[gs->begin_vertex_count & 1] = gs->vertex;
+			gl_emit_triangle(gs->last_vertices[0], gs->last_vertices[1], vertex);
+		gs->last_vertices[gs->begin_vertex_count & 1] = vertex;
 		break;
 	case GL_TRIANGLE_FAN:
 	case GL_POLYGON://TODO line fill
 		if (gs->begin_vertex_count >= 2)
 		{
 			if (gs->begin_primitive_mode == GL_POLYGON)
-				gs->vertex.color = gs->last_vertices[0].color;
-			gl_emit_triangle(gs->last_vertices[0], gs->last_vertices[1], gs->vertex);
+				vertex.color = gs->last_vertices[0].color;
+			gl_emit_triangle(gs->last_vertices[0], gs->last_vertices[1], vertex);
 		}
-		gs->last_vertices[gs->begin_vertex_count ? 1 : 0] = gs->vertex;
+		gs->last_vertices[gs->begin_vertex_count ? 1 : 0] = vertex;
 		break;
 
 	case GL_QUADS:
 	{
 		int j = gs->begin_vertex_count & 3;
 		if (j < 3)
-			gs->last_vertices[j] = gs->vertex;
+			gs->last_vertices[j] = vertex;
 		else
-			gl_emit_quad(gs->last_vertices[0], gs->last_vertices[1], gs->last_vertices[2], gs->vertex);
+			gl_emit_quad(gs->last_vertices[0], gs->last_vertices[1], gs->last_vertices[2], vertex);
 	}
 		break;
 	case GL_QUAD_STRIP:
@@ -117,12 +118,12 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 		if (gs->begin_vertex_count >= 3)
 		{
 			if (j == 3)
-				gl_emit_quad(gs->last_vertices[0], gs->last_vertices[1], gs->vertex, gs->last_vertices[2]);
+				gl_emit_quad(gs->last_vertices[0], gs->last_vertices[1], vertex, gs->last_vertices[2]);
 			else if (j == 1)
-				gl_emit_quad(gs->last_vertices[2], gs->last_vertices[1], gs->vertex, gs->last_vertices[0]);
+				gl_emit_quad(gs->last_vertices[2], gs->last_vertices[1], vertex, gs->last_vertices[0]);
 		}
 
-		gs->last_vertices[j < 3 ? j : 1] = gs->vertex;
+		gs->last_vertices[j < 3 ? j : 1] = vertex;
 	}
 		break;
 	default:

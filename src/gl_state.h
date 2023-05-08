@@ -38,7 +38,6 @@ struct gl_state
 	uint32_t error_bits = 0;
 	int begin_primitive_mode = -1;
 	int begin_vertex_count = 0;
-	gl_processed_vertex vertex;
 	gl_processed_vertex last_vertices[3];//for lines, triangles and quads
 	bool edge_flag = true;
 	glm::vec4 current_tex_coord;

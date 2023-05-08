@@ -8,7 +8,6 @@ void gl_state::init(int window_w, int window_h)
 
 	begin_primitive_mode = -1;
 	begin_vertex_count = 0;
-	vertex = { glm::vec4(0, 0, 0, 1), glm::vec4(0, 0, 0, 1), glm::vec4(1, 1, 1, 1), glm::vec4(0, 0, 0, 1), true };
 	edge_flag = true;
 	current_tex_coord = glm::vec4(0, 0, 0, 1);
 	current_normal = glm::vec3(0, 0, 1);
@@ -276,7 +275,7 @@ static const char *error_to_str(GLenum e)
 #if DEBUG_LOG
 #define gl_log printf
 #else
-#define gl_log()
+#define gl_log(...)
 #endif
 
 void gl_set_error_a_(GLenum error, GLenum arg, const char *func)
