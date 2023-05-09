@@ -103,6 +103,9 @@ void gl_state::init(int window_w, int window_h)
 	memset(polygon_stipple_mask, 0xFFFFFFFF, sizeof(polygon_stipple_mask));
 	polygon_mode[0] = GL_FILL;
 	polygon_mode[1] = GL_FILL;
+
+	scissor_test = false;
+	scissor_rect = glm::ivec4{ 0, 0, window_w, window_h };
 }
 
 void gl_state::destroy()
@@ -166,6 +169,10 @@ void APIENTRY glEnable(GLenum cap)
 	{
 		gs->cull_face = true;
 	}
+	else if (cap == GL_SCISSOR_TEST)
+	{
+		gs->scissor_test = true;
+	}
 	else
 	{
 		gl_set_error_a(GL_INVALID_ENUM, cap);
@@ -226,6 +233,10 @@ void APIENTRY glDisable(GLenum cap)
 	else if (cap == GL_CULL_FACE)
 	{
 		gs->cull_face = false;
+	}
+	else if (cap == GL_SCISSOR_TEST)
+	{
+		gs->scissor_test = false;
 	}
 	else
 	{

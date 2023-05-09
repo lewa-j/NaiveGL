@@ -2,7 +2,18 @@
 #include "gl_state.h"
 #include "gl_exports.h"
 
-void APIENTRY glScissor(GLint x, GLint y, GLsizei width, GLsizei height) {}
+void APIENTRY glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (width < 0 || height < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+	gs->scissor_rect = glm::ivec4(x, y, width, height);
+}
 
 void APIENTRY glDrawBuffer(GLenum buf) {}
 void APIENTRY glReadBuffer(GLenum src) {}

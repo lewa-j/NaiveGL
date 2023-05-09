@@ -118,6 +118,9 @@ struct gl_state
 	uint32_t polygon_stipple_mask[32];
 	GLenum polygon_mode[2]{ GL_FILL,GL_FILL };//front and back
 
+	bool scissor_test = false;
+	glm::ivec4 scissor_rect;
+
 	void init(int window_w, int window_h);
 	void destroy();
 

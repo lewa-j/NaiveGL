@@ -90,6 +90,13 @@ void gl_emit_fragment(gl_state *gs, int x, int y, gl_frag_data &data)
 	if (x < 0 || x >= fb.width || y < 0 || y >= fb.height)
 		return;
 
+	if (gs->scissor_test)
+	{
+		const glm::ivec4 &s = gs->scissor_rect;
+		if (x < s.x || x >= s.x + s.z || y < s.y || y >= s.y + s.w)
+			return;
+	}
+
 	int i = (fb.width * y + x) * 4;
 	fb.color[i]     = uint8_t(data.color.b * 0xFF);
 	fb.color[i + 1] = uint8_t(data.color.g * 0xFF);
