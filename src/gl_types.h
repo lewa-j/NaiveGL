@@ -143,6 +143,11 @@ inline float GLtof(GLdouble v) { return (float)v; }
 #define GL_AUX2 0x040B
 #define GL_AUX3 0x040C
 
+#define GL_DEPTH_BUFFER_BIT 0x00000100
+#define GL_ACCUM_BUFFER_BIT 0x00000200
+#define GL_STENCIL_BUFFER_BIT 0x00000400
+#define GL_COLOR_BUFFER_BIT 0x00004000
+
 #define GL_VENDOR 0x1F00
 #define GL_RENDERER 0x1F01
 #define GL_VERSION 0x1F02

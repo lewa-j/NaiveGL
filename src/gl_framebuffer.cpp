@@ -100,7 +100,68 @@ void APIENTRY glStencilMask(GLuint mask)
 	gs->stencil_writemask = mask;
 }
 
-void APIENTRY glClear(GLbitfield mask) {}
+uint32_t gl_color_to_framebuffer(const glm::vec4 &c)
+{
+	//bgra
+	return uint32_t(c.b * 0xFF) | (uint32_t(c.g * 0xFF) << 8) | (uint32_t(c.r * 0xFF) << 16) | (uint32_t(c.a * 0xFF) << 24);
+}
+
+void APIENTRY glClear(GLbitfield mask)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (mask != (mask & (GL_DEPTH_BUFFER_BIT | GL_ACCUM_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT)))
+	{
+		gl_set_error_a(GL_INVALID_VALUE, mask);
+		return;
+	}
+
+	glm::ivec4 s = gs->scissor_rect;
+	if (gs->scissor_test)
+	{
+		s.x = glm::max(0, s.x);
+		s.y = glm::max(0, s.y);
+		s.z = glm::min(s.z,gs->framebuffer->width - s.x);
+		s.w = glm::min(s.w,gs->framebuffer->height - s.y);
+	}
+
+	const glm::bvec4 &cm = gs->color_mask;
+	if (mask & GL_COLOR_BUFFER_BIT && (cm.r || cm.g || cm.b || cm.a))
+	{
+		uint32_t value = gl_color_to_framebuffer(gs->clear_color);
+		uint32_t *dst = (uint32_t *)gs->framebuffer->color;
+
+		//TODO color mask components
+		//TODO dither
+		if (!gs->scissor_test || (s.x == 0 && s.x + s.z == gs->framebuffer->width && s.y == 0 && s.y + s.w == gs->framebuffer->height))
+		{
+			int count = gs->framebuffer->width * gs->framebuffer->height;
+			for (int i = 0; i < count; i++)
+			{
+				*dst = value;
+				dst++;
+			}
+		}
+		else
+		{
+			dst += gs->framebuffer->width * s.y;
+			dst += s.x;
+			for (int iy = 0; iy < s.w; iy++)
+			{
+				uint32_t *row = dst;
+				for (int ix = 0; ix < s.z; ix++)
+				{
+					*row = value;
+					row++;
+				}
+				row += gs->framebuffer->width * s.y;
+			}
+		}
+	}
+
+	//TODO depth, stencil, accum
+}
 
 void APIENTRY glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
