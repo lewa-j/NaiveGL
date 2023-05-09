@@ -218,3 +218,10 @@ EXPORTS
 	wglGetPixelFormat
 	wglDescribePixelFormat
 	wglSwapBuffers
+;freeglut
+	glBitmap
+	glFlush
+	glPopAttrib
+	glPushAttrib
+	glGetBooleanv
+	glPixelStorei

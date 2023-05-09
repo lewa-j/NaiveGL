@@ -22,3 +22,11 @@ EXPORT void APIENTRY glHint(GLenum target, GLenum mode) {}
 EXPORT void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels) {}
 EXPORT void APIENTRY glBindTexture(GLenum target, GLuint texture) {}
 //!!!!!!!!!!!!!!!!!!
+
+//freeglut
+EXPORT void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap) {}
+EXPORT void APIENTRY glFlush(void) {}
+EXPORT void APIENTRY glPopAttrib(void) {}
+EXPORT void APIENTRY glPushAttrib(GLbitfield mask) {}
+EXPORT void APIENTRY glGetBooleanv(GLenum pname, GLboolean *data) {}
+EXPORT void APIENTRY glPixelStorei(GLenum pname, GLint param) {}
