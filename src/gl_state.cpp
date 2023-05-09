@@ -2,7 +2,7 @@
 #include "gl_state.h"
 #include "gl_exports.h"
 
-void gl_state::init(int window_w, int window_h)
+void gl_state::init(int window_w, int window_h, bool doublebuffer)
 {
 	error_bits = 0;
 
@@ -106,6 +106,16 @@ void gl_state::init(int window_w, int window_h)
 
 	scissor_test = false;
 	scissor_rect = glm::ivec4{ 0, 0, window_w, window_h };
+
+	draw_buffer = doublebuffer ? GL_BACK : GL_FRONT;
+	read_buffer = doublebuffer ? GL_BACK : GL_FRONT;
+	color_mask = glm::bvec4{ true,true,true,true };
+	depth_mask = true;
+	stencil_writemask = 0xFFFFFFFF;
+	clear_color = glm::vec4{ 0, 0, 0, 0 };
+	clear_depth = 1;
+	clear_stencil = 0;
+	clear_accum = glm::vec4{ 0, 0, 0, 0 };
 }
 
 void gl_state::destroy()

@@ -12,6 +12,8 @@ constexpr int gl_max_texture_mtx = 2;
 constexpr int gl_max_user_clip_planes = 6;
 constexpr int gl_max_lights = 8;
 
+constexpr int gl_max_aux_buffers = 0;
+
 struct gl_framebuffer
 {
 	int width = 0;
@@ -121,7 +123,17 @@ struct gl_state
 	bool scissor_test = false;
 	glm::ivec4 scissor_rect;
 
-	void init(int window_w, int window_h);
+	int draw_buffer = GL_FRONT;
+	int read_buffer = GL_FRONT;
+	glm::bvec4 color_mask{ true,true,true,true };
+	bool depth_mask = true;
+	uint32_t stencil_writemask = 0xFFFFFFFF;
+	glm::vec4 clear_color{ 0,0,0,0 };
+	float clear_depth = 1;
+	int clear_stencil = 0;
+	glm::vec4 clear_accum{ 0,0,0,0 };
+
+	void init(int window_w, int window_h, bool doublebuffer);
 	void destroy();
 
 	const glm::mat4 &get_modelview();

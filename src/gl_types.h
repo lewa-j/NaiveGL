@@ -128,6 +128,21 @@ inline float GLtof(GLdouble v) { return (float)v; }
 
 #define GL_SCISSOR_TEST 0x0C11
 
+#define GL_NONE 0
+#define GL_FRONT_LEFT 0x0400
+#define GL_FRONT_RIGHT 0x0401
+#define GL_BACK_LEFT 0x0402
+#define GL_BACK_RIGHT 0x0403
+#define GL_FRONT 0x0404
+#define GL_BACK 0x0405
+#define GL_LEFT 0x0406
+#define GL_RIGHT 0x0407
+#define GL_FRONT_AND_BACK 0x0408
+#define GL_AUX0 0x0409
+#define GL_AUX1 0x040A
+#define GL_AUX2 0x040B
+#define GL_AUX3 0x040C
+
 #define GL_VENDOR 0x1F00
 #define GL_RENDERER 0x1F01
 #define GL_VERSION 0x1F02
