@@ -2,7 +2,6 @@
 #include "gl_state.h"
 #include "gl_exports.h"
 
-
 void APIENTRY glPointSize(GLfloat size)
 {
 	gl_state *gs = gl_current_state();

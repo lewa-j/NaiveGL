@@ -108,6 +108,7 @@
     <ClCompile Include="gl_begin.cpp" />
     <ClCompile Include="gl_clip.cpp" />
     <ClCompile Include="gl_export.cpp" />
+    <ClCompile Include="gl_framebuffer.cpp" />
     <ClCompile Include="gl_lighting.cpp" />
     <ClCompile Include="gl_matrix_stack.cpp" />
     <ClCompile Include="gl_pixels.cpp" />
