@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "gl_state.h"
 #include "gl_exports.h"
+#include <utility>
 
 void APIENTRY glPointSize(GLfloat size)
 {
@@ -154,6 +155,66 @@ void gl_emit_point(gl_processed_vertex &vertex)
 	}
 }
 
-void gl_emit_line(gl_processed_vertex &v0, gl_processed_vertex &v1) {}
+void gl_emit_line(gl_processed_vertex &v0, gl_processed_vertex &v1)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+
+	glm::vec3 device_c0 = glm::vec3(v0.clip) / v0.clip.w;
+	glm::vec3 win_c0 = gs->get_window_coords(device_c0);
+
+	glm::vec3 device_c1 = glm::vec3(v1.clip) / v1.clip.w;
+	glm::vec3 win_c1 = gs->get_window_coords(device_c1);
+
+	glm::ivec2 ic0(floor(win_c0));
+	glm::ivec2 ic1(floor(win_c1));
+
+	bool low = false;
+	bool left = false;
+	if (std::abs(ic0.x - ic1.x) < std::abs(ic0.y - ic1.y))
+	{
+		low = true;
+		std::swap(ic0.x, ic0.y);
+		std::swap(ic1.x, ic1.y);
+	}
+
+	if (ic0.x > ic1.x)
+	{
+		left = true;
+		std::swap(ic0, ic1);
+	}
+
+	gl_frag_data data;
+	//TODO interpolate
+	data.color = v0.color;
+	data.tex_coord = v0.tex_coord;
+
+	int dx = ic1.x - ic0.x;
+	int dy = ic1.y - ic0.y;
+
+	int derror2 = std::abs(dy) * 2;
+	int error2 = 0;
+	int y = ic0.y;
+	int ydir = (ic1.y > ic0.y ? 1 : -1);
+
+	//skip last point
+	if (left)
+		ic0.x++;
+	else
+		ic1.x--;
+
+	for (int x = ic0.x; x <= ic1.x; x++)
+	{
+		gl_emit_fragment(gs, low ? y : x, low ? x : y, data);
+
+		error2 += derror2;
+		if (error2 > dx)
+		{
+			y += ydir;
+			error2 -= dx * 2;
+		}
+	}
+}
+
 void gl_emit_triangle(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2) {}
 void gl_emit_quad(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2, gl_processed_vertex &v3) {}
