@@ -197,14 +197,26 @@ void gl_emit_line(gl_processed_vertex &v0, gl_processed_vertex &v1)
 	int y = ic0.y;
 	int ydir = (ic1.y > ic0.y ? 1 : -1);
 
-	//skip last point
+	float t = 0;
+	float fdx;
 	if (left)
-		ic0.x++;
+	{
+		ic0.x++;//skip last point
+		t = 1;
+		fdx = -1.0f / dx; //invert t direction instead of swaping verts data
+	}
 	else
-		ic1.x--;
+	{
+		ic1.x--;//skip last point
+		fdx = 1.0f / dx;
+	}
 
 	for (int x = ic0.x; x <= ic1.x; x++)
 	{
+		t += fdx;
+		data.color = glm::mix(v0.color / v0.clip.w, v1.color / v1.clip.w, t) / glm::mix(1.0f / v0.clip.w, 1.0f / v1.clip.w, t);
+		data.tex_coord = glm::mix(v0.tex_coord / v0.clip.w, v1.tex_coord / v1.clip.w, t) / glm::mix(v0.tex_coord.q / v0.clip.w, v1.tex_coord.q / v1.clip.w, t);
+		data.z = glm::mix(win_c0.z, win_c1.z, t);
 		gl_emit_fragment(gs, low ? y : x, low ? x : y, data);
 
 		error2 += derror2;
