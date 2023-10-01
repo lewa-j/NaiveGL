@@ -113,6 +113,7 @@ struct gl_state
 	bool line_stipple = false;
 	int line_stipple_factor = 1;
 	uint16_t line_stipple_pattern = 0xFFFF;
+	int line_stipple_counter = 0;
 	bool polygon_smooth = false;
 	bool cull_face = false;
 	GLenum cull_face_mode = GL_BACK;

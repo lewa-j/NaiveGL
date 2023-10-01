@@ -155,6 +155,17 @@ void gl_emit_point(gl_processed_vertex &vertex)
 	}
 }
 
+static bool line_stipple(gl_state *gs)
+{
+	if (!gs->line_stipple)
+		return true;
+
+	int b = (gs->line_stipple_counter / gs->line_stipple_factor) & 0xF;
+	gs->line_stipple_counter++;
+
+	return (gs->line_stipple_pattern >> b) & 1;
+}
+
 void gl_emit_line(gl_processed_vertex &v0, gl_processed_vertex &v1)
 {
 	gl_state *gs = gl_current_state();
@@ -214,10 +225,13 @@ void gl_emit_line(gl_processed_vertex &v0, gl_processed_vertex &v1)
 	for (int x = ic0.x; x <= ic1.x; x++)
 	{
 		t += fdx;
-		data.color = glm::mix(v0.color / v0.clip.w, v1.color / v1.clip.w, t) / glm::mix(1.0f / v0.clip.w, 1.0f / v1.clip.w, t);
-		data.tex_coord = glm::mix(v0.tex_coord / v0.clip.w, v1.tex_coord / v1.clip.w, t) / glm::mix(v0.tex_coord.q / v0.clip.w, v1.tex_coord.q / v1.clip.w, t);
-		data.z = glm::mix(win_c0.z, win_c1.z, t);
-		gl_emit_fragment(gs, low ? y : x, low ? x : y, data);
+		if (line_stipple(gs))
+		{
+			data.color = glm::mix(v0.color / v0.clip.w, v1.color / v1.clip.w, t) / glm::mix(1.0f / v0.clip.w, 1.0f / v1.clip.w, t);
+			data.tex_coord = glm::mix(v0.tex_coord / v0.clip.w, v1.tex_coord / v1.clip.w, t) / glm::mix(v0.tex_coord.q / v0.clip.w, v1.tex_coord.q / v1.clip.w, t);
+			data.z = glm::mix(win_c0.z, win_c1.z, t);
+			gl_emit_fragment(gs, low ? y : x, low ? x : y, data);
+		}
 
 		error2 += derror2;
 		if (error2 > dx)

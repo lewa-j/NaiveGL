@@ -96,6 +96,7 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	line_stipple = false;
 	line_stipple_factor = 1;
 	line_stipple_pattern = 0xFFFF;
+	line_stipple_counter = 0;
 	polygon_smooth = false;
 	cull_face = false;
 	cull_face_mode = GL_BACK;
@@ -173,7 +174,7 @@ void APIENTRY glEnable(GLenum cap)
 	}
 	else if (cap == GL_POLYGON_STIPPLE)
 	{
-		gs->line_stipple = true;
+		gs->polygon_stipple = true;
 	}
 	else if (cap == GL_CULL_FACE)
 	{
@@ -238,7 +239,7 @@ void APIENTRY glDisable(GLenum cap)
 	}
 	else if (cap == GL_POLYGON_STIPPLE)
 	{
-		gs->line_stipple = false;
+		gs->polygon_stipple = false;
 	}
 	else if (cap == GL_CULL_FACE)
 	{
