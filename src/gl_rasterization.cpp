@@ -166,8 +166,10 @@ static bool line_stipple(gl_state *gs)
 	return (gs->line_stipple_pattern >> b) & 1;
 }
 
-void gl_emit_line(gl_processed_vertex &v0, gl_processed_vertex &v1)
+void gl_emit_line(const gl_processed_vertex &v0, const gl_processed_vertex &v1)
 {
+	//TODO clip
+
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 
@@ -196,9 +198,6 @@ void gl_emit_line(gl_processed_vertex &v0, gl_processed_vertex &v1)
 	}
 
 	gl_frag_data data;
-	//TODO interpolate
-	data.color = v0.color;
-	data.tex_coord = v0.tex_coord;
 
 	int dx = ic1.x - ic0.x;
 	int dy = ic1.y - ic0.y;
@@ -222,6 +221,9 @@ void gl_emit_line(gl_processed_vertex &v0, gl_processed_vertex &v1)
 		fdx = 1.0f / dx;
 	}
 
+	//TODO wide lines
+	//TODO antialiasing
+
 	for (int x = ic0.x; x <= ic1.x; x++)
 	{
 		t += fdx;
@@ -242,5 +244,37 @@ void gl_emit_line(gl_processed_vertex &v0, gl_processed_vertex &v1)
 	}
 }
 
-void gl_emit_triangle(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2) {}
+static void rasterize_triangle(const gl_processed_vertex &v0, const gl_processed_vertex &v1, const gl_processed_vertex &v2)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+
+	glm::vec3 pts[3];
+
+	pts[0] = gs->get_window_coords(glm::vec3(v0.clip) / v0.clip.w);
+	pts[1] = gs->get_window_coords(glm::vec3(v1.clip) / v1.clip.w);
+	pts[2] = gs->get_window_coords(glm::vec3(v2.clip) / v2.clip.w);
+
+	if (gs->cull_face)
+	{
+		if (gs->cull_face_mode == GL_FRONT_AND_BACK)
+			return;
+
+		float side = (pts[2].x - pts[1].x) * (pts[0].y - pts[1].y) - (pts[0].x - pts[1].x) * (pts[2].y - pts[1].y);
+		if (side > 0 != gs->front_face_ccw != (gs->cull_face_mode == GL_FRONT))
+			return;
+	}
+
+	gl_emit_line(v0, v1);
+	gl_emit_line(v1, v2);
+	gl_emit_line(v2, v0);
+}
+
+void gl_emit_triangle(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2) 
+{
+	//TODO clip
+
+	rasterize_triangle(v0, v1, v2);
+}
+
 void gl_emit_quad(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2, gl_processed_vertex &v3) {}

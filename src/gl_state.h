@@ -157,7 +157,7 @@ void gl_set_error_(GLenum error, const char *func);
 void gl_set_error_a_(GLenum error, GLenum arg, const char *func);
 
 void gl_emit_point(gl_processed_vertex &vertex);
-void gl_emit_line(gl_processed_vertex &v0, gl_processed_vertex &v1);
+void gl_emit_line(const gl_processed_vertex &v0, const gl_processed_vertex &v1);
 void gl_emit_triangle(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2);
 void gl_emit_quad(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2, gl_processed_vertex &v3);
 
