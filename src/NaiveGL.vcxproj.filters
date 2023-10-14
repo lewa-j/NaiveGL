@@ -27,6 +27,9 @@
     <ClInclude Include="gl_types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="gl_funcs_x.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">

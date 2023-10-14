@@ -104,6 +104,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="gl_exports.h" />
+    <ClInclude Include="gl_funcs_x.h" />
     <ClInclude Include="gl_state.h" />
     <ClInclude Include="gl_types.h" />
     <ClInclude Include="pch.h" />
