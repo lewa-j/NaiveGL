@@ -184,7 +184,7 @@ void gl_emit_line(const gl_processed_vertex &v0, const gl_processed_vertex &v1)
 
 	bool low = false;
 	bool left = false;
-	if (std::abs(ic0.x - ic1.x) < std::abs(ic0.y - ic1.y))
+	if (glm::abs(ic0.x - ic1.x) < glm::abs(ic0.y - ic1.y))
 	{
 		low = true;
 		std::swap(ic0.x, ic0.y);
@@ -202,7 +202,7 @@ void gl_emit_line(const gl_processed_vertex &v0, const gl_processed_vertex &v1)
 	int dx = ic1.x - ic0.x;
 	int dy = ic1.y - ic0.y;
 
-	int derror2 = std::abs(dy) * 2;
+	int derror2 = glm::abs(dy) * 2;
 	int error2 = 0;
 	int y = ic0.y;
 	int ydir = (ic1.y > ic0.y ? 1 : -1);

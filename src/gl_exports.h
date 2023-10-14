@@ -3,9 +3,14 @@
 #include <stdint.h>
 
 #undef EXPORT
-#define EXPORT __declspec(dllexport) extern
 #undef APIENTRY
+#ifdef WIN32
+#define EXPORT __declspec(dllexport) extern
 #define APIENTRY __stdcall
+#else
+#define EXPORT extern
+#define APIENTRY
+#endif
 
 #ifdef __cplusplus
 extern "C" {

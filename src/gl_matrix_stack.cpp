@@ -2,6 +2,7 @@
 #include "gl_state.h"
 #include "gl_exports.h"
 #include <glm/gtc/matrix_transform.hpp>
+#include <string.h>
 
 const glm::mat4 &gl_state::get_modelview()
 {

@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "gl_state.h"
 #include "gl_exports.h"
+#include <string.h>
 
 void gl_state::init(int window_w, int window_h, bool doublebuffer)
 {
