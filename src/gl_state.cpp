@@ -14,10 +14,7 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	current_normal = glm::vec3(0, 0, 1);
 	current_color = glm::vec4(1, 1, 1, 1);
 
-	viewport.width = window_w;
-	viewport.height = window_h;
-	viewport.center_x = window_w / 2;
-	viewport.center_y = window_h / 2;
+	set_viewport(0,0,window_w,window_h);
 	viewport.dnear = 0;
 	viewport.dfar = 1;
 

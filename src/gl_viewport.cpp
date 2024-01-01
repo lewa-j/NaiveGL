@@ -3,6 +3,17 @@
 #include "gl_exports.h"
 #include <glm/common.hpp>
 
+void gl_state::set_viewport(float x, float y, float w, float h)
+{
+	viewport.width = w;
+	viewport.height = h;
+#if NAGL_FLIP_VIEWPORT_Y
+	viewport.height *= -1;
+#endif
+	viewport.center_x = x + w / 2;
+	viewport.center_y = y + h / 2;
+}
+
 glm::vec3 gl_state::get_window_coords(glm::vec3 device_coords)
 {
 	return device_coords * glm::vec3(viewport.width, viewport.height, viewport.dfar - viewport.dnear) * 0.5f
@@ -32,8 +43,5 @@ void APIENTRY glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 	}
 
 	//TODO clamp by max
-	gs->viewport.width = width;
-	gs->viewport.height = height;
-	gs->viewport.center_x = x + width / 2;
-	gs->viewport.center_y = y + height / 2;
+	gs->set_viewport(x,y,width,height);
 }
