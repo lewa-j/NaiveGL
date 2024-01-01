@@ -277,4 +277,12 @@ void gl_emit_triangle(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_proce
 	rasterize_triangle(v0, v1, v2);
 }
 
-void gl_emit_quad(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2, gl_processed_vertex &v3) {}
+void gl_emit_quad(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2, gl_processed_vertex &v3)
+{
+	//TODO clip
+
+	gl_emit_line(v0, v1);
+	gl_emit_line(v1, v2);
+	gl_emit_line(v2, v3);
+	gl_emit_line(v3, v0);
+}
