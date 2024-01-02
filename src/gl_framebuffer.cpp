@@ -15,6 +15,26 @@ void APIENTRY glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 	gs->scissor_rect = glm::ivec4(x, y, width, height);
 }
 
+void APIENTRY glBlendFunc(GLenum sfactor, GLenum dfactor)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (sfactor != 0 && sfactor != 1 && (sfactor < GL_SRC_ALPHA || sfactor > GL_SRC_ALPHA_SATURATE))
+	{
+		gl_set_error_a(GL_INVALID_ENUM, sfactor);
+		return;
+	}
+	if (dfactor != 0 && dfactor != 1 && (dfactor < GL_SRC_COLOR || dfactor > GL_ONE_MINUS_DST_ALPHA))
+	{
+		gl_set_error_a(GL_INVALID_ENUM, dfactor);
+		return;
+	}
+
+	gs->blend_func_src = sfactor;
+	gs->blend_func_dst = dfactor;
+}
+
 #define VALIDATE_DR_BUFFER(buf) \
 if (buf != GL_NONE && (buf < GL_FRONT_LEFT && buf >= (GL_AUX0 + gl_max_aux_buffers)))\
 {\

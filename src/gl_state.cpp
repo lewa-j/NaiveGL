@@ -105,6 +105,9 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 
 	scissor_test = false;
 	scissor_rect = glm::ivec4{ 0, 0, window_w, window_h };
+	blend = false;
+	blend_func_src = GL_ONE;
+	blend_func_dst = GL_ZERO;
 
 	draw_buffer = doublebuffer ? GL_BACK : GL_FRONT;
 	read_buffer = doublebuffer ? GL_BACK : GL_FRONT;
@@ -182,6 +185,10 @@ void APIENTRY glEnable(GLenum cap)
 	{
 		gs->scissor_test = true;
 	}
+	else if (cap == GL_BLEND)
+	{
+		gs->blend = true;
+	}
 	else
 	{
 		gl_set_error_a(GL_INVALID_ENUM, cap);
@@ -246,6 +253,10 @@ void APIENTRY glDisable(GLenum cap)
 	else if (cap == GL_SCISSOR_TEST)
 	{
 		gs->scissor_test = false;
+	}
+	else if (cap == GL_BLEND)
+	{
+		gs->blend = false;
 	}
 	else
 	{

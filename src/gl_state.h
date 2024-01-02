@@ -127,6 +127,9 @@ struct gl_state
 
 	bool scissor_test = false;
 	glm::ivec4 scissor_rect;
+	bool blend = false;
+	GLenum blend_func_src = GL_ONE;
+	GLenum blend_func_dst = GL_ZERO;
 
 	int draw_buffer = GL_FRONT;
 	int read_buffer = GL_FRONT;

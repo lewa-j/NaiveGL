@@ -6,7 +6,6 @@ EXPORT void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param)
 EXPORT void APIENTRY glTexEnvf(GLenum target, GLenum pname, GLfloat param) {}
 EXPORT void APIENTRY glAlphaFunc(GLenum func, GLfloat ref) {}
 EXPORT void APIENTRY glDepthFunc(GLenum func) {}
-EXPORT void APIENTRY glBlendFunc(GLenum sfactor, GLenum dfactor) {}
 EXPORT void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels) {}
 EXPORT void APIENTRY glGetFloatv(GLenum pname, GLfloat *data) {}
 EXPORT void APIENTRY glGetIntegerv(GLenum pname, GLint *data) {}
