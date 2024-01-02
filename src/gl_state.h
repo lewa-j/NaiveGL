@@ -45,6 +45,8 @@ struct gl_state
 	int begin_primitive_mode = -1;
 	int begin_vertex_count = 0;
 	gl_processed_vertex last_vertices[3];//for lines, triangles and quads
+	bool last_side = false;
+
 	bool edge_flag = true;
 	glm::vec4 current_tex_coord;
 	glm::vec3 current_normal;
@@ -164,10 +166,10 @@ gl_state *gl_current_state();
 void gl_set_error_(GLenum error, const char *func);
 void gl_set_error_a_(GLenum error, GLenum arg, const char *func);
 
-void gl_emit_point(gl_processed_vertex &vertex);
-void gl_emit_line(const gl_processed_vertex &v0, const gl_processed_vertex &v1);
-void gl_emit_triangle(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2);
-void gl_emit_quad(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2, gl_processed_vertex &v3);
+void gl_emit_point(gl_state &st, gl_processed_vertex &vertex);
+void gl_emit_line(gl_state& st, const gl_processed_vertex &v0, const gl_processed_vertex &v1);
+void gl_emit_triangle(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2);
+void gl_emit_quad(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2, gl_processed_vertex &v3);
 
 #define VALIDATE_NOT_BEGIN_MODE \
 if (gs->begin_primitive_mode != -1)\

@@ -85,15 +85,15 @@ struct gl_frag_data
 	float z;
 };
 
-void gl_emit_fragment(gl_state *gs, int x, int y, gl_frag_data &data)
+void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 {
-	gl_framebuffer &fb = *gs->framebuffer;
+	gl_framebuffer &fb = *st.framebuffer;
 	if (x < 0 || x >= fb.width || y < 0 || y >= fb.height)
 		return;
 
-	if (gs->scissor_test)
+	if (st.scissor_test)
 	{
-		const glm::ivec4 &s = gs->scissor_rect;
+		const glm::ivec4 &s = st.scissor_rect;
 		if (x < s.x || x >= s.x + s.z || y < s.y || y >= s.y + s.w)
 			return;
 	}
@@ -105,39 +105,37 @@ void gl_emit_fragment(gl_state *gs, int x, int y, gl_frag_data &data)
 	fb.color[i + 3] = uint8_t(data.color.a * 0xFF);
 }
 
-void gl_emit_point(gl_processed_vertex &vertex)
+void gl_emit_point(gl_state& st, gl_processed_vertex &vertex)
 {
-	gl_state *gs = gl_current_state();
-	if (!gs) return;
-	if (!gs->clip_point(vertex.position, vertex.clip))
+	if (!st.clip_point(vertex.position, vertex.clip))
 		return;
 
 	glm::vec3 device_c = glm::vec3(vertex.clip) / vertex.clip.w;
-	glm::vec3 win_c = gs->get_window_coords(device_c);
+	glm::vec3 win_c = st.get_window_coords(device_c);
 
 	gl_frag_data data;
 	data.color = vertex.color;
 	data.tex_coord = vertex.tex_coord;
 	data.z = win_c.z;
 
-	if (!gs->point_smooth)
+	if (!st.point_smooth)
 	{
-		int w = (int)round(gs->point_size);//TODO clamp to max
+		int w = (int)round(st.point_size);//TODO clamp to max
 		w = w < 1 ? 1 : w;
 		glm::ivec2 ic(floor(win_c + (w & 1 ? 0 : 0.5f)));//add half pixel when size is even. then truncate to int
 		if (w == 1)
-			gl_emit_fragment(gs, ic.x, ic.y, data);
+			gl_emit_fragment(st, ic.x, ic.y, data);
 		else
 		{
 			ic -= (w >> 1);//floor(w * 0.5)
 			for (int ix = 0; ix < w; ix++)
 				for (int iy = 0; iy < w; iy++)
-					gl_emit_fragment(gs, ic.x + ix, ic.y + iy, data);
+					gl_emit_fragment(st, ic.x + ix, ic.y + iy, data);
 		}
 	}
 	else
 	{
-		float w = gs->point_size;
+		float w = st.point_size;
 		int wi = int(ceil(w) + 1);
 		glm::ivec2 ic(floor(win_c));
 		ic -= (wi >> 1);
@@ -150,34 +148,31 @@ void gl_emit_point(gl_processed_vertex &vertex)
 				if (coverage <= 0.f)
 					continue;
 				data.color.a = vertex.color.a * glm::min(coverage, 1.0f);
-				gl_emit_fragment(gs, ic.x + ix, ic.y + iy, data);
+				gl_emit_fragment(st, ic.x + ix, ic.y + iy, data);
 			}
 	}
 }
 
-static bool line_stipple(gl_state *gs)
+static bool line_stipple(gl_state &st)
 {
-	if (!gs->line_stipple)
+	if (!st.line_stipple)
 		return true;
 
-	int b = (gs->line_stipple_counter / gs->line_stipple_factor) & 0xF;
-	gs->line_stipple_counter++;
+	int b = (st.line_stipple_counter / st.line_stipple_factor) & 0xF;
+	st.line_stipple_counter++;
 
-	return (gs->line_stipple_pattern >> b) & 1;
+	return (st.line_stipple_pattern >> b) & 1;
 }
 
-void gl_emit_line(const gl_processed_vertex &v0, const gl_processed_vertex &v1)
+void gl_emit_line(gl_state& st, const gl_processed_vertex &v0, const gl_processed_vertex &v1)
 {
 	//TODO clip
 
-	gl_state *gs = gl_current_state();
-	if (!gs) return;
-
 	glm::vec3 device_c0 = glm::vec3(v0.clip) / v0.clip.w;
-	glm::vec3 win_c0 = gs->get_window_coords(device_c0);
+	glm::vec3 win_c0 = st.get_window_coords(device_c0);
 
 	glm::vec3 device_c1 = glm::vec3(v1.clip) / v1.clip.w;
-	glm::vec3 win_c1 = gs->get_window_coords(device_c1);
+	glm::vec3 win_c1 = st.get_window_coords(device_c1);
 
 	glm::ivec2 ic0(floor(win_c0));
 	glm::ivec2 ic1(floor(win_c1));
@@ -227,12 +222,12 @@ void gl_emit_line(const gl_processed_vertex &v0, const gl_processed_vertex &v1)
 	for (int x = ic0.x; x <= ic1.x; x++)
 	{
 		t += fdx;
-		if (line_stipple(gs))
+		if (line_stipple(st))
 		{
 			data.color = glm::mix(v0.color / v0.clip.w, v1.color / v1.clip.w, t) / glm::mix(1.0f / v0.clip.w, 1.0f / v1.clip.w, t);
 			data.tex_coord = glm::mix(v0.tex_coord / v0.clip.w, v1.tex_coord / v1.clip.w, t) / glm::mix(v0.tex_coord.q / v0.clip.w, v1.tex_coord.q / v1.clip.w, t);
 			data.z = glm::mix(win_c0.z, win_c1.z, t);
-			gl_emit_fragment(gs, low ? y : x, low ? x : y, data);
+			gl_emit_fragment(st, low ? y : x, low ? x : y, data);
 		}
 
 		error2 += derror2;
@@ -244,45 +239,72 @@ void gl_emit_line(const gl_processed_vertex &v0, const gl_processed_vertex &v1)
 	}
 }
 
-static void rasterize_triangle(const gl_processed_vertex &v0, const gl_processed_vertex &v1, const gl_processed_vertex &v2)
+static bool triangle_side(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1, const gl_processed_vertex& v2)
 {
-	gl_state *gs = gl_current_state();
-	if (!gs) return;
-
 	glm::vec3 pts[3];
 
-	pts[0] = gs->get_window_coords(glm::vec3(v0.clip) / v0.clip.w);
-	pts[1] = gs->get_window_coords(glm::vec3(v1.clip) / v1.clip.w);
-	pts[2] = gs->get_window_coords(glm::vec3(v2.clip) / v2.clip.w);
+	pts[0] = st.get_window_coords(glm::vec3(v0.clip) / v0.clip.w);
+	pts[1] = st.get_window_coords(glm::vec3(v1.clip) / v1.clip.w);
+	pts[2] = st.get_window_coords(glm::vec3(v2.clip) / v2.clip.w);
 
-	if (gs->cull_face)
+	float sarea = (pts[2].x - pts[1].x) * (pts[0].y - pts[1].y) - (pts[0].x - pts[1].x) * (pts[2].y - pts[1].y);
+	return sarea > 0 != st.front_face_ccw;
+}
+
+static void rasterize_triangle(gl_state& st, const gl_processed_vertex &v0, const gl_processed_vertex &v1, const gl_processed_vertex &v2)
+{
+	if (st.cull_face)
 	{
-		if (gs->cull_face_mode == GL_FRONT_AND_BACK)
+		if (st.cull_face_mode == GL_FRONT_AND_BACK)
 			return;
 
-		float side = (pts[2].x - pts[1].x) * (pts[0].y - pts[1].y) - (pts[0].x - pts[1].x) * (pts[2].y - pts[1].y);
-		if (side > 0 != gs->front_face_ccw != (gs->cull_face_mode == GL_FRONT))
+		if (st.last_side != (st.cull_face_mode == GL_FRONT))
 			return;
 	}
 
-	gl_emit_line(v0, v1);
-	gl_emit_line(v1, v2);
-	gl_emit_line(v2, v0);
+	gl_emit_line(st, v0, v1);
+	gl_emit_line(st, v1, v2);
+	gl_emit_line(st, v2, v0);
 }
 
-void gl_emit_triangle(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2) 
+void gl_emit_triangle(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2)
 {
 	//TODO clip
 
-	rasterize_triangle(v0, v1, v2);
+	st.last_side = triangle_side(st, v0, v1, v2);
+
+	if (st.polygon_mode[st.last_side] == GL_POINT)
+	{
+		if (v0.edge) gl_emit_point(st, v0);
+		if (v1.edge) gl_emit_point(st, v1);
+		if (v2.edge) gl_emit_point(st, v2);
+	}
+	else if (st.polygon_mode[st.last_side] == GL_LINE)
+	{
+		if (v0.edge) gl_emit_line(st, v0, v1);
+		if (v1.edge) gl_emit_line(st, v1, v2);
+		if (v2.edge) gl_emit_line(st, v2, v0);
+	}
+	else
+		rasterize_triangle(st, v0, v1, v2);
 }
 
-void gl_emit_quad(gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2, gl_processed_vertex &v3)
+void gl_emit_quad(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2, gl_processed_vertex &v3)
 {
 	//TODO clip
-
-	gl_emit_line(v0, v1);
-	gl_emit_line(v1, v2);
-	gl_emit_line(v2, v3);
-	gl_emit_line(v3, v0);
+	//TODO side
+	if (st.polygon_mode[0] == GL_POINT)
+	{
+		if (v0.edge) gl_emit_point(st, v0);
+		if (v1.edge) gl_emit_point(st, v1);
+		if (v2.edge) gl_emit_point(st, v2);
+		if (v3.edge) gl_emit_point(st, v3);
+	}
+	else
+	{
+		if (v0.edge) gl_emit_line(st, v0, v1);
+		if (v1.edge) gl_emit_line(st, v1, v2);
+		if (v2.edge) gl_emit_line(st, v2, v3);
+		if (v3.edge) gl_emit_line(st, v3, v0);
+	}
 }

@@ -60,12 +60,12 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 	switch (gs->begin_primitive_mode)
 	{
 	case GL_POINTS:
-		gl_emit_point(vertex);
+		gl_emit_point(*gs, vertex);
 		break;
 	case GL_LINES:
 		if (gs->begin_vertex_count & 1)
 		{
-			gl_emit_line(gs->last_vertices[0], vertex);
+			gl_emit_line(*gs, gs->last_vertices[0], vertex);
 			gs->line_stipple_counter = 0;
 		}
 		else
@@ -77,9 +77,10 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 		[[fallthrough]];
 	case GL_LINE_STRIP:
 		if (gs->begin_vertex_count)
-			gl_emit_line(gs->last_vertices[0], vertex);
+			gl_emit_line(*gs, gs->last_vertices[0], vertex);
 		gs->last_vertices[0] = vertex;
 		break;
+
 	case GL_TRIANGLES:
 		if (gs->begin_vertex_count < 2)
 		{
@@ -87,24 +88,61 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 		}
 		else
 		{
-			gl_emit_triangle(gs->last_vertices[0], gs->last_vertices[1], vertex);
+			gl_emit_triangle(*gs, gs->last_vertices[0], gs->last_vertices[1], vertex);
 			gs->begin_vertex_count = -1;
 		}
 		break;
 	case GL_TRIANGLE_STRIP:
 		if (gs->begin_vertex_count >= 2)
-			gl_emit_triangle(gs->last_vertices[0], gs->last_vertices[1], vertex);
+			gl_emit_triangle(*gs, gs->last_vertices[0], gs->last_vertices[1], vertex);
 		gs->last_vertices[gs->begin_vertex_count & 1] = vertex;
 		break;
-	case GL_TRIANGLE_FAN:
-	case GL_POLYGON://TODO line fill
+	case GL_POLYGON:
+#if 0
+		if (gs->polygon_mode[0] == GL_POINT)
+		{
+			if(gs->begin_vertex_count < 2)
+				gs->last_vertices[gs->begin_vertex_count ? 1 : 0] = vertex;
+			else if (gs->begin_vertex_count == 2)
+			{
+				gl_emit_point(*gs, gs->last_vertices[0]);
+				gl_emit_point(*gs, gs->last_vertices[1]);
+				gl_emit_point(*gs, vertex);
+			}
+			else if (gs->begin_vertex_count >= 2)
+				gl_emit_point(*gs, vertex);
+			break;
+		}
+		else if (gs->polygon_mode[0] == GL_LINE)
+		{
+			if (!gs->begin_vertex_count)
+				gs->last_vertices[1] = vertex;// save first to loop back later
+			else if (gs->begin_vertex_count == 2)
+				gl_emit_line(*gs, gs->last_vertices[1], gs->last_vertices[0]);
+
+			if (gs->begin_vertex_count >= 2)
+				gl_emit_line(*gs, gs->last_vertices[0], vertex);
+			gs->last_vertices[0] = vertex;
+			break;
+		}
+#endif
 		if (gs->begin_vertex_count >= 2)
 		{
-			if (gs->begin_primitive_mode == GL_POLYGON)
-				vertex.color = gs->last_vertices[0].color;
-			gl_emit_triangle(gs->last_vertices[0], gs->last_vertices[1], vertex);
+			vertex.color = gs->last_vertices[1].color;
+			vertex.edge = false;
 		}
-		gs->last_vertices[gs->begin_vertex_count ? 1 : 0] = vertex;
+
+		[[fallthrough]];
+	case GL_TRIANGLE_FAN:
+		if (gs->begin_vertex_count >= 2)
+			gl_emit_triangle(*gs, gs->last_vertices[1], gs->last_vertices[0], vertex);
+		if (gs->begin_primitive_mode == GL_POLYGON)
+		{
+			vertex.edge = gs->edge_flag;
+			if (gs->begin_vertex_count == 2)
+				gs->last_vertices[1].edge = false;
+		}
+		gs->last_vertices[gs->begin_vertex_count ? 0 : 1] = vertex;
 		break;
 
 	case GL_QUADS:
@@ -113,7 +151,7 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 		if (j < 3)
 			gs->last_vertices[j] = vertex;
 		else
-			gl_emit_quad(gs->last_vertices[0], gs->last_vertices[1], gs->last_vertices[2], vertex);
+			gl_emit_quad(*gs, gs->last_vertices[0], gs->last_vertices[1], gs->last_vertices[2], vertex);
 	}
 		break;
 	case GL_QUAD_STRIP:
@@ -122,9 +160,9 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 		if (gs->begin_vertex_count >= 3)
 		{
 			if (j == 3)
-				gl_emit_quad(gs->last_vertices[0], gs->last_vertices[1], vertex, gs->last_vertices[2]);
+				gl_emit_quad(*gs, gs->last_vertices[0], gs->last_vertices[1], vertex, gs->last_vertices[2]);
 			else if (j == 1)
-				gl_emit_quad(gs->last_vertices[2], gs->last_vertices[1], vertex, gs->last_vertices[0]);
+				gl_emit_quad(*gs, gs->last_vertices[2], gs->last_vertices[1], vertex, gs->last_vertices[0]);
 		}
 
 		gs->last_vertices[j < 3 ? j : 1] = vertex;
@@ -148,8 +186,15 @@ void APIENTRY glEnd()
 		return;
 	}
 
-	if (gs->begin_primitive_mode == GL_LINE_LOOP && gs->begin_vertex_count >= 3)
-		gl_emit_line(gs->last_vertices[0], gs->last_vertices[1]);// loop back from last to first
+	if (gs->begin_primitive_mode == GL_LINE_LOOP && gs->begin_vertex_count >= 2)
+		gl_emit_line(*gs, gs->last_vertices[0], gs->last_vertices[1]);// loop back from last to first
+	else if (gs->begin_primitive_mode == GL_POLYGON && gs->begin_vertex_count >= 3 && gs->last_vertices[0].edge)
+	{
+		if (gs->polygon_mode[gs->last_side] == GL_LINE)
+			gl_emit_line(*gs, gs->last_vertices[0], gs->last_vertices[1]);
+		else if (gs->polygon_mode[gs->last_side] == GL_POINT)
+			gl_emit_point(*gs, gs->last_vertices[0]);
+	}
 
 	gs->begin_primitive_mode = -1;
 }
