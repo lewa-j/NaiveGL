@@ -60,7 +60,7 @@ EXPORT HGLRC APIENTRY wglCreateContext(HDC device_context)
 	bmih.biBitCount = 32;
 	bmih.biCompression = BI_RGB;
 	rc->bitmap_dc = CreateCompatibleDC(device_context);
-	rc->bitmap = CreateDIBSection(device_context, &rc->bitmap_info, DIB_RGB_COLORS, (void **)&rc->framebuffer.color, 0, 0);
+	rc->bitmap = CreateDIBSection(device_context, &rc->bitmap_info, DIB_RGB_COLORS, (void **)&rc->framebuffer.color, NULL, 0);
 	if (rc->bitmap)
 		SelectObject(rc->bitmap_dc, rc->bitmap);
 
@@ -201,6 +201,42 @@ EXPORT BOOL WINAPI wglSwapBuffers(HDC device_context)
 	if (current_context && current_context->bitmap_dc)
 	{
 		BitBlt(device_context, 0, 0, current_context->framebuffer.width, current_context->framebuffer.height, current_context->bitmap_dc, 0, 0, SRCCOPY);
+
+		HWND win = WindowFromDC(device_context);
+		if (win)
+		{
+			RECT rect{ 0 };
+			GetClientRect(win, &rect);
+			int w = rect.right - rect.left;
+			int h = rect.bottom - rect.top;
+
+			wgl_context* rc = current_context;
+			if (w != rc->framebuffer.width || h != rc->framebuffer.height)
+			{
+				printf("wglSwapBuffers: need resize %dx%d %dx%d\n", rc->framebuffer.width, rc->framebuffer.height, w, h);
+
+				DeleteObject(rc->bitmap);
+				BITMAPINFOHEADER& bmih = rc->bitmap_info.bmiHeader;
+				bmih.biWidth = w;
+				bmih.biHeight = h;
+				rc->bitmap = CreateDIBSection(rc->device_context, &rc->bitmap_info, DIB_RGB_COLORS, (void**)&rc->framebuffer.color, 0, 0);
+				if (rc->bitmap)
+					SelectObject(rc->bitmap_dc, rc->bitmap);
+
+				rc->framebuffer.width = w;
+				rc->framebuffer.height = h;
+				if (rc->framebuffer.depth)
+				{
+					delete[] rc->framebuffer.depth;
+					rc->framebuffer.depth = new uint16_t[w * h];
+				}
+				if (rc->framebuffer.stencil)
+				{
+					delete[] rc->framebuffer.stencil;
+					rc->framebuffer.stencil = new uint8_t[w * h];
+				}
+			}
+		}
 	}
 	return 1;
 }
