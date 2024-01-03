@@ -152,7 +152,7 @@ struct gl_state
 	const glm::mat4 &get_projection();
 	const glm::mat4 &get_mtx_texture();
 	glm::vec3 get_eye_normal();
-	glm::vec4 get_vertex_color(const glm::vec4 &vertex_object, const glm::vec4 &vertex_view, bool front_face);
+	glm::vec4 get_vertex_color(const glm::vec4 &vertex_view, bool front_face);
 	glm::vec4 get_vertex_texcoord(const glm::vec4 &v_object, const glm::vec4 &v_eye);
 	glm::vec3 get_window_coords(glm::vec3 device_coords);
 	bool clip_point(const glm::vec4 &v_eye, const glm::vec4 &v_clip);

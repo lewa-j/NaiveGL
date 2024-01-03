@@ -19,7 +19,7 @@ inline float GLtof(GLbyte v) { return float(2 * v + 1) / 0xFF; }
 inline float GLtof(GLushort v) { return float(v) / 0xFFFF; }
 inline float GLtof(GLshort v) { return float(2 * v + 1) / 0xFFFF; }
 inline float GLtof(GLuint v) { return float(v) / 0xFFFFFFFF; }
-inline float GLtof(GLint v) { return float(2 * v + 1) / 0xFFFFFFFF; }
+inline float GLtof(GLint v) { return float(2.0 * v + 1) / 0xFFFFFFFF; }
 inline float GLtof(GLfloat v) { return v; }
 inline float GLtof(GLdouble v) { return (float)v; }
 

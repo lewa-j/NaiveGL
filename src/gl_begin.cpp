@@ -40,6 +40,7 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 
 	if (gs->begin_primitive_mode == -1)
 	{
+		//undefined behaviour
 		return;
 	}
 
@@ -49,7 +50,7 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 	gl_processed_vertex vertex;
 	vertex.position = gs->get_modelview() * v_object;
 	vertex.tex_coord = gs->get_vertex_texcoord(v_object, vertex.position);
-	vertex.color = gs->get_vertex_color(v_object, vertex.position, front_face);
+	vertex.color = gs->get_vertex_color(vertex.position, front_face);
 	vertex.clip = gs->get_projection() * vertex.position;
 
 	if (gs->begin_primitive_mode == GL_TRIANGLES || gs->begin_primitive_mode == GL_QUADS || gs->begin_primitive_mode == GL_POLYGON)
@@ -294,9 +295,9 @@ void APIENTRY glNormal3f(GLfloat nx, GLfloat ny, GLfloat nz)
 	gs->current_normal = glm::vec3(nx, ny, nz);
 }
 
-void APIENTRY glNormal3b(GLbyte nx, GLbyte ny, GLbyte nz)			{ glNormal3f(GLtof(nx), GLtof(ny), GLtof(ny)); }
-void APIENTRY glNormal3s(GLshort nx, GLshort ny, GLshort nz)		{ glNormal3f(GLtof(nx), GLtof(ny), GLtof(ny)); }
-void APIENTRY glNormal3i(GLint nx, GLint ny, GLint nz)				{ glNormal3f(GLtof(nx), GLtof(ny), GLtof(ny)); }
+void APIENTRY glNormal3b(GLbyte nx, GLbyte ny, GLbyte nz)			{ glNormal3f(GLtof(nx), GLtof(ny), GLtof(nz)); }
+void APIENTRY glNormal3s(GLshort nx, GLshort ny, GLshort nz)		{ glNormal3f(GLtof(nx), GLtof(ny), GLtof(nz)); }
+void APIENTRY glNormal3i(GLint nx, GLint ny, GLint nz)				{ glNormal3f(GLtof(nx), GLtof(ny), GLtof(nz)); }
 void APIENTRY glNormal3d(GLdouble nx, GLdouble ny, GLdouble nz)		{ glNormal3f(GLtof(nx), GLtof(ny), GLtof(nz)); }
 void APIENTRY glNormal3bv(const GLbyte* v)		{ glNormal3b(v[0], v[1], v[2]); }
 void APIENTRY glNormal3sv(const GLshort* v)		{ glNormal3s(v[0], v[1], v[2]); }

@@ -3,7 +3,7 @@
 #include "gl_exports.h"
 #include <glm/trigonometric.hpp>
 
-glm::vec4 gl_state::get_vertex_color(const glm::vec4 &vertex_object, const glm::vec4 &vertex_view, bool front_face)
+glm::vec4 gl_state::get_vertex_color(const glm::vec4 &vertex_view, bool front_face)
 {
 	if (!lighting_enabled)
 		return current_color;
