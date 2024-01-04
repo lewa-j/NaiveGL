@@ -173,6 +173,9 @@ void gl_emit_line(gl_state& st, const gl_processed_vertex &v0, const gl_processe
 void gl_emit_triangle(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2);
 void gl_emit_quad(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2, gl_processed_vertex &v3);
 
+void rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1);
+void rasterize_clipped_line(gl_state& st, gl_processed_vertex v0, gl_processed_vertex v1);
+
 #define VALIDATE_NOT_BEGIN_MODE \
 if (gs->begin_primitive_mode != -1)\
 {\

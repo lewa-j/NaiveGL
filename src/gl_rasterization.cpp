@@ -164,10 +164,8 @@ static bool line_stipple(gl_state &st)
 	return (st.line_stipple_pattern >> b) & 1;
 }
 
-void gl_emit_line(gl_state& st, const gl_processed_vertex &v0, const gl_processed_vertex &v1)
+void rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1)
 {
-	//TODO clip
-
 	glm::vec3 device_c0 = glm::vec3(v0.clip) / v0.clip.w;
 	glm::vec3 win_c0 = st.get_window_coords(device_c0);
 
@@ -237,6 +235,27 @@ void gl_emit_line(gl_state& st, const gl_processed_vertex &v0, const gl_processe
 			error2 -= dx * 2;
 		}
 	}
+}
+
+void gl_emit_line(gl_state& st, const gl_processed_vertex &v0, const gl_processed_vertex &v1)
+{
+	if (v0.clip.z > v0.clip.w && v1.clip.z > v1.clip.w)
+		return;
+	if (v0.clip.z < -v0.clip.w && v1.clip.z < -v1.clip.w)
+		return;
+	if (v0.clip.x < -v0.clip.w && v1.clip.x < -v1.clip.w)
+		return;
+	if (v0.clip.x > v0.clip.w && v1.clip.x > v1.clip.w)
+		return;
+	if (v0.clip.y < -v0.clip.w && v1.clip.y < -v1.clip.w)
+		return;
+	if (v0.clip.y > v0.clip.w && v1.clip.y > v1.clip.w)
+		return;
+
+	if (st.clip_point(v0.position, v0.clip) && st.clip_point(v1.position, v1.clip))
+		rasterize_line(st, v0, v1);
+	else
+		rasterize_clipped_line(st, v0, v1);
 }
 
 static bool triangle_side(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1, const gl_processed_vertex& v2)
