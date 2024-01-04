@@ -303,7 +303,7 @@ static const char *error_to_str(GLenum e)
 	return "?";
 }
 
-#if DEBUG_LOG
+#if NAGL_DEBUG_LOG
 #define gl_log printf
 #else
 #define gl_log(...)
