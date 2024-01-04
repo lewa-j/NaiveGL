@@ -3,7 +3,7 @@
 #include "gl_exports.h"
 #include <glm/common.hpp>
 
-void gl_state::set_viewport(float x, float y, float w, float h)
+void gl_state::set_viewport(int x, int y, int w, int h)
 {
 	viewport.width = w;
 	viewport.height = h;
@@ -42,6 +42,8 @@ void APIENTRY glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 		return;
 	}
 
-	//TODO clamp by max
+	width = glm::min(width, gl_max_viewport_dims[0]);
+	height = glm::min(height, gl_max_viewport_dims[1]);
+
 	gs->set_viewport(x,y,width,height);
 }

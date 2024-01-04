@@ -8,6 +8,8 @@
 	#define NAGL_FLIP_VIEWPORT_Y 1
 #endif
 
+constexpr int gl_max_viewport_dims[2]{0x4000,0x4000};
+
 constexpr int gl_max_viewmodel_mtx = 32;
 constexpr int gl_max_projection_mtx = 2;
 constexpr int gl_max_texture_mtx = 2;
@@ -146,7 +148,7 @@ struct gl_state
 	void init(int window_w, int window_h, bool doublebuffer);
 	void destroy();
 
-	void set_viewport(float x, float y, float w, float h);
+	void set_viewport(int x, int y, int w, int h);
 	const glm::mat4 &get_modelview();
 	glm::mat4 get_inv_modelview();
 	const glm::mat4 &get_projection();
