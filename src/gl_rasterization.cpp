@@ -270,7 +270,7 @@ static bool triangle_side(gl_state& st, const gl_processed_vertex& v0, const gl_
 	return sarea > 0 != st.front_face_ccw;
 }
 
-static void rasterize_triangle(gl_state& st, const gl_processed_vertex &v0, const gl_processed_vertex &v1, const gl_processed_vertex &v2)
+void rasterize_triangle(gl_state& st, const gl_processed_vertex &v0, const gl_processed_vertex &v1, const gl_processed_vertex &v2)
 {
 	if (st.cull_face)
 	{
@@ -281,6 +281,14 @@ static void rasterize_triangle(gl_state& st, const gl_processed_vertex &v0, cons
 			return;
 	}
 
+	if (st.polygon_mode[st.last_side] == GL_LINE)
+	{
+		if (v0.edge) rasterize_line(st, v0, v1);
+		if (v1.edge) rasterize_line(st, v1, v2);
+		if (v2.edge) rasterize_line(st, v2, v0);
+		return;
+	}
+
 	gl_emit_line(st, v0, v1);
 	gl_emit_line(st, v1, v2);
 	gl_emit_line(st, v2, v0);
@@ -288,7 +296,18 @@ static void rasterize_triangle(gl_state& st, const gl_processed_vertex &v0, cons
 
 void gl_emit_triangle(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2)
 {
-	//TODO clip
+	if (v0.clip.z > v0.clip.w && v1.clip.z > v1.clip.w && v2.clip.z > v2.clip.w)
+		return;
+	if (v0.clip.z < -v0.clip.w && v1.clip.z < -v1.clip.w && v2.clip.z < -v2.clip.w)
+		return;
+	if (v0.clip.x < -v0.clip.w && v1.clip.x < -v1.clip.w && v2.clip.x < -v2.clip.w)
+		return;
+	if (v0.clip.x > v0.clip.w && v1.clip.x > v1.clip.w && v2.clip.x > v2.clip.w)
+		return;
+	if (v0.clip.y < -v0.clip.w && v1.clip.y < -v1.clip.w && v2.clip.y < -v2.clip.w)
+		return;
+	if (v0.clip.y > v0.clip.w && v1.clip.y > v1.clip.w && v2.clip.y > v2.clip.w)
+		return;
 
 	st.last_side = triangle_side(st, v0, v1, v2);
 
@@ -298,14 +317,13 @@ void gl_emit_triangle(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex
 		if (v1.edge) gl_emit_point(st, v1);
 		if (v2.edge) gl_emit_point(st, v2);
 	}
-	else if (st.polygon_mode[st.last_side] == GL_LINE)
-	{
-		if (v0.edge) gl_emit_line(st, v0, v1);
-		if (v1.edge) gl_emit_line(st, v1, v2);
-		if (v2.edge) gl_emit_line(st, v2, v0);
-	}
 	else
-		rasterize_triangle(st, v0, v1, v2);
+	{
+		if (st.clip_point(v0.position, v0.clip) && st.clip_point(v1.position, v1.clip) && st.clip_point(v2.position, v2.clip))
+			rasterize_triangle(st, v0, v1, v2);
+		else
+			rasterize_clipped_triangle(st, v0, v1, v2);
+	}
 }
 
 void gl_emit_quad(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2, gl_processed_vertex &v3)

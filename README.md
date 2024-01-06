@@ -17,3 +17,5 @@ Work in progress towards 1.0 conformance
 specification [OpenGL](https://registry.khronos.org/OpenGL/specs/gl/glspec10.pdf)
 
 generated headers [glad](https://github.com/Dav1dde/glad)
+
+triangle clipping [McGuire2011Clipping](https://casual-effects.com/research/McGuire2011Clipping/index.html)
