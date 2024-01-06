@@ -83,8 +83,8 @@ struct gl_state
 		glm::vec4 coords{ 0,0,0,1 }; //window xyz, clip w
 		float distance = 0;
 		bool valid = true;
-		glm::vec4 color{ 0,0,0,1 };
-		glm::vec4 tex_coord{ 1,1,1,1 };
+		glm::vec4 color{ 1,1,1,1 };
+		glm::vec4 tex_coord{ 0,0,0,1 };
 	} raster_pos;
 	bool lighting_enabled = false;
 	bool front_face_ccw = true;
