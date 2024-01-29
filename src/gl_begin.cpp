@@ -44,13 +44,23 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 		return;
 	}
 
-	bool front_face = true;//TODO
-
 	glm::vec4 v_object(x, y, z, w);
-	gl_processed_vertex vertex;
+	gl_full_vertex vertex;
 	vertex.position = gs->get_modelview() * v_object;
 	vertex.tex_coord = gs->get_vertex_texcoord(v_object, vertex.position);
-	vertex.color = gs->get_vertex_color(vertex.position, front_face);
+	if (!gs->light_model_two_side
+		|| gs->begin_primitive_mode == GL_POINTS
+		|| gs->begin_primitive_mode == GL_LINES
+		|| gs->begin_primitive_mode == GL_LINE_LOOP
+		|| gs->begin_primitive_mode == GL_LINE_STRIP)
+	{
+		vertex.color = gs->get_vertex_color_current(vertex.position, true);
+	}
+	else
+	{
+		vertex.original_color = gs->current_color;
+		vertex.normal = gs->get_eye_normal();
+	}
 	vertex.clip = gs->get_projection() * vertex.position;
 
 	if (gs->begin_primitive_mode == GL_TRIANGLES || gs->begin_primitive_mode == GL_QUADS || gs->begin_primitive_mode == GL_POLYGON)

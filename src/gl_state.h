@@ -39,6 +39,12 @@ struct gl_processed_vertex
 	bool edge;
 };
 
+struct gl_full_vertex : gl_processed_vertex
+{
+	glm::vec4 original_color;
+	glm::vec3 normal;//for two sided lighting
+};
+
 struct gl_state
 {
 	gl_framebuffer *framebuffer;
@@ -46,7 +52,7 @@ struct gl_state
 	uint32_t error_bits = 0;
 	int begin_primitive_mode = -1;
 	int begin_vertex_count = 0;
-	gl_processed_vertex last_vertices[3];//for lines, triangles and quads
+	gl_full_vertex last_vertices[3];//for lines, triangles and quads
 	bool last_side = false;
 
 	bool edge_flag = true;
@@ -154,11 +160,13 @@ struct gl_state
 	const glm::mat4 &get_projection();
 	const glm::mat4 &get_mtx_texture();
 	glm::vec3 get_eye_normal();
-	glm::vec4 get_vertex_color(const glm::vec4 &vertex_view, bool front_face);
+	glm::vec4 get_vertex_color_current(const glm::vec4 &vertex_view, bool front_face);
+	glm::vec4 get_vertex_color(const glm::vec4& vertex_view, const glm::vec4& color, glm::vec3 normal, bool front_face);
 	glm::vec4 get_vertex_texcoord(const glm::vec4 &v_object, const glm::vec4 &v_eye);
 	glm::vec3 get_window_coords(glm::vec3 device_coords);
 	bool clip_point(const glm::vec4 &v_eye, const glm::vec4 &v_clip);
 	void update_color_material();
+	void set_material_color(GLenum face, GLenum pname, const glm::vec4& param, bool force = false);
 };
 
 gl_state *gl_current_state();
@@ -170,7 +178,7 @@ void gl_set_error_a_(GLenum error, GLenum arg, const char *func);
 
 void gl_emit_point(gl_state &st, gl_processed_vertex &vertex);
 void gl_emit_line(gl_state& st, const gl_processed_vertex &v0, const gl_processed_vertex &v1);
-void gl_emit_triangle(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2);
+void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_full_vertex&v2);
 void gl_emit_quad(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2, gl_processed_vertex &v3);
 
 void rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1);

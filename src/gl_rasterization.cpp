@@ -294,7 +294,7 @@ void rasterize_triangle(gl_state& st, const gl_processed_vertex &v0, const gl_pr
 	gl_emit_line(st, v2, v0);
 }
 
-void gl_emit_triangle(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2)
+void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_full_vertex&v2)
 {
 	if (v0.clip.z > v0.clip.w && v1.clip.z > v1.clip.w && v2.clip.z > v2.clip.w)
 		return;
@@ -310,6 +310,13 @@ void gl_emit_triangle(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex
 		return;
 
 	st.last_side = triangle_side(st, v0, v1, v2);
+
+	if (st.light_model_two_side)
+	{
+		v0.color = st.get_vertex_color(v0.position, v0.original_color, v0.normal, !st.last_side);
+		v1.color = st.get_vertex_color(v1.position, v1.original_color, v1.normal, !st.last_side);
+		v2.color = st.get_vertex_color(v2.position, v2.original_color, v2.normal, !st.last_side);
+	}
 
 	if (st.polygon_mode[st.last_side] == GL_POINT)
 	{

@@ -3,10 +3,19 @@
 #include "gl_exports.h"
 #include <glm/trigonometric.hpp>
 
-glm::vec4 gl_state::get_vertex_color(const glm::vec4 &vertex_view, bool front_face)
+
+glm::vec4 gl_state::get_vertex_color_current(const glm::vec4& vertex_view, bool front_face)
+{
+	return get_vertex_color(vertex_view, current_color, get_eye_normal(), front_face);
+}
+
+glm::vec4 gl_state::get_vertex_color(const glm::vec4& vertex_view, const glm::vec4& color, glm::vec3 normal, bool front_face)
 {
 	if (!lighting_enabled)
-		return current_color;
+		return glm::clamp(color, glm::vec4(0), glm::vec4(1));
+
+	if (color_material && light_model_two_side)
+		set_material_color(color_material_face, color_material_mode, color, true);
 
 	int ms = front_face ? 0 : 1;//material side
 	const gl_state::material &m = materials[ms];
@@ -22,7 +31,6 @@ glm::vec4 gl_state::get_vertex_color(const glm::vec4 &vertex_view, bool front_fa
 	}
 
 	const glm::vec4 p_eye(0, 0, 0, 1);
-	glm::vec3 normal = get_eye_normal();
 	if (!front_face)
 		normal = -normal;
 
@@ -75,45 +83,42 @@ static void set_material_shininess(gl_state *gs, GLenum face, GLfloat param)
 		gs->materials[1].shininess = param;
 }
 
-static void set_material_color(gl_state *gs, GLenum face, GLenum pname, const glm::vec4 &param, bool force = false)
+void gl_state::set_material_color(GLenum face, GLenum pname, const glm::vec4 &param, bool force)
 {
-	if (!force && gs->color_material
-		&& (pname == gs->color_material_mode || (gs->color_material_mode == GL_AMBIENT_AND_DIFFUSE && (pname == GL_AMBIENT || pname == GL_DIFFUSE))))
+	if (!force && color_material
+		&& (pname == color_material_mode || (color_material_mode == GL_AMBIENT_AND_DIFFUSE && (pname == GL_AMBIENT || pname == GL_DIFFUSE))))
 	{
-		if (face == gs->color_material_face || gs->color_material_face == GL_FRONT_AND_BACK)
+		if (face == color_material_face || color_material_face == GL_FRONT_AND_BACK)
 			return;
 	}
 
 	if (face == GL_FRONT_AND_BACK)
 	{
-		set_material_color(gs, GL_FRONT, pname, param, force);
-		set_material_color(gs, GL_BACK, pname, param, force);
+		set_material_color(GL_FRONT, pname, param, force);
+		set_material_color(GL_BACK, pname, param, force);
 		return;
 	}
 
 	if (pname == GL_AMBIENT_AND_DIFFUSE)
 	{
-		set_material_color(gs, face, GL_AMBIENT, param, force);
-		set_material_color(gs, face, GL_DIFFUSE, param, force);
+		set_material_color(face, GL_AMBIENT, param, force);
+		set_material_color(face, GL_DIFFUSE, param, force);
 		return;
 	}
 
 	if (pname == GL_AMBIENT)
-		gs->materials[face == GL_FRONT ? 0 : 1].ambient = param;
+		materials[face == GL_FRONT ? 0 : 1].ambient = param;
 	else if (pname == GL_DIFFUSE)
-		gs->materials[face == GL_FRONT ? 0 : 1].diffuse = param;
+		materials[face == GL_FRONT ? 0 : 1].diffuse = param;
 	else if (pname == GL_SPECULAR)
-		gs->materials[face == GL_FRONT ? 0 : 1].specular = param;
+		materials[face == GL_FRONT ? 0 : 1].specular = param;
 	else if (pname == GL_EMISSION)
-		gs->materials[face == GL_FRONT ? 0 : 1].emission = param;
+		materials[face == GL_FRONT ? 0 : 1].emission = param;
 }
 
 void gl_state::update_color_material()
 {
-	if (!color_material)
-		return;
-
-	set_material_color(this, color_material_face, color_material_mode, current_color, true);
+	set_material_color(color_material_face, color_material_mode, current_color, true);
 }
 
 void APIENTRY glFrontFace(GLenum mode)
@@ -230,7 +235,7 @@ void APIENTRY glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
 	if (pname == GL_SHININESS)
 		set_material_shininess(gs, face, params[0]);
 	else
-		set_material_color(gs, face, pname, glm::vec4(params[0], params[1], params[2], params[3]));
+		gs->set_material_color(face, pname, glm::vec4(params[0], params[1], params[2], params[3]));
 }
 
 void APIENTRY glMaterialiv(GLenum face, GLenum pname, const GLint *params)
@@ -243,7 +248,7 @@ void APIENTRY glMaterialiv(GLenum face, GLenum pname, const GLint *params)
 	if (pname == GL_SHININESS)
 		set_material_shininess(gs, face, (GLfloat)params[0]);
 	else
-		set_material_color(gs, face, pname, glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])));
+		gs->set_material_color(face, pname, glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])));
 }
 
 void APIENTRY glLightf(GLenum light, GLenum pname, GLfloat param)
