@@ -105,7 +105,7 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 	fb.color[i + 3] = uint8_t(data.color.a * 0xFF);
 }
 
-void gl_emit_point(gl_state& st, gl_processed_vertex &vertex)
+void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 {
 	if (!st.clip_point(vertex.position, vertex.clip))
 		return;
@@ -237,7 +237,7 @@ void rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_proces
 	}
 }
 
-void gl_emit_line(gl_state& st, const gl_processed_vertex &v0, const gl_processed_vertex &v1)
+void gl_emit_line(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1)
 {
 	if (v0.clip.z > v0.clip.w && v1.clip.z > v1.clip.w)
 		return;
@@ -251,6 +251,9 @@ void gl_emit_line(gl_state& st, const gl_processed_vertex &v0, const gl_processe
 		return;
 	if (v0.clip.y > v0.clip.w && v1.clip.y > v1.clip.w)
 		return;
+
+	if (st.shade_model_flat)
+		v0.color = v1.color;
 
 	if (st.clip_point(v0.position, v0.clip) && st.clip_point(v1.position, v1.clip))
 		rasterize_line(st, v0, v1);
@@ -270,7 +273,7 @@ static bool triangle_side(gl_state& st, const gl_processed_vertex& v0, const gl_
 	return sarea > 0 != st.front_face_ccw;
 }
 
-void rasterize_triangle(gl_state& st, const gl_processed_vertex &v0, const gl_processed_vertex &v1, const gl_processed_vertex &v2)
+void rasterize_triangle(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2)
 {
 	if (st.cull_face)
 	{
@@ -279,6 +282,12 @@ void rasterize_triangle(gl_state& st, const gl_processed_vertex &v0, const gl_pr
 
 		if (st.last_side != (st.cull_face_mode == GL_FRONT))
 			return;
+	}
+
+	if (st.shade_model_flat)
+	{
+		v0.color = v2.color;
+		v1.color = v2.color;
 	}
 
 	if (st.polygon_mode[st.last_side] == GL_LINE)
@@ -337,6 +346,14 @@ void gl_emit_quad(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1
 {
 	//TODO clip
 	//TODO side
+
+	if (st.shade_model_flat)
+	{
+		v0.color = v3.color;
+		v1.color = v3.color;
+		v2.color = v3.color;
+	}
+
 	if (st.polygon_mode[0] == GL_POINT)
 	{
 		if (v0.edge) gl_emit_point(st, v0);

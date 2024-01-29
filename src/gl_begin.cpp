@@ -137,6 +137,9 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 			break;
 		}
 #endif
+		if (gs->shade_model_flat && gs->begin_vertex_count)
+			vertex.color = gs->last_vertices[1].color;
+
 		if (gs->begin_vertex_count >= 2)
 			vertex.edge = false;
 
@@ -168,9 +171,9 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 		if (gs->begin_vertex_count >= 3)
 		{
 			if (j == 3)
-				gl_emit_quad(*gs, gs->last_vertices[0], gs->last_vertices[1], vertex, gs->last_vertices[2]);
+				gl_emit_quad(*gs, gs->last_vertices[2], gs->last_vertices[0], gs->last_vertices[1], vertex);
 			else if (j == 1)
-				gl_emit_quad(*gs, gs->last_vertices[2], gs->last_vertices[1], vertex, gs->last_vertices[0]);
+				gl_emit_quad(*gs, gs->last_vertices[0], gs->last_vertices[2], gs->last_vertices[1], vertex);
 		}
 
 		gs->last_vertices[j < 3 ? j : 1] = vertex;
