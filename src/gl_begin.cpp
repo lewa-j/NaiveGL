@@ -138,10 +138,7 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 		}
 #endif
 		if (gs->begin_vertex_count >= 2)
-		{
-			vertex.color = gs->last_vertices[1].color;
 			vertex.edge = false;
-		}
 
 		[[fallthrough]];
 	case GL_TRIANGLE_FAN:
