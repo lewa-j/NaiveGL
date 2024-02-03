@@ -284,12 +284,6 @@ void rasterize_triangle(gl_state& st, gl_processed_vertex &v0, gl_processed_vert
 			return;
 	}
 
-	if (st.shade_model_flat)
-	{
-		v0.color = v2.color;
-		v1.color = v2.color;
-	}
-
 	if (st.polygon_mode[st.last_side] == GL_LINE)
 	{
 		if (v0.edge) rasterize_line(st, v0, v1);
@@ -322,9 +316,18 @@ void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_fu
 
 	if (st.light_model_two_side)
 	{
-		v0.color = st.get_vertex_color(v0.position, v0.original_color, v0.normal, !st.last_side);
-		v1.color = st.get_vertex_color(v1.position, v1.original_color, v1.normal, !st.last_side);
+		if (!st.shade_model_flat)
+		{
+			v0.color = st.get_vertex_color(v0.position, v0.original_color, v0.normal, !st.last_side);
+			v1.color = st.get_vertex_color(v1.position, v1.original_color, v1.normal, !st.last_side);
+		}
 		v2.color = st.get_vertex_color(v2.position, v2.original_color, v2.normal, !st.last_side);
+	}
+
+	if (st.shade_model_flat)
+	{
+		v0.color = v2.color;
+		v1.color = v2.color;
 	}
 
 	if (st.polygon_mode[st.last_side] == GL_POINT)
