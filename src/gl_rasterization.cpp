@@ -78,6 +78,7 @@ void APIENTRY glPolygonMode(GLenum face, GLenum mode)
 		gs->polygon_mode[1] = mode;
 }
 
+//fragment's associated data
 struct gl_frag_data
 {
 	glm::vec4 color;
@@ -120,7 +121,7 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 
 	if (!st.point_smooth)
 	{
-		int w = (int)round(st.point_size);//TODO clamp to max
+		int w = std::min((int)round(st.point_size), gl_max_point_size);
 		w = w < 1 ? 1 : w;
 		glm::ivec2 ic(floor(win_c + (w & 1 ? 0 : 0.5f)));//add half pixel when size is even. then truncate to int
 		if (w == 1)
@@ -135,7 +136,8 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 	}
 	else
 	{
-		float w = st.point_size;
+		//NOTE: POINT_SIZE_GRANULARITY ignored
+		float w = glm::clamp(st.point_size, gl_point_size_range[0], gl_point_size_range[1]);
 		int wi = int(ceil(w) + 1);
 		glm::ivec2 ic(floor(win_c));
 		ic -= (wi >> 1);
@@ -144,6 +146,7 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 			for (int iy = 0; iy < wi; iy++)
 			{
 				glm::vec2 p{ ic.x + ix + 0.5f, ic.y + iy + 0.5f };
+				//rough approximation of pixel/circle intersection
 				float coverage = w - glm::distance(p, glm::vec2(win_c)) + 0.5f;
 				if (coverage <= 0.f)
 					continue;

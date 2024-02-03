@@ -18,6 +18,9 @@ constexpr int gl_max_texture_mtx = 2;
 constexpr int gl_max_user_clip_planes = 6;
 constexpr int gl_max_lights = 8;
 
+constexpr int gl_max_point_size = 2048;
+constexpr float gl_point_size_range[2]{ 0.1, 2048 };
+
 constexpr int gl_max_aux_buffers = 0;
 
 struct gl_framebuffer

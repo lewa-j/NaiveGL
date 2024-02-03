@@ -42,6 +42,7 @@ static void interpolate(gl_processed_vertex& to, const gl_processed_vertex& v0, 
 {
 	to.position = glm::mix(v0.position, v1.position, t);
 	to.clip = glm::mix(v0.clip, v1.clip, t);
+	//Color and Texture Coordinate Clipping
 	to.color = glm::mix(v0.color, v1.color, t);
 	to.tex_coord = glm::mix(v0.tex_coord, v1.tex_coord, t);
 	to.edge = v0.edge;
