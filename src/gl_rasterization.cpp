@@ -207,14 +207,24 @@ void rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_proces
 	float fdx;
 	if (left)
 	{
-		ic0.x++;//skip last point
 		t = 1;
 		fdx = -1.0f / dx; //invert t direction instead of swaping verts data
+
+		//skip last point
+		ic0.x++;
+		error2 += derror2;
+		if (error2 > dx)
+		{
+			y += ydir;
+			error2 -= dx * 2;
+		}
+		t += fdx;
 	}
 	else
 	{
-		ic1.x--;//skip last point
 		fdx = 1.0f / dx;
+
+		ic1.x--;//skip last point
 	}
 
 	//TODO wide lines
@@ -222,7 +232,6 @@ void rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_proces
 
 	for (int x = ic0.x; x <= ic1.x; x++)
 	{
-		t += fdx;
 		if (line_stipple(st))
 		{
 			data.color = glm::mix(v0.color / v0.clip.w, v1.color / v1.clip.w, t) / glm::mix(1.0f / v0.clip.w, 1.0f / v1.clip.w, t);
@@ -230,6 +239,7 @@ void rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_proces
 			data.z = glm::mix(win_c0.z, win_c1.z, t);
 			gl_emit_fragment(st, low ? y : x, low ? x : y, data);
 		}
+		t += fdx;
 
 		error2 += derror2;
 		if (error2 > dx)
