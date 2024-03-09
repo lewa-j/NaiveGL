@@ -55,6 +55,16 @@ void APIENTRY glMatrixMode(GLenum mode)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+
+	if (gs->display_list_begun)
+	{
+		gl_display_list_call call{ gl_display_list_call::tMatrixMode };
+		call.argsi[0] = mode;
+		gs->display_list_indices[0].calls.push_back(call);
+		if (!gs->display_list_execute)
+			return;
+	}
+
 	VALIDATE_NOT_BEGIN_MODE;
 	if (mode < GL_MODELVIEW || mode > GL_TEXTURE)
 	{
@@ -104,6 +114,14 @@ void APIENTRY glLoadIdentity()
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+
+	if (gs->display_list_begun)
+	{
+		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tLoadIdentity });
+		if (!gs->display_list_execute)
+			return;
+	}
+
 	VALIDATE_NOT_BEGIN_MODE;
 	get_current_mtx(gs) = glm::mat4(1);
 }
@@ -112,6 +130,14 @@ void APIENTRY glRotatef(GLfloat angle, GLfloat x, GLfloat y, GLfloat z)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+
+	if (gs->display_list_begun)
+	{
+		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tRotate, {angle,x,y,z} });
+		if (!gs->display_list_execute)
+			return;
+	}
+
 	VALIDATE_NOT_BEGIN_MODE;
 	glm::mat4 &dst = get_current_mtx(gs);
 	dst = glm::rotate(dst, glm::radians(angle), glm::vec3(x, y, z));
@@ -121,6 +147,14 @@ void APIENTRY glTranslatef(GLfloat x, GLfloat y, GLfloat z)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+
+	if (gs->display_list_begun)
+	{
+		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tTranslate, {x,y,z} });
+		if (!gs->display_list_execute)
+			return;
+	}
+
 	VALIDATE_NOT_BEGIN_MODE;
 	glm::mat4 &dst = get_current_mtx(gs);
 	dst = glm::translate(dst, glm::vec3(x, y, z));
@@ -130,6 +164,14 @@ void APIENTRY glScalef(GLfloat x, GLfloat y, GLfloat z)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+
+	if (gs->display_list_begun)
+	{
+		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tScale, {x,y,z} });
+		if (!gs->display_list_execute)
+			return;
+	}
+
 	VALIDATE_NOT_BEGIN_MODE;
 	glm::mat4 &dst = get_current_mtx(gs);
 	dst = glm::scale(dst, glm::vec3(x, y, z));

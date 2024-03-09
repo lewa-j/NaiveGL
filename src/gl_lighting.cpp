@@ -139,6 +139,13 @@ void APIENTRY glShadeModel(GLenum mode)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	if (gs->display_list_begun)
+	{
+		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tShadeModel, {}, {(int)mode} });
+		if (!gs->display_list_execute)
+			return;
+	}
+
 	VALIDATE_NOT_BEGIN_MODE;
 	if (mode != GL_FLAT && mode != GL_SMOOTH)
 	{
@@ -217,6 +224,18 @@ void APIENTRY glMaterialf(GLenum face, GLenum pname, GLfloat param)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	if (gs->display_list_begun)
+	{
+		gl_display_list_call call{ gl_display_list_call::tMaterial };
+		call.argsi[0] = face;
+		call.argsi[1] = pname;
+		if (pname == GL_SHININESS)
+			call.argsf[0] = param;
+		gs->display_list_indices[0].calls.push_back(call);
+		if (!gs->display_list_execute)
+			return;
+	}
+
 	VALIDATE_FACE;
 	VALIDATE_MAT_PNAME;
 
@@ -229,6 +248,21 @@ void APIENTRY glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	if (gs->display_list_begun)
+	{
+		gl_display_list_call call{ gl_display_list_call::tMaterial };
+		call.argsi[0] = face;
+		call.argsi[1] = pname;
+		if (pname == GL_SHININESS)
+			call.argsf[0] = params[0];
+		else
+			memcpy(call.argsf, params, 16);
+
+		gs->display_list_indices[0].calls.push_back(call);
+		if (!gs->display_list_execute)
+			return;
+	}
+
 	VALIDATE_FACE;
 	VALIDATE_MAT_PNAME_V;
 
@@ -242,6 +276,26 @@ void APIENTRY glMaterialiv(GLenum face, GLenum pname, const GLint *params)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	if (gs->display_list_begun)
+	{
+		gl_display_list_call call{ gl_display_list_call::tMaterial };
+		call.argsi[0] = face;
+		call.argsi[1] = pname;
+		if (pname == GL_SHININESS)
+			call.argsf[0] = (GLfloat)params[0];
+		else
+		{
+			call.argsf[0] = GLtof(params[0]);
+			call.argsf[1] = GLtof(params[1]);
+			call.argsf[2] = GLtof(params[2]);
+			call.argsf[3] = GLtof(params[3]);
+		}
+
+		gs->display_list_indices[0].calls.push_back(call);
+		if (!gs->display_list_execute)
+			return;
+	}
+
 	VALIDATE_FACE;
 	VALIDATE_MAT_PNAME_V;
 

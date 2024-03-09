@@ -4,6 +4,7 @@
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
 #include <map>
+#include <vector>
 
 #ifdef ANDROID
 	#define NAGL_FLIP_VIEWPORT_Y 1
@@ -47,6 +48,31 @@ struct gl_full_vertex : gl_processed_vertex
 {
 	glm::vec4 original_color;
 	glm::vec3 normal;//for two sided lighting
+};
+
+struct gl_display_list_call
+{
+	int type;
+	float argsf[4];
+	int argsi[4];
+
+	enum eType
+	{
+		tBegin,
+		tEnd,
+		tVertex,
+		tEdgeFlag,
+		tTexCoord,
+		tNormal,
+		tColor,
+		tMaterial,
+		tShadeModel,
+		tMatrixMode,
+		tLoadIdentity,
+		tRotate,
+		tTranslate,
+		tScale
+	};
 };
 
 struct gl_state
@@ -155,9 +181,15 @@ struct gl_state
 	int clear_stencil = 0;
 	glm::vec4 clear_accum{ 0,0,0,0 };
 
-	GLuint display_list_begun = 0;
+	int display_list_begun = 0;
 	bool display_list_execute = false;
 	GLuint display_list_base = 0;
+	struct displayList
+	{
+		bool recorded = false;
+		std::vector<gl_display_list_call> calls;
+	};
+	std::map<int, displayList> display_list_indices;
 
 	void init(int window_w, int window_h, bool doublebuffer);
 	void destroy();

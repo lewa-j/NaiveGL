@@ -26,7 +26,10 @@ EXPORT void APIENTRY glNewList(GLuint list, GLenum mode)
 		return;
 	}
 
+	gs->display_list_execute = (mode == GL_COMPILE_AND_EXECUTE);
+
 	gs->display_list_begun = list;
+	gs->display_list_indices[0] = {};
 }
 
 EXPORT void APIENTRY glEndList(void)
@@ -41,12 +44,82 @@ EXPORT void APIENTRY glEndList(void)
 		return;
 	}
 
+	auto it = gs->display_list_indices.find(0);
+	if (it != gs->display_list_indices.end())
+	{
+		printf("glEndList list %d recorded %d calls\n", gs->display_list_begun, it->second.calls.size());
+		it->second.recorded = true;
+		std::swap(gs->display_list_indices[gs->display_list_begun], it->second);
+		gs->display_list_indices.erase(it);
+	}
+
 	gs->display_list_begun = 0;
 }
 
 void gl_callList(GLuint list)
 {
-	//TODO impl
+	if (list == 0)
+		return;
+
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+
+	auto it = gs->display_list_indices.find(list);
+	if (it == gs->display_list_indices.end())
+		return;
+
+	if (!it->second.recorded)
+		return;
+
+	for (size_t i = 0; i < it->second.calls.size(); i++)
+	{
+		const gl_display_list_call& call = it->second.calls[i];
+		switch (call.type)
+		{
+		case gl_display_list_call::tBegin:
+			glBegin(call.argsi[0]);
+			break;
+		case gl_display_list_call::tEnd:
+			glEnd();
+			break;
+		case gl_display_list_call::tVertex:
+			glVertex4fv(call.argsf);
+			break;
+		case gl_display_list_call::tEdgeFlag:
+			glEdgeFlag(call.argsi[0]);
+			break;
+		case gl_display_list_call::tTexCoord:
+			glTexCoord4fv(call.argsf);
+			break;
+		case gl_display_list_call::tNormal:
+			glNormal3fv(call.argsf);
+			break;
+		case gl_display_list_call::tColor:
+			glColor4fv(call.argsf);
+			break;
+		case gl_display_list_call::tMaterial:
+			glMaterialfv(call.argsi[0], call.argsi[1], call.argsf);
+			break;
+		case gl_display_list_call::tShadeModel:
+			glShadeModel(call.argsi[0]);
+			break;
+		case gl_display_list_call::tMatrixMode:
+			glMatrixMode(call.argsi[0]);
+			break;
+		case gl_display_list_call::tLoadIdentity:
+			glLoadIdentity();
+			break;
+		case gl_display_list_call::tRotate:
+			glRotatef(call.argsf[0], call.argsf[1], call.argsf[2], call.argsf[3]);
+			break;
+		case gl_display_list_call::tTranslate:
+			glTranslatef(call.argsf[0], call.argsf[1], call.argsf[2]);
+			break;
+		case gl_display_list_call::tScale:
+			glScalef(call.argsf[0], call.argsf[1], call.argsf[2]);
+			break;
+		}
+	}
 }
 
 EXPORT void APIENTRY glCallList(GLuint list)
@@ -163,7 +236,29 @@ EXPORT GLuint APIENTRY glGenLists(GLsizei range)
 		return 0;
 	}
 
-	//TODO impl
+	int start = 1;
+	while (start < 0xFFFFFF)
+	{
+		while (gs->display_list_indices.find(start) != gs->display_list_indices.end())
+			start++;
+
+		int i = 1;
+		for (; i < range; i++)
+		{
+			if (gs->display_list_indices.find(start + i) != gs->display_list_indices.end())
+				break;
+		}
+		if (i == range)
+		{
+			for (int l = start; l < start + range; l++)
+				gs->display_list_indices[l] = {};
+			printf("glGenLists(%d) = %d (total size %d)\n", range, start, (int)gs->display_list_indices.size());
+			return start;
+		}
+		start += i;
+	}
+
+	printf("glGenLists(%d) failed\n", range);
 	return 0;
 }
 
@@ -178,8 +273,11 @@ EXPORT GLboolean APIENTRY glIsList(GLuint list)
 		return GL_FALSE;
 	}
 
-	//TODO impl
-	return GL_FALSE;
+	auto it = gs->display_list_indices.find(list);
+	if (it == gs->display_list_indices.end())
+		return GL_FALSE;
+
+	return it->second.recorded ? GL_TRUE : GL_FALSE;
 }
 
 EXPORT void APIENTRY glDeleteLists(GLuint list, GLsizei range)
@@ -194,5 +292,13 @@ EXPORT void APIENTRY glDeleteLists(GLuint list, GLsizei range)
 		return;
 	}
 
-	//TODO impl
+	for (GLuint i = list; i < list + range; i++)
+	{
+		auto it = gs->display_list_indices.find(list);
+		if (it != gs->display_list_indices.end())
+		{
+			gs->display_list_indices.erase(it);
+			printf("glDeleteLists(%d, %d) %d deleted (total size %d)\n", list, range, i, (int)gs->display_list_indices.size());
+		}
+	}
 }
