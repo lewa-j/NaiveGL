@@ -118,6 +118,10 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	clear_depth = 1;
 	clear_stencil = 0;
 	clear_accum = glm::vec4{ 0, 0, 0, 0 };
+
+	display_list_begun = 0;
+	display_list_execute = false;
+	display_list_base = 0;
 }
 
 void gl_state::destroy()

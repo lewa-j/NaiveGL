@@ -23,6 +23,9 @@ inline float GLtof(GLint v) { return float(2.0 * v + 1) / 0xFFFFFFFF; }
 inline float GLtof(GLfloat v) { return v; }
 inline float GLtof(GLdouble v) { return (float)v; }
 
+#define GL_FALSE 0
+#define GL_TRUE 1
+
 #define GL_NO_ERROR 0
 #define GL_INVALID_ENUM 0x0500
 #define GL_INVALID_VALUE 0x0501
@@ -126,6 +129,17 @@ inline float GLtof(GLdouble v) { return (float)v; }
 #define GL_LINE 0x1B01
 #define GL_FILL 0x1B02
 
+#define GL_BYTE 0x1400
+#define GL_UNSIGNED_BYTE 0x1401
+#define GL_SHORT 0x1402
+#define GL_UNSIGNED_SHORT 0x1403
+#define GL_INT 0x1404
+#define GL_UNSIGNED_INT 0x1405
+#define GL_FLOAT 0x1406
+#define GL_2_BYTES 0x1407
+#define GL_3_BYTES 0x1408
+#define GL_4_BYTES 0x1409
+
 #define GL_SCISSOR_TEST 0x0C11
 #define GL_BLEND 0x0BE2
 
@@ -161,6 +175,9 @@ inline float GLtof(GLdouble v) { return (float)v; }
 #define GL_ACCUM_BUFFER_BIT 0x00000200
 #define GL_STENCIL_BUFFER_BIT 0x00000400
 #define GL_COLOR_BUFFER_BIT 0x00004000
+
+#define GL_COMPILE 0x1300
+#define GL_COMPILE_AND_EXECUTE 0x1301
 
 #define GL_VENDOR 0x1F00
 #define GL_RENDERER 0x1F01

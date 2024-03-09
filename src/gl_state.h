@@ -3,6 +3,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
+#include <map>
 
 #ifdef ANDROID
 	#define NAGL_FLIP_VIEWPORT_Y 1
@@ -153,6 +154,10 @@ struct gl_state
 	float clear_depth = 1;
 	int clear_stencil = 0;
 	glm::vec4 clear_accum{ 0,0,0,0 };
+
+	GLuint display_list_begun = 0;
+	bool display_list_execute = false;
+	GLuint display_list_base = 0;
 
 	void init(int window_w, int window_h, bool doublebuffer);
 	void destroy();
