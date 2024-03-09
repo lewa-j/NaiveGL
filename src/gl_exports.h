@@ -215,9 +215,18 @@ EXPORT void APIENTRY glCullFace(GLenum mode);
 EXPORT void APIENTRY glPolygonStipple(const GLubyte *mask);
 EXPORT void APIENTRY glPolygonMode(GLenum face, GLenum mode);
 
+EXPORT void APIENTRY glPixelStorei(GLenum pname, GLint param);
+EXPORT void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte* bitmap);
+EXPORT void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels);
+EXPORT void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param);
+EXPORT void APIENTRY glTexEnvf(GLenum target, GLenum pname, GLfloat param);
+
 EXPORT void APIENTRY glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
+EXPORT void APIENTRY glAlphaFunc(GLenum func, GLfloat ref);
+EXPORT void APIENTRY glDepthFunc(GLenum func);
+EXPORT void APIENTRY glBlendFunc(GLenum sfactor, GLenum dfactor);
+
 EXPORT void APIENTRY glDrawBuffer(GLenum buf);
-EXPORT void APIENTRY glReadBuffer(GLenum src);
 EXPORT void APIENTRY glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);
 EXPORT void APIENTRY glIndexMask(GLuint mask);
 EXPORT void APIENTRY glDepthMask(GLboolean flag);
@@ -229,26 +238,28 @@ EXPORT void APIENTRY glClearDepth(GLdouble depth);
 EXPORT void APIENTRY glClearStencil(GLint s);
 EXPORT void APIENTRY glClearAccum(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha);
 EXPORT void APIENTRY glAccum(GLenum op, GLfloat value);
+EXPORT void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void* pixels);
+EXPORT void APIENTRY glReadBuffer(GLenum src);
 
-EXPORT void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels);
-EXPORT void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param);
-EXPORT void APIENTRY glTexEnvf(GLenum target, GLenum pname, GLfloat param);
-EXPORT void APIENTRY glAlphaFunc(GLenum func, GLfloat ref);
-EXPORT void APIENTRY glDepthFunc(GLenum func);
-EXPORT void APIENTRY glBlendFunc(GLenum sfactor, GLenum dfactor);
-EXPORT void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels);
-EXPORT void APIENTRY glGetFloatv(GLenum pname, GLfloat *data);
-EXPORT void APIENTRY glGetIntegerv(GLenum pname, GLint *data);
-EXPORT const char *APIENTRY glGetString(GLenum name);
+EXPORT void APIENTRY glNewList(GLuint list, GLenum mode);
+EXPORT void APIENTRY glEndList(void);
+EXPORT void APIENTRY glCallList(GLuint list);
+EXPORT void APIENTRY glCallLists(GLsizei n, GLenum type, const void* lists);
+EXPORT void APIENTRY glListBase(GLuint base);
+EXPORT GLuint APIENTRY glGenLists(GLsizei range);
+EXPORT GLboolean APIENTRY glIsList(GLuint list);
+EXPORT void APIENTRY glDeleteLists(GLuint list, GLsizei range);
+
+EXPORT void APIENTRY glFlush(void);
 EXPORT void APIENTRY glFinish(void);
 EXPORT void APIENTRY glHint(GLenum target, GLenum mode);
 
-EXPORT void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap);
-EXPORT void APIENTRY glFlush(void);
-EXPORT void APIENTRY glPopAttrib(void);
+EXPORT const char* APIENTRY glGetString(GLenum name);
+EXPORT void APIENTRY glGetBooleanv(GLenum pname, GLboolean* data);
+EXPORT void APIENTRY glGetIntegerv(GLenum pname, GLint* data);
+EXPORT void APIENTRY glGetFloatv(GLenum pname, GLfloat* data);
 EXPORT void APIENTRY glPushAttrib(GLbitfield mask);
-EXPORT void APIENTRY glGetBooleanv(GLenum pname, GLboolean *data);
-EXPORT void APIENTRY glPixelStorei(GLenum pname, GLint param);
+EXPORT void APIENTRY glPopAttrib(void);
 
 ///!!!!!!!!!! gl 1.1
 EXPORT void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);

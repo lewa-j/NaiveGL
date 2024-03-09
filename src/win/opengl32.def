@@ -184,9 +184,18 @@ EXPORTS
 	glPolygonStipple
 	glPolygonMode
 
+	glPixelStorei
+	glBitmap
+	glTexImage2D
+	glTexParameterf
+	glTexEnvf
+
 	glScissor
+	glAlphaFunc
+	glDepthFunc
+	glBlendFunc
+
 	glDrawBuffer
-	glReadBuffer
 	glColorMask
 	glIndexMask
 	glDepthMask
@@ -198,27 +207,29 @@ EXPORTS
 	glClearStencil
 	glClearAccum
 	glAccum
-
-	glAlphaFunc
-	glBlendFunc
-	glDepthFunc
-	glFinish
-	glGetError
-	glGetFloatv
-	glGetIntegerv
-	glGetString
-	glHint
 	glReadPixels
-	glTexEnvf
-	glTexImage2D
-	glTexParameterf
-;freeglut
-	glBitmap
+	glReadBuffer
+
+	glNewList
+	glEndList
+	glCallList
+	glCallLists
+	glListBase
+	glGenLists
+	glIsList
+	glDeleteLists
+
 	glFlush
-	glPopAttrib
-	glPushAttrib
+	glFinish
+	glHint
+
+	glGetString
 	glGetBooleanv
-	glPixelStorei
+	glGetIntegerv
+	glGetFloatv
+	glPushAttrib
+	glPopAttrib
+
 ;1.1
 	glBindTexture
 	glTexSubImage2D

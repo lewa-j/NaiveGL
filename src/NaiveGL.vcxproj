@@ -112,6 +112,7 @@
   <ItemGroup>
     <ClCompile Include="gl_begin.cpp" />
     <ClCompile Include="gl_clip.cpp" />
+    <ClCompile Include="gl_display_lists.cpp" />
     <ClCompile Include="gl_export.cpp" />
     <ClCompile Include="gl_framebuffer.cpp" />
     <ClCompile Include="gl_lighting.cpp" />
