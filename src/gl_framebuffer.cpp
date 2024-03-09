@@ -175,7 +175,7 @@ void APIENTRY glClear(GLbitfield mask)
 					*row = value;
 					row++;
 				}
-				row += gs->framebuffer->width * s.y;
+				dst += gs->framebuffer->width;
 			}
 		}
 	}
