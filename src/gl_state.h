@@ -162,7 +162,7 @@ struct gl_state
 	bool cull_face = false;
 	GLenum cull_face_mode = GL_BACK;
 	bool polygon_stipple = false;
-	uint32_t polygon_stipple_mask[32];
+	uint8_t polygon_stipple_mask[128];
 	GLenum polygon_mode[2]{ GL_FILL,GL_FILL };//front and back
 
 	bool scissor_test = false;

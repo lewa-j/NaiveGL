@@ -286,7 +286,15 @@ static bool triangle_side(gl_state& st, const gl_processed_vertex& v0, const gl_
 	return sarea > 0 != st.front_face_ccw;
 }
 
-void rasterize_triangle(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2)
+glm::vec3 barycentric(glm::vec3* pts, glm::vec2 P)
+{
+	glm::vec3 u = glm::cross(glm::vec3(pts[2].x - pts[0].x, pts[1].x - pts[0].x, pts[0].x - P.x), glm::vec3(pts[2].y - pts[0].y, pts[1].y - pts[0].y, pts[0].y - P.y));
+	if (std::abs(u[2]) < 1)
+		return glm::vec3(-1, 1, 1); // triangle is degenerate, in this case return smth with negative coordinates
+	return glm::vec3(1.f - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
+}
+
+void rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vertex& v1, gl_processed_vertex& v2)
 {
 	if (st.cull_face)
 	{
@@ -305,9 +313,58 @@ void rasterize_triangle(gl_state& st, gl_processed_vertex &v0, gl_processed_vert
 		return;
 	}
 
-	gl_emit_line(st, v0, v1);
-	gl_emit_line(st, v1, v2);
-	gl_emit_line(st, v2, v0);
+	glm::ivec4 rect(0, 0, st.framebuffer->width, st.framebuffer->height);
+	if (st.scissor_test)
+	{
+		rect.x = glm::max(0, st.scissor_rect.x);
+		rect.y = glm::max(0, st.scissor_rect.y);
+		rect.z = glm::min(st.scissor_rect.z, st.framebuffer->width - st.scissor_rect.x);
+		rect.w = glm::min(st.scissor_rect.w, st.framebuffer->height - st.scissor_rect.y);
+	}
+
+	glm::ivec2 bbmin(rect.x + rect.z, rect.y + rect.w);
+	glm::ivec2 bbmax(rect.x, rect.y);
+
+	glm::vec3 device_c[3]{
+		glm::vec3(v0.clip) / v0.clip.w,
+		glm::vec3(v1.clip) / v1.clip.w,
+		glm::vec3(v2.clip) / v2.clip.w };
+
+	glm::vec3 win_c[3];
+	glm::ivec2 ic[3];
+	for (int i = 0; i < 3; i++)
+	{
+		win_c[i] = st.get_window_coords(device_c[i]);
+		ic[i] = glm::floor(win_c[i]);
+
+		for (int j = 0; j < 2; j++)
+		{
+			bbmin[j] = glm::clamp(ic[i][j], rect[j], bbmin[j]);
+			bbmax[j] = glm::clamp(ic[i][j], bbmax[j], rect[j] + rect[j + 2]);
+		}
+	}
+
+	gl_frag_data data;
+
+	glm::ivec2 P;
+	for (P.x = bbmin.x; P.x < bbmax.x; P.x++)
+	{
+		for (P.y = bbmin.y; P.y < bbmax.y; P.y++)
+		{
+			if (st.polygon_stipple)
+			{
+				if (!(st.polygon_stipple_mask[(P.y & 0x1F) * 4 + ((P.x >> 3) & 3)] & (128 >> (P.x & 7))))
+					continue;
+			}
+
+			glm::vec3 bc_screen = barycentric(win_c, glm::vec2(P) + glm::vec2(0.5f));
+			if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0)
+				continue;
+
+			data.color = bc_screen.x * v0.color + bc_screen.y * v1.color + bc_screen.z * v2.color;
+			gl_emit_fragment(st, P.x, P.y, data);
+		}
+	}
 }
 
 void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_full_vertex&v2)
