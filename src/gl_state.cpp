@@ -103,6 +103,27 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	polygon_mode[0] = GL_FILL;
 	polygon_mode[1] = GL_FILL;
 
+	pixel_unpack = {};
+	pixel_pack = {};
+	map_color = false;
+	map_stencil = false;
+	index_shift = 0;
+	index_offset = 0;
+	color_scale = glm::vec4{ 1,1,1,1 };
+	color_bias = glm::vec4{ 0,0,0,0 };
+	depth_scale = 1;
+	depth_bias = 0;
+	for (int i = 0; i < 8; i++)
+	{
+		pixel_map_color_table[i].size = 1;
+		memset(pixel_map_color_table[i].data, 0, sizeof(pixel_map_color_table[i].data));
+	}
+	for (int i = 0; i < 2; i++)
+	{
+		pixel_map_index_table[i].size = 1;
+		memset(pixel_map_index_table[i].data, 0, sizeof(pixel_map_index_table[i].data));
+	}
+
 	scissor_test = false;
 	scissor_rect = glm::ivec4{ 0, 0, window_w, window_h };
 	blend = false;

@@ -183,8 +183,14 @@ EXPORTS
 	glCullFace
 	glPolygonStipple
 	glPolygonMode
-
 	glPixelStorei
+	glPixelStoref
+	glPixelTransferi
+	glPixelTransferf
+	glPixelMapuiv
+	glPixelMapusv
+	glPixelMapfv
+
 	glBitmap
 	glTexImage2D
 	glTexParameterf

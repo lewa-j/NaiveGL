@@ -183,6 +183,13 @@ X(glPolygonStipple)
 X(glPolygonMode)
 
 X(glPixelStorei)
+X(glPixelStoref)
+X(glPixelTransferi)
+X(glPixelTransferf)
+X(glPixelMapuiv)
+X(glPixelMapusv)
+X(glPixelMapfv)
+
 X(glBitmap)
 X(glTexImage2D)
 X(glTexParameterf)

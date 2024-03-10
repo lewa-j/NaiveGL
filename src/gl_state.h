@@ -23,6 +23,8 @@ constexpr int gl_max_lights = 8;
 constexpr int gl_max_point_size = 2048;
 constexpr float gl_point_size_range[2]{ 0.1f, 2048 };
 
+constexpr int gl_max_pixel_map_table = 32;
+
 constexpr int gl_max_aux_buffers = 0;
 
 struct gl_framebuffer
@@ -164,6 +166,34 @@ struct gl_state
 	bool polygon_stipple = false;
 	uint8_t polygon_stipple_mask[128];
 	GLenum polygon_mode[2]{ GL_FILL,GL_FILL };//front and back
+
+	struct pixelStore
+	{
+		bool swap_bytes = false;
+		bool lsb_first = false;
+		int row_length = 0;
+		int skip_rows = 0;
+		int skip_pixels = 0;
+		int alignment = 4;
+	} pixel_unpack, pixel_pack;
+	bool map_color = false;
+	bool map_stencil = false;
+	int index_shift = 0;
+	int index_offset = 0;
+	glm::vec4 color_scale{ 1,1,1,1 };
+	glm::vec4 color_bias{ 0,0,0,0 };
+	float depth_scale = 1;
+	float depth_bias = 0;
+	struct pixelMapColor
+	{
+		int size = 1;
+		float data[gl_max_pixel_map_table];
+	} pixel_map_color_table[8];//4 index to rgba tabes and 4 rgba to rgba tables
+	struct pixelMapIndex
+	{
+		int size = 1;
+		int data[gl_max_pixel_map_table];
+	} pixel_map_index_table[2];
 
 	bool scissor_test = false;
 	glm::ivec4 scissor_rect;

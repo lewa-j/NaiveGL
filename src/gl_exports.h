@@ -216,6 +216,13 @@ EXPORT void APIENTRY glPolygonStipple(const GLubyte *mask);
 EXPORT void APIENTRY glPolygonMode(GLenum face, GLenum mode);
 
 EXPORT void APIENTRY glPixelStorei(GLenum pname, GLint param);
+EXPORT void APIENTRY glPixelStoref(GLenum pname, GLfloat param);
+EXPORT void APIENTRY glPixelTransferi(GLenum pname, GLint param);
+EXPORT void APIENTRY glPixelTransferf(GLenum pname, GLfloat param);
+EXPORT void APIENTRY glPixelMapuiv(GLenum map, GLsizei mapsize, const GLuint* values);
+EXPORT void APIENTRY glPixelMapusv(GLenum map, GLsizei mapsize, const GLushort* values);
+EXPORT void APIENTRY glPixelMapfv(GLenum map, GLsizei mapsize, const GLfloat* values);
+
 EXPORT void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte* bitmap);
 EXPORT void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels);
 EXPORT void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param);
