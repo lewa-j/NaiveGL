@@ -313,7 +313,7 @@ void rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vert
 		return;
 	}
 
-	glm::ivec4 rect(0, 0, st.framebuffer->width, st.framebuffer->height);
+	glm::ivec4 rect(0, 0, st.framebuffer->width-1, st.framebuffer->height-1);
 	if (st.scissor_test)
 	{
 		rect.x = glm::max(0, st.scissor_rect.x);
@@ -331,25 +331,24 @@ void rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vert
 		glm::vec3(v2.clip) / v2.clip.w };
 
 	glm::vec3 win_c[3];
-	glm::ivec2 ic[3];
 	for (int i = 0; i < 3; i++)
 	{
 		win_c[i] = st.get_window_coords(device_c[i]);
-		ic[i] = glm::floor(win_c[i]);
+		glm::ivec2 ic = glm::floor(win_c[i]);
 
 		for (int j = 0; j < 2; j++)
 		{
-			bbmin[j] = glm::clamp(ic[i][j], rect[j], bbmin[j]);
-			bbmax[j] = glm::clamp(ic[i][j], bbmax[j], rect[j] + rect[j + 2]);
+			bbmin[j] = glm::clamp(ic[j], rect[j], bbmin[j]);
+			bbmax[j] = glm::clamp(ic[j], bbmax[j], rect[j] + rect[j + 2]);
 		}
 	}
 
 	gl_frag_data data;
 
 	glm::ivec2 P;
-	for (P.x = bbmin.x; P.x < bbmax.x; P.x++)
+	for (P.x = bbmin.x; P.x <= bbmax.x; P.x++)
 	{
-		for (P.y = bbmin.y; P.y < bbmax.y; P.y++)
+		for (P.y = bbmin.y; P.y <= bbmax.y; P.y++)
 		{
 			if (st.polygon_stipple)
 			{
@@ -415,7 +414,7 @@ void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_fu
 	}
 }
 
-void gl_emit_quad(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1, gl_processed_vertex &v2, gl_processed_vertex &v3)
+void gl_emit_quad(gl_state& st, gl_full_vertex &v0, gl_full_vertex &v1, gl_full_vertex &v2, gl_full_vertex &v3)
 {
 	//TODO clip
 	//TODO side
@@ -434,11 +433,16 @@ void gl_emit_quad(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1
 		if (v2.edge) gl_emit_point(st, v2);
 		if (v3.edge) gl_emit_point(st, v3);
 	}
-	else
+	else if(st.polygon_mode[0] == GL_LINE)
 	{
 		if (v0.edge) gl_emit_line(st, v0, v1);
 		if (v1.edge) gl_emit_line(st, v1, v2);
 		if (v2.edge) gl_emit_line(st, v2, v3);
 		if (v3.edge) gl_emit_line(st, v3, v0);
+	}
+	else
+	{
+		gl_emit_triangle(st, v0, v1, v2);
+		gl_emit_triangle(st, v0, v2, v3);
 	}
 }
