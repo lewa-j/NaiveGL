@@ -170,6 +170,8 @@ inline float GLtof(GLdouble v) { return (float)v; }
 #define GL_PIXEL_MAP_B_TO_B 0x0C78
 #define GL_PIXEL_MAP_A_TO_A 0x0C79
 
+#define GL_BITMAP 0x1A00
+
 #define GL_BYTE 0x1400
 #define GL_UNSIGNED_BYTE 0x1401
 #define GL_SHORT 0x1402
@@ -180,6 +182,18 @@ inline float GLtof(GLdouble v) { return (float)v; }
 #define GL_2_BYTES 0x1407
 #define GL_3_BYTES 0x1408
 #define GL_4_BYTES 0x1409
+
+#define GL_COLOR_INDEX 0x1900
+#define GL_STENCIL_INDEX 0x1901
+#define GL_DEPTH_COMPONENT 0x1902
+#define GL_RED 0x1903
+#define GL_GREEN 0x1904
+#define GL_BLUE 0x1905
+#define GL_ALPHA 0x1906
+#define GL_RGB 0x1907
+#define GL_RGBA 0x1908
+#define GL_LUMINANCE 0x1909
+#define GL_LUMINANCE_ALPHA 0x190A
 
 #define GL_SCISSOR_TEST 0x0C11
 #define GL_BLEND 0x0BE2

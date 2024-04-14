@@ -78,14 +78,6 @@ void APIENTRY glPolygonMode(GLenum face, GLenum mode)
 		gs->polygon_mode[1] = mode;
 }
 
-//fragment's associated data
-struct gl_frag_data
-{
-	glm::vec4 color;
-	glm::vec4 tex_coord;
-	float z;
-};
-
 void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 {
 	gl_framebuffer &fb = *st.framebuffer;

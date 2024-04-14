@@ -189,6 +189,8 @@ X(glPixelTransferf)
 X(glPixelMapuiv)
 X(glPixelMapusv)
 X(glPixelMapfv)
+X(glPixelZoom)
+X(glDrawPixels)
 
 X(glBitmap)
 X(glTexImage2D)

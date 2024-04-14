@@ -188,12 +188,13 @@ struct gl_state
 	{
 		int size = 1;
 		float data[gl_max_pixel_map_table];
-	} pixel_map_color_table[8];//4 index to rgba tabes and 4 rgba to rgba tables
+	} pixel_map_color_table[8];//4 index to rgba tables and 4 rgba to rgba tables
 	struct pixelMapIndex
 	{
 		int size = 1;
 		int data[gl_max_pixel_map_table];
-	} pixel_map_index_table[2];
+	} pixel_map_index_table[2];//color, stencil
+	glm::vec2 pixel_zoom{ 1, 1 };
 
 	bool scissor_test = false;
 	glm::ivec4 scissor_rect;
@@ -246,6 +247,15 @@ gl_state *gl_current_state();
 void gl_set_error_(GLenum error, const char *func);
 void gl_set_error_a_(GLenum error, GLenum arg, const char *func);
 
+//fragment's associated data
+struct gl_frag_data
+{
+	glm::vec4 color;
+	glm::vec4 tex_coord;
+	float z;
+};
+
+void gl_emit_fragment(gl_state& st, int x, int y, gl_frag_data& data);
 void gl_emit_point(gl_state &st, const gl_processed_vertex &vertex);
 void gl_emit_line(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1);
 void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_full_vertex&v2);

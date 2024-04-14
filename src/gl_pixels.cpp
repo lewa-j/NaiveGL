@@ -211,3 +211,283 @@ void APIENTRY glPixelMapfv(GLenum map, GLsizei mapsize, const GLfloat* values)
 		memcpy(m.data, values, mapsize * sizeof(*values));
 	}
 }
+
+void APIENTRY glPixelZoom(GLfloat xfactor, GLfloat yfactor)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE
+	gs->pixel_zoom = glm::vec2(xfactor, yfactor);
+}
+
+template<typename T>
+static glm::vec4 pixel_to_float(const T* data, GLenum format)
+{
+	if (format == GL_GREEN)
+		return glm::vec4(0, GLtof(data[0]), 0, 1);
+	if (format == GL_BLUE)
+		return glm::vec4(0, 0, GLtof(data[0]), 1);
+	if (format == GL_ALPHA)
+		return glm::vec4(0, 0, 0, GLtof(data[0]));
+	if (format == GL_RGB)
+		return glm::vec4(GLtof(data[0]), GLtof(data[1]), GLtof(data[2]), 1);
+	if (format == GL_RGBA)
+		return glm::vec4(GLtof(data[0]), GLtof(data[1]), GLtof(data[2]), GLtof(data[3]));
+	if (format == GL_LUMINANCE)
+	{
+		float l = GLtof(data[0]);
+		return glm::vec4(l, l, l, 1);
+	}
+	if (format == GL_LUMINANCE_ALPHA)
+	{
+		float l = GLtof(data[0]);
+		return glm::vec4(l, l, l, GLtof(data[1]));
+	}
+
+	return glm::vec4(GLtof(data[0]), 0, 0, 1);
+}
+
+static glm::vec4 remap_color(const glm::vec4 &c, gl_state::pixelMapColor *tables)
+{
+	glm::vec4 r;
+	for (int i = 0; i < 4; i++)
+	{
+		int ci = (int)roundf(glm::clamp(c[i], 0.f, 1.f) * tables[i].size - 1);
+		r[i] = tables[i].data[ci];
+	}
+	return r;
+}
+
+static glm::vec4 index_to_rgba(int index, gl_state::pixelMapColor* tables)
+{
+	glm::vec4 r{};
+	for (int k = 0; k < 4; k++)
+	{
+		int ti = index & (tables[k].size - 1);
+		r[k] = tables[k].data[ti];
+	}
+	return r;
+}
+
+void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum type, const void* data)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE
+
+	if (format < GL_COLOR_INDEX || format > GL_LUMINANCE_ALPHA)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, format);
+		return;
+	}
+	if (type != GL_BITMAP && (type < GL_BYTE || type > GL_FLOAT))
+	{
+		gl_set_error_a(GL_INVALID_ENUM, type);
+		return;
+	}
+	if (type == GL_BITMAP && format != GL_COLOR_INDEX && format != GL_STENCIL_INDEX)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, format);
+		return;
+	}
+
+#if 0
+	//color index mode only
+	if (format != GL_COLOR_INDEX && format != GL_STENCIL_INDEX && format != GL_DEPTH_COMPONENT)
+	{
+		gl_set_error(GL_INVALID_OPERATION);
+		return;
+	}
+#endif
+
+	if (!gs->raster_pos.valid)
+		return;
+
+	const gl_state::pixelStore& ps = gs->pixel_unpack;
+	int row_length = (ps.row_length > 0) ? ps.row_length : width;
+
+	const uint8_t* pixels = (const uint8_t*)data;
+
+	if (type == GL_BITMAP)
+	{
+		int stride = (int)(ps.alignment * glm::ceil(row_length / float(8 * ps.alignment)));
+		int skip_bits = ps.skip_pixels & 7;
+
+		pixels += ps.skip_pixels/8 + ps.skip_rows * stride;
+
+		glm::vec4 bitmap_colors[2]{ index_to_rgba(0, gs->pixel_map_color_table), index_to_rgba(1, gs->pixel_map_color_table) };
+
+		for (int j = 0; j < height; j++)
+		{
+			const uint8_t* group = pixels;
+
+			int pixel = skip_bits;
+			for (int ix = 0; ix < width; ix++)
+			{
+				bool b = 0;
+				if (ps.lsb_first)
+					b = !!((*group) & (1 << pixel));
+				else
+					b = !!((*group) & (0x80 >> pixel));
+
+				gl_frag_data fdata;
+				fdata.color = gs->raster_pos.color;
+				fdata.tex_coord = gs->raster_pos.tex_coord;
+				fdata.z = gs->raster_pos.coords.z;
+				if (format == GL_STENCIL_INDEX)
+				{
+					//TODO
+				}
+				else
+				{
+					fdata.color = bitmap_colors[b];
+				}
+
+				int x = (int)(gs->raster_pos.coords.x + gs->pixel_zoom.x * ix);
+				int y = (int)(gs->raster_pos.coords.y + gs->pixel_zoom.y * j);
+				for (int sy = 0; sy < gs->pixel_zoom.y; sy++)
+					for (int sx = 0; sx < gs->pixel_zoom.x; sx++)
+						gl_emit_fragment(*gs, x + sx, y + sy, fdata);
+
+				pixel++;
+
+				if (pixel >= 8)
+				{
+					pixel = pixel & 7;
+					group++;
+				}
+			}
+			pixels += stride;
+		}
+	}
+	else
+	{
+		int pixel_size = 1;
+		if (format == GL_LUMINANCE_ALPHA)
+			pixel_size = 2;
+		else if (format == GL_RGB)
+			pixel_size = 3;
+		else if (format == GL_RGBA)
+			pixel_size = 4;
+
+		int element_size = 1;
+		if (type == GL_UNSIGNED_SHORT || type == GL_SHORT)
+			element_size = 2;
+		else if (type == GL_UNSIGNED_INT || type == GL_INT || type == GL_FLOAT)
+			element_size = 4;
+
+		int elements_stride = int((element_size >= ps.alignment) ?
+			(pixel_size * row_length) :
+			(ps.alignment / element_size * glm::ceil((element_size * pixel_size * row_length) / (float)ps.alignment)));
+
+		pixels += (ps.skip_pixels * pixel_size + ps.skip_rows * elements_stride) * element_size;
+
+		for (int j = 0; j < height; j++)
+		{
+			const uint8_t* row = pixels;
+			for (int i = 0; i < width; i++)
+			{
+				uint8_t group[16];
+				memcpy(group, row, element_size * pixel_size);
+				if (ps.swap_bytes && element_size > 1)
+				{
+					for (int c = 0; c < pixel_size; c++)
+					{
+						std::swap(group[c * element_size], group[(c + 1) * element_size - 1]);
+						if (element_size == 4)
+							std::swap(group[c * element_size + 1], group[c * element_size + 2]);
+					}
+				}
+				glm::vec4 pixel{};
+				uint32_t index = 0;
+				if (format == GL_COLOR_INDEX || format == GL_STENCIL_INDEX)
+				{
+					if (type == GL_BYTE)
+						index = *(const GLbyte*)group;
+					else if (type == GL_UNSIGNED_BYTE)
+						index = *(const GLubyte*)group;
+					else if (type == GL_SHORT)
+						index = *(const GLshort*)group;
+					else if (type == GL_UNSIGNED_SHORT)
+						index = *(const GLushort*)group;
+					else if (type == GL_INT)
+						index = *(const GLint*)group;
+					else if (type == GL_UNSIGNED_INT)
+						index = *(const GLuint*)group;
+					else if (type == GL_FLOAT)
+						index = (uint32_t)*(const float*)group;
+
+					if (gs->index_shift > 0)
+						index <<= gs->index_shift;
+					else if(gs->index_shift < 0)
+						index >>= -gs->index_shift;
+
+					index += gs->index_offset;
+
+					if (format == GL_COLOR_INDEX)
+					{
+						//only in rgba mode
+						pixel = index_to_rgba(index, gs->pixel_map_color_table);
+					}
+					else if(format == GL_STENCIL_INDEX && gs->map_stencil)
+					{
+						int ti = index & (gs->pixel_map_index_table[1].size - 1);
+						index = gs->pixel_map_index_table[1].data[ti];
+					}
+				}
+				else
+				{
+					if (type == GL_BYTE)
+						pixel = pixel_to_float((const GLbyte*)group, format);
+					else if (type == GL_UNSIGNED_BYTE)
+						pixel = pixel_to_float((const GLubyte*)group, format);
+					else if (type == GL_SHORT)
+						pixel = pixel_to_float((const GLshort*)group, format);
+					else if (type == GL_UNSIGNED_SHORT)
+						pixel = pixel_to_float((const GLushort*)group, format);
+					else if (type == GL_INT)
+						pixel = pixel_to_float((const GLint*)group, format);
+					else if (type == GL_UNSIGNED_INT)
+						pixel = pixel_to_float((const GLuint*)group, format);
+					else if (type == GL_FLOAT)
+						pixel = pixel_to_float((const float*)group, format);
+
+					if (format == GL_DEPTH_COMPONENT)
+						pixel.r = pixel.r * gs->depth_scale + gs->depth_bias;
+					else
+					{
+						pixel = pixel * gs->color_scale + gs->color_bias;
+						if (gs->map_color)
+							pixel = remap_color(pixel, gs->pixel_map_color_table + 4);
+					}
+				}
+
+				gl_frag_data fdata;
+				fdata.color = gs->raster_pos.color;
+				fdata.tex_coord = gs->raster_pos.tex_coord;
+				fdata.z = gs->raster_pos.coords.z;
+				if (format == GL_STENCIL_INDEX)
+				{
+					//TODO
+				}
+				else if (format == GL_DEPTH_COMPONENT)
+				{
+					fdata.z = pixel.r;
+				}
+				else
+				{
+					fdata.color = pixel;
+				}
+
+				int x = int(gs->raster_pos.coords.x + gs->pixel_zoom.x * i);
+				int y = int(gs->raster_pos.coords.y + gs->pixel_zoom.y * j);
+				for (int sy = 0; sy < gs->pixel_zoom.y; sy++)
+					for (int sx = 0; sx < gs->pixel_zoom.x; sx++)
+						gl_emit_fragment(*gs, x + sx, y + sy, fdata);
+
+				row += pixel_size * element_size;
+			}
+			pixels += elements_stride * element_size;
+		}
+	}
+}

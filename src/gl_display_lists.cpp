@@ -47,7 +47,7 @@ EXPORT void APIENTRY glEndList(void)
 	auto it = gs->display_list_indices.find(0);
 	if (it != gs->display_list_indices.end())
 	{
-		printf("glEndList list %d recorded %d calls\n", gs->display_list_begun, it->second.calls.size());
+		printf("glEndList list %d recorded %d calls\n", gs->display_list_begun, (int)it->second.calls.size());
 		it->second.recorded = true;
 		std::swap(gs->display_list_indices[gs->display_list_begun], it->second);
 		gs->display_list_indices.erase(it);
