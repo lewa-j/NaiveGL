@@ -491,3 +491,65 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 		}
 	}
 }
+
+void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte* data)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE
+
+	if (!gs->raster_pos.valid)
+		return;
+
+	if (!data)
+	{
+		gs->raster_pos.coords += glm::vec4(xmove, ymove, 0, 0);
+		return;
+	}
+
+	const gl_state::pixelStore& ps = gs->pixel_unpack;
+	int row_length = (ps.row_length > 0) ? ps.row_length : width;
+
+	int stride = (int)(ps.alignment * glm::ceil(row_length / float(8 * ps.alignment)));
+	int skip_bits = ps.skip_pixels & 7;
+
+	data += ps.skip_pixels / 8 + ps.skip_rows * stride;
+
+	int x = (int)floorf(gs->raster_pos.coords.x - xorig);
+	int y = (int)floorf(gs->raster_pos.coords.y - yorig);
+
+	for (int j = 0; j < height; j++)
+	{
+		const uint8_t* group = data;
+
+		int pixel = skip_bits;
+		for (int ix = 0; ix < width; ix++)
+		{
+			bool b = 0;
+			if (ps.lsb_first)
+				b = !!((*group) & (1 << pixel));
+			else
+				b = !!((*group) & (0x80 >> pixel));
+
+			if (b)
+			{
+				gl_frag_data fdata;
+				fdata.color = gs->raster_pos.color;
+				fdata.tex_coord = gs->raster_pos.tex_coord;
+				fdata.z = gs->raster_pos.coords.z;
+				gl_emit_fragment(*gs, x + ix, y + j, fdata);
+			}
+
+			pixel++;
+
+			if (pixel >= 8)
+			{
+				pixel = pixel & 7;
+				group++;
+			}
+		}
+		data += stride;
+	}
+
+	gs->raster_pos.coords += glm::vec4(xmove, ymove, 0, 0);
+}

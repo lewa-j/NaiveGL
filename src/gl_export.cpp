@@ -13,7 +13,6 @@ EXPORT void APIENTRY glFinish(void) {}
 EXPORT void APIENTRY glHint(GLenum target, GLenum mode) {}
 
 //freeglut
-EXPORT void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte *bitmap) {}
 EXPORT void APIENTRY glFlush(void) {}
 EXPORT void APIENTRY glPopAttrib(void) {}
 EXPORT void APIENTRY glPushAttrib(GLbitfield mask) {}
