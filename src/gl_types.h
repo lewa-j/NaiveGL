@@ -23,6 +23,8 @@ inline float GLtof(GLint v) { return float(2.0 * v + 1) / 0xFFFFFFFF; }
 inline float GLtof(GLfloat v) { return v; }
 inline float GLtof(GLdouble v) { return (float)v; }
 
+inline bool is_pow(int a) { return !(a & (a - 1)); }
+
 #define GL_FALSE 0
 #define GL_TRUE 1
 
@@ -194,6 +196,25 @@ inline float GLtof(GLdouble v) { return (float)v; }
 #define GL_RGBA 0x1908
 #define GL_LUMINANCE 0x1909
 #define GL_LUMINANCE_ALPHA 0x190A
+
+#define GL_TEXTURE_1D 0x0DE0
+#define GL_TEXTURE_2D 0x0DE1
+
+#define GL_TEXTURE_MAG_FILTER 0x2800
+#define GL_TEXTURE_MIN_FILTER 0x2801
+#define GL_TEXTURE_WRAP_S 0x2802
+#define GL_TEXTURE_WRAP_T 0x2803
+#define GL_TEXTURE_BORDER_COLOR 0x1004
+
+#define GL_CLAMP 0x2900
+#define GL_REPEAT 0x2901
+
+#define GL_NEAREST 0x2600
+#define GL_LINEAR 0x2601
+#define GL_NEAREST_MIPMAP_NEAREST 0x2700
+#define GL_LINEAR_MIPMAP_NEAREST 0x2701
+#define GL_NEAREST_MIPMAP_LINEAR 0x2702
+#define GL_LINEAR_MIPMAP_LINEAR 0x2703
 
 #define GL_SCISSOR_TEST 0x0C11
 #define GL_BLEND 0x0BE2

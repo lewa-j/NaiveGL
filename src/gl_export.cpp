@@ -1,9 +1,6 @@
 #include "pch.h"
 #include "gl_exports.h"
 
-EXPORT void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels) {}
-EXPORT void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param) {}
-EXPORT void APIENTRY glTexEnvf(GLenum target, GLenum pname, GLfloat param) {}
 EXPORT void APIENTRY glAlphaFunc(GLenum func, GLfloat ref) {}
 EXPORT void APIENTRY glDepthFunc(GLenum func) {}
 EXPORT void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels) {}

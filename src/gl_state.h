@@ -24,6 +24,8 @@ constexpr int gl_max_point_size = 2048;
 constexpr float gl_point_size_range[2]{ 0.1f, 2048 };
 
 constexpr int gl_max_pixel_map_table = 32;
+constexpr int gl_max_texture_size = 64;
+constexpr int gl_max_tex_level = 6;// log2(gl_max_texture_size)
 
 constexpr int gl_max_aux_buffers = 0;
 
@@ -50,6 +52,26 @@ struct gl_full_vertex : gl_processed_vertex
 {
 	glm::vec4 original_color;
 	glm::vec3 normal;//for two sided lighting
+};
+
+struct gl_texture_array
+{
+	uint8_t* data = nullptr;
+	int width = 0;
+	int height = 0;
+	int border = 0;
+	int components = 1;
+};
+
+struct gl_texture
+{
+	gl_texture_array arrays[gl_max_tex_level + 1];
+	int num_arrays = gl_max_tex_level + 1;
+	int min_filter = GL_NEAREST_MIPMAP_LINEAR;
+	int mag_filter = GL_LINEAR;
+	int wrap_s = GL_REPEAT;
+	int wrap_t = GL_REPEAT;
+	glm::vec4 border_color{ 0,0,0,0 };
 };
 
 struct gl_display_list_call
@@ -195,6 +217,9 @@ struct gl_state
 		int data[gl_max_pixel_map_table];
 	} pixel_map_index_table[2];//color, stencil
 	glm::vec2 pixel_zoom{ 1, 1 };
+
+	gl_texture texture_2d;
+	gl_texture texture_1d;
 
 	bool scissor_test = false;
 	glm::ivec4 scissor_rect;

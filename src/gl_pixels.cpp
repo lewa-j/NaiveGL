@@ -130,8 +130,6 @@ void APIENTRY glPixelTransferf(GLenum pname, GLfloat param)
 }
 void APIENTRY glPixelTransferi(GLenum pname, GLint param) { glPixelTransferf(pname, (GLfloat)param); }
 
-inline bool is_pow(int a) { return !(a & (a - 1)); }
-
 #define VALIDATE_PIXEL_MAP \
 VALIDATE_NOT_BEGIN_MODE;\
 if (map < GL_PIXEL_MAP_I_TO_I || map > GL_PIXEL_MAP_A_TO_A)\

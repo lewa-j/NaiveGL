@@ -194,7 +194,11 @@ EXPORTS
 	glDrawPixels
 	glBitmap
 	glTexImage2D
+	glTexImage1D
+	glTexParameteri
 	glTexParameterf
+	glTexParameteriv
+	glTexParameterfv
 	glTexEnvf
 
 	glScissor
