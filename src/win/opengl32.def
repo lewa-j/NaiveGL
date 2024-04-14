@@ -190,7 +190,8 @@ EXPORTS
 	glPixelMapuiv
 	glPixelMapusv
 	glPixelMapfv
-
+	glPixelZoom
+	glDrawPixels
 	glBitmap
 	glTexImage2D
 	glTexParameterf

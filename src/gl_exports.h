@@ -224,7 +224,6 @@ EXPORT void APIENTRY glPixelMapusv(GLenum map, GLsizei mapsize, const GLushort* 
 EXPORT void APIENTRY glPixelMapfv(GLenum map, GLsizei mapsize, const GLfloat* values);
 EXPORT void APIENTRY glPixelZoom(GLfloat xfactor, GLfloat yfactor);
 EXPORT void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum type, const void* data);
-
 EXPORT void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte* bitmap);
 EXPORT void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *pixels);
 EXPORT void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param);
