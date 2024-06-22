@@ -199,7 +199,10 @@ EXPORTS
 	glTexParameterf
 	glTexParameteriv
 	glTexParameterfv
+	glTexEnvi
 	glTexEnvf
+	glTexEnviv
+	glTexEnvfv
 
 	glScissor
 	glAlphaFunc

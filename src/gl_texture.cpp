@@ -226,5 +226,63 @@ void APIENTRY glTexParameterfv(GLenum target, GLenum pname, const GLfloat* param
 	gl_texparameterv(target, pname, params);
 }
 
+#define VALIDATE_TEX_ENV_V(p) \
+gl_state* gs = gl_current_state(); \
+if (!gs) return; \
+VALIDATE_NOT_BEGIN_MODE; \
+if (target != GL_TEXTURE_ENV) \
+{ \
+	gl_set_error_a(GL_INVALID_ENUM, target); \
+	return; \
+} \
+if (pname != GL_TEXTURE_ENV_MODE && pname != GL_TEXTURE_ENV_COLOR) \
+{ \
+	gl_set_error_a(GL_INVALID_ENUM, pname); \
+	return; \
+} \
+if (pname == GL_TEXTURE_ENV_MODE && (p != GL_MODULATE && p != GL_DECAL && p != GL_BLEND)) \
+{ \
+	gl_set_error_a(GL_INVALID_ENUM, p); \
+	return; \
+}
+
+void APIENTRY glTexEnvi(GLenum target, GLenum pname, GLint param)
+{
+	VALIDATE_TEX_ENV_V(param);
+
+	if (pname == GL_TEXTURE_ENV_COLOR)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, pname);
+		return;
+	}
+
+	if (pname == GL_TEXTURE_ENV_MODE)
+	{
+		gs->texture_env_function = param;
+	}
+}
 void APIENTRY glTexEnvf(GLenum target, GLenum pname, GLfloat param)
-{}
+{
+	glTexEnvi(target, pname, (GLint)param);
+}
+
+void APIENTRY glTexEnviv(GLenum target, GLenum pname, const GLint* params)
+{
+	VALIDATE_TEX_ENV_V(params[0]);
+
+	if (pname == GL_TEXTURE_ENV_MODE)
+		gs->texture_env_function = params[0];
+	else if (pname == GL_TEXTURE_ENV_COLOR)
+		gs->texture_env_color = glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3]));
+}
+
+void APIENTRY glTexEnvfv(GLenum target, GLenum pname, const GLfloat* params)
+{
+	VALIDATE_TEX_ENV_V((GLenum)params[0]);
+
+	if (pname == GL_TEXTURE_ENV_MODE)
+		gs->texture_env_function = (int)params[0];
+	else if (pname == GL_TEXTURE_ENV_COLOR)
+		gs->texture_env_color = glm::vec4(params[0], params[1], params[2], params[3]);
+}
+

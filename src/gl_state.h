@@ -220,6 +220,8 @@ struct gl_state
 
 	gl_texture texture_2d;
 	gl_texture texture_1d;
+	int texture_env_function = GL_MODULATE;
+	glm::vec4 texture_env_color{ 0,0,0,0 };
 
 	bool scissor_test = false;
 	glm::ivec4 scissor_rect;

@@ -198,7 +198,11 @@ X(glTexParameteri)
 X(glTexParameterf)
 X(glTexParameteriv)
 X(glTexParameterfv)
+X(glTexEnvi)
 X(glTexEnvf)
+X(glTexEnviv)
+X(glTexEnvfv)
+
 
 X(glScissor)
 X(glAlphaFunc)

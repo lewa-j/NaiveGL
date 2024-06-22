@@ -216,6 +216,15 @@ inline bool is_pow(int a) { return !(a & (a - 1)); }
 #define GL_NEAREST_MIPMAP_LINEAR 0x2702
 #define GL_LINEAR_MIPMAP_LINEAR 0x2703
 
+#define GL_TEXTURE_ENV 0x2300
+
+#define GL_TEXTURE_ENV_COLOR 0x2201
+#define GL_TEXTURE_ENV_MODE 0x2200
+
+#define GL_MODULATE 0x2100
+#define GL_DECAL 0x2101
+//#define GL_BLEND 0x0BE2
+
 #define GL_SCISSOR_TEST 0x0C11
 #define GL_BLEND 0x0BE2
 

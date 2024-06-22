@@ -14,7 +14,7 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	current_normal = glm::vec3(0, 0, 1);
 	current_color = glm::vec4(1, 1, 1, 1);
 
-	set_viewport(0,0,window_w,window_h);
+	set_viewport(0, 0, window_w, window_h);
 	viewport.dnear = 0;
 	viewport.dfar = 1;
 
@@ -123,6 +123,13 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 		pixel_map_index_table[i].size = 1;
 		memset(pixel_map_index_table[i].data, 0, sizeof(pixel_map_index_table[i].data));
 	}
+	pixel_zoom = glm::vec2{ 1, 1 };
+
+	texture_1d = {};
+	texture_2d = {};
+
+	texture_env_function = GL_MODULATE;
+	texture_env_color = glm::vec4{ 0,0,0,0 };
 
 	scissor_test = false;
 	scissor_rect = glm::ivec4{ 0, 0, window_w, window_h };
