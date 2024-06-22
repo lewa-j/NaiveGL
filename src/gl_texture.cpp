@@ -20,6 +20,7 @@ if (border != 0 && border != 1) \
 	return; \
 } \
 if (format != GL_COLOR_INDEX && (format < GL_RED || format > GL_LUMINANCE_ALPHA)) \
+/*STENCIL_INDEX and DEPTH_COMPONENT are not allowed*/ \
 { \
 	gl_set_error_a(GL_INVALID_ENUM, format); \
 	return; \
@@ -56,6 +57,73 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 		gl_set_error(GL_INVALID_VALUE);
 		return;
 	}
+
+	gl_texture& tex = gs->texture_2d;
+	gl_texture_array& ta = tex.arrays[level];
+
+	if (width == 0 || height == 0)
+	{
+		if (ta.data)
+			delete[] ta.data;
+		ta.data = nullptr;
+		ta.width = 0;
+		ta.height = 0;
+		return;
+	}
+
+	size_t size = width * height * components;
+
+	if (ta.width * ta.height * ta.components != size)
+	{
+		if (ta.data)
+			delete[] ta.data;
+
+		ta.data = new uint8_t[size];
+	}
+	ta.width = width;
+	ta.height = height;
+	ta.components = components;
+	ta.border = border;
+
+	if (!data)
+		return;
+
+	const gl_state::pixelStore& ps = gs->pixel_unpack;
+
+	int pixel_size = 1;
+	if (format == GL_LUMINANCE_ALPHA)
+		pixel_size = 2;
+	else if (format == GL_RGB)
+		pixel_size = 3;
+	else if (format == GL_RGBA)
+		pixel_size = 4;
+
+	if (type == GL_UNSIGNED_BYTE && border == 0 && (ps.row_length == 0 || ps.row_length == width) && (pixel_size * width % ps.alignment) == 0 && ps.skip_rows == 0 && ps.skip_pixels == 0 &&
+		!gs->map_color && gs->color_scale == glm::vec4{ 1,1,1,1 } && gs->color_bias == glm::vec4{ 0,0,0,0 })
+	{
+		if (format == GL_LUMINANCE && components == 1 || format == GL_LUMINANCE_ALPHA && components == 2 || format == GL_RGB && components == 3 || format == GL_RGBA && components == 4)
+		{
+			memcpy(ta.data, data, size);
+			return;
+		}
+		else
+		{
+			if (format == GL_RGBA && components == 3)
+			{
+				const uint8_t* src = (const uint8_t*)data;
+				for (size_t i = 0; i < size; i += 3)
+				{
+					ta.data[i] = src[0];
+					ta.data[i + 1] = src[1];
+					ta.data[i + 2] = src[2];
+					src += 4;
+				}
+				return;
+			}
+		}
+	}
+
+	printf("glTexImage2D(%d,%d,%d,%d,%d,%X,%X) al=%d unhandled combination\n", level, components, width, height, border, format, type, ps.alignment);
 }
 
 void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei width, GLint border, GLenum format, GLenum type, const void* data)
@@ -75,6 +143,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei
 	if (borderless_width < 0 || borderless_width > gl_max_texture_size || !is_pow(borderless_width))
 	{
 		gl_set_error_a(GL_INVALID_VALUE, width);
+		return;
 	}
 }
 
