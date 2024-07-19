@@ -327,7 +327,12 @@ glm::vec4 gl_state::sample_tex2d(const gl_texture& tex, const glm::vec4& tex_coo
 	if (!a.data)
 		return glm::vec4(1, 1, 1, 1);
 
-	glm::vec2 c = glm::fract(glm::vec2(tex_coord));
+	glm::vec2 c = glm::vec2(tex_coord);
+	if (tex.wrap_s == GL_REPEAT)
+		c.x = glm::fract(c.x);
+	if (tex.wrap_t == GL_REPEAT)
+		c.y = glm::fract(c.y);
+	c = glm::clamp(c, glm::vec2(0), glm::vec2(1));
 	int x = glm::clamp((int)floor(c.x * a.width), 0, a.width - 1);
 	int y = glm::clamp((int)floor(c.y * a.height), 0, a.height - 1);
 	uint8_t* d = a.data + (y * a.width + x) * 4;
