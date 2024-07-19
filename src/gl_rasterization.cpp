@@ -78,6 +78,28 @@ void APIENTRY glPolygonMode(GLenum face, GLenum mode)
 		gs->polygon_mode[1] = mode;
 }
 
+static void apply_texture(gl_state& st, glm::vec4& color, const glm::vec4 &tex_coord)
+{
+	glm::vec4 tex_color(1);
+	if (st.texture_2d_enabled)
+	{
+		if (!st.texture_2d.is_complete)
+			return;
+		tex_color = st.sample_tex2d(st.texture_2d, tex_coord);
+	}
+	else if (st.texture_1d_enabled)
+	{
+		if (!st.texture_1d.is_complete)
+			return;
+		glm::vec4 t = tex_coord;
+		t.y = 0.5f;
+		tex_color = st.sample_tex2d(st.texture_1d, t);
+	}
+
+	color *= tex_color;//modulate
+	//TODO tex env
+}
+
 void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 {
 	gl_framebuffer &fb = *st.framebuffer;
@@ -91,11 +113,16 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 			return;
 	}
 
+	glm::vec4 color = data.color;
+
+	if (st.texture_2d_enabled || st.texture_1d_enabled)
+		apply_texture(st, color, data.tex_coord);
+
 	int i = (fb.width * y + x) * 4;
-	fb.color[i]     = uint8_t(data.color.b * 0xFF);
-	fb.color[i + 1] = uint8_t(data.color.g * 0xFF);
-	fb.color[i + 2] = uint8_t(data.color.r * 0xFF);
-	fb.color[i + 3] = uint8_t(data.color.a * 0xFF);
+	fb.color[i]     = uint8_t(color.b * 0xFF);
+	fb.color[i + 1] = uint8_t(color.g * 0xFF);
+	fb.color[i + 2] = uint8_t(color.r * 0xFF);
+	fb.color[i + 3] = uint8_t(color.a * 0xFF);
 }
 
 void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
@@ -353,6 +380,7 @@ void rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vert
 				continue;
 
 			data.color = bc_screen.x * v0.color + bc_screen.y * v1.color + bc_screen.z * v2.color;
+			data.tex_coord = bc_screen.x * v0.tex_coord + bc_screen.y * v1.tex_coord + bc_screen.z * v2.tex_coord;
 			gl_emit_fragment(st, P.x, P.y, data);
 		}
 	}

@@ -36,6 +36,31 @@ if (type == GL_BITMAP && format != GL_COLOR_INDEX) \
 	return; \
 }
 
+static bool gl_is_texture_complete(gl_texture &tex)
+{
+	int w = tex.arrays[0].width;
+	int h = tex.arrays[0].height;
+	if (w < 1 || h < 1)
+		return false;
+
+	bool mipmap = (tex.min_filter == GL_NEAREST_MIPMAP_NEAREST || tex.min_filter == GL_NEAREST_MIPMAP_LINEAR
+		|| tex.min_filter == GL_LINEAR_MIPMAP_NEAREST || tex.min_filter == GL_LINEAR_MIPMAP_LINEAR);
+
+	if (!mipmap)
+		return true;
+
+	int levels = 1 + log2(glm::max(w, h));
+
+	for (int i = 1; i < levels; i++)
+	{
+		w = glm::max(1, (w >> 1));
+		h = glm::max(1, (h >> 1));
+		if (w != tex.arrays[i].width || h != tex.arrays[i].height || tex.arrays[i].components != tex.arrays[0].components || tex.arrays[i].border != tex.arrays[0].border)
+			return false;
+	}
+	return true;
+}
+
 void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* data)
 {
 	gl_state* gs = gl_current_state();
@@ -86,7 +111,10 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 	ta.border = border;
 
 	if (!data)
+	{
+		tex.is_complete = gl_is_texture_complete(tex);
 		return;
+	}
 
 	const gl_state::pixelStore& ps = gs->pixel_unpack;
 
@@ -104,6 +132,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 		if (format == GL_LUMINANCE && components == 1 || format == GL_LUMINANCE_ALPHA && components == 2 || format == GL_RGB && components == 3 || format == GL_RGBA && components == 4)
 		{
 			memcpy(ta.data, data, size);
+			tex.is_complete = gl_is_texture_complete(tex);
 			return;
 		}
 		else
@@ -118,6 +147,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 					ta.data[i + 2] = src[2];
 					src += 4;
 				}
+				tex.is_complete = gl_is_texture_complete(tex);
 				return;
 			}
 		}
@@ -192,6 +222,8 @@ void APIENTRY glTexParameteri(GLenum target, GLenum pname, GLint param)
 		tex.wrap_s = param;
 	else if (pname == GL_TEXTURE_WRAP_T)
 		tex.wrap_t = param;
+
+	tex.is_complete = gl_is_texture_complete(tex);
 }
 void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param)
 {
@@ -215,6 +247,8 @@ void gl_texparameterv(GLenum target, GLenum pname, const T* params)
 		tex.wrap_t = (int)params[0];
 	else if (pname == GL_TEXTURE_BORDER_COLOR)
 		tex.border_color = glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3]));
+
+	tex.is_complete = gl_is_texture_complete(tex);
 }
 
 void APIENTRY glTexParameteriv(GLenum target, GLenum pname, const GLint* params)
@@ -286,3 +320,17 @@ void APIENTRY glTexEnvfv(GLenum target, GLenum pname, const GLfloat* params)
 		gs->texture_env_color = glm::vec4(params[0], params[1], params[2], params[3]);
 }
 
+
+glm::vec4 gl_state::sample_tex2d(const gl_texture& tex, const glm::vec4& tex_coord)
+{
+	const gl_texture_array& a = tex.arrays[0];
+	if (!a.data)
+		return glm::vec4(1, 1, 1, 1);
+
+	glm::vec2 c = glm::fract(glm::vec2(tex_coord));
+	int x = glm::clamp((int)floor(c.x * a.width), 0, a.width - 1);
+	int y = glm::clamp((int)floor(c.y * a.height), 0, a.height - 1);
+	uint8_t* d = a.data + (y * a.width + x) * 4;
+	glm::vec4 col{ GLtof(d[0]), GLtof(d[1]), GLtof(d[2]), a.components == 4 ? GLtof(d[3]) : 1 };
+	return col;
+}

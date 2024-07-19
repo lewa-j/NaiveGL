@@ -72,6 +72,7 @@ struct gl_texture
 	int wrap_s = GL_REPEAT;
 	int wrap_t = GL_REPEAT;
 	glm::vec4 border_color{ 0,0,0,0 };
+	bool is_complete = false;//cached
 };
 
 struct gl_display_list_call
@@ -267,6 +268,8 @@ struct gl_state
 	bool clip_point(const glm::vec4 &v_eye, const glm::vec4 &v_clip);
 	void update_color_material();
 	void set_material_color(GLenum face, GLenum pname, const glm::vec4& param, bool force = false);
+
+	glm::vec4 sample_tex2d(const gl_texture &tex, const glm::vec4 &tex_coord);
 };
 
 gl_state *gl_current_state();
