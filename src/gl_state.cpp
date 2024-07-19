@@ -130,6 +130,8 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 
 	texture_env_function = GL_MODULATE;
 	texture_env_color = glm::vec4{ 0,0,0,0 };
+	texture_2d_enabled = false;
+	texture_1d_enabled = false;
 
 	scissor_test = false;
 	scissor_rect = glm::ivec4{ 0, 0, window_w, window_h };
@@ -215,6 +217,14 @@ void APIENTRY glEnable(GLenum cap)
 	{
 		gs->cull_face = true;
 	}
+	else if (cap == GL_TEXTURE_2D)
+	{
+		gs->texture_2d_enabled = true;
+	}
+	else if (cap == GL_TEXTURE_1D)
+	{
+		gs->texture_1d_enabled = true;
+	}
 	else if (cap == GL_SCISSOR_TEST)
 	{
 		gs->scissor_test = true;
@@ -283,6 +293,14 @@ void APIENTRY glDisable(GLenum cap)
 	else if (cap == GL_CULL_FACE)
 	{
 		gs->cull_face = false;
+	}
+	else if (cap == GL_TEXTURE_2D)
+	{
+		gs->texture_2d_enabled = false;
+	}
+	else if (cap == GL_TEXTURE_1D)
+	{
+		gs->texture_1d_enabled = false;
 	}
 	else if (cap == GL_SCISSOR_TEST)
 	{
