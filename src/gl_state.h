@@ -73,6 +73,7 @@ struct gl_texture
 	int wrap_t = GL_REPEAT;
 	glm::vec4 border_color{ 0,0,0,0 };
 	bool is_complete = false;//cached
+	int max_lod = 0;
 };
 
 struct gl_display_list_call
@@ -269,7 +270,7 @@ struct gl_state
 	void update_color_material();
 	void set_material_color(GLenum face, GLenum pname, const glm::vec4& param, bool force = false);
 
-	glm::vec4 sample_tex2d(const gl_texture &tex, const glm::vec4 &tex_coord);
+	glm::vec4 sample_tex2d(const gl_texture &tex, const glm::vec4 &tex_coord, float lod);
 };
 
 gl_state *gl_current_state();
@@ -284,6 +285,7 @@ struct gl_frag_data
 {
 	glm::vec4 color;
 	glm::vec4 tex_coord;
+	float lod;
 	float z;
 };
 

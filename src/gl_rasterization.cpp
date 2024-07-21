@@ -78,22 +78,22 @@ void APIENTRY glPolygonMode(GLenum face, GLenum mode)
 		gs->polygon_mode[1] = mode;
 }
 
-static void apply_texture(gl_state& st, glm::vec4& color, const glm::vec4 &tex_coord)
+static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &data)
 {
 	glm::vec4 tex_color(1);
 	if (st.texture_2d_enabled)
 	{
 		if (!st.texture_2d.is_complete)
 			return;
-		tex_color = st.sample_tex2d(st.texture_2d, tex_coord);
+		tex_color = st.sample_tex2d(st.texture_2d, data.tex_coord, data.lod);
 	}
 	else if (st.texture_1d_enabled)
 	{
 		if (!st.texture_1d.is_complete)
 			return;
-		glm::vec4 t = tex_coord;
+		glm::vec4 t = data.tex_coord;
 		t.y = 0.5f;
-		tex_color = st.sample_tex2d(st.texture_1d, t);
+		tex_color = st.sample_tex2d(st.texture_1d, t, data.lod);
 	}
 
 	color *= tex_color;//modulate
@@ -116,7 +116,7 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 	glm::vec4 color = data.color;
 
 	if (st.texture_2d_enabled || st.texture_1d_enabled)
-		apply_texture(st, color, data.tex_coord);
+		apply_texture(st, color, data);
 
 	int i = (fb.width * y + x) * 4;
 	fb.color[i]     = uint8_t(color.b * 0xFF);
@@ -137,6 +137,7 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 	data.color = vertex.color;
 	data.tex_coord = vertex.tex_coord;
 	data.z = win_c.z;
+	data.lod = 0;
 
 	if (!st.point_smooth)
 	{
@@ -255,6 +256,21 @@ void rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_proces
 		{
 			data.color = glm::mix(v0.color / v0.clip.w, v1.color / v1.clip.w, t) / glm::mix(1.0f / v0.clip.w, 1.0f / v1.clip.w, t);
 			data.tex_coord = glm::mix(v0.tex_coord / v0.clip.w, v1.tex_coord / v1.clip.w, t) / glm::mix(v0.tex_coord.q / v0.clip.w, v1.tex_coord.q / v1.clip.w, t);
+			data.lod = 0;
+			if (st.texture_2d_enabled && st.texture_2d.is_complete || st.texture_1d_enabled && st.texture_1d.is_complete)
+			{
+				float l = glm::sqrt(dx * dx + dy * dy);
+
+				float t2 = t + fdx;
+				glm::vec2 tex_coord2 = glm::mix(v0.tex_coord / v0.clip.w, v1.tex_coord / v1.clip.w, t2) / glm::mix(v0.tex_coord.q / v0.clip.w, v1.tex_coord.q / v1.clip.w, t2);
+				glm::vec2 duv = (tex_coord2 - glm::vec2(data.tex_coord)) * glm::vec2(st.texture_2d.arrays[0].width, st.texture_2d.arrays[0].height);
+
+				float duxy = duv.x * dx + duv.x * dy;
+				float dvxy = duv.y * dx + duv.y * dy;
+				float scale_factor = glm::sqrt(duxy * duxy + dvxy * dvxy) / l;
+				data.lod = glm::log2(scale_factor);
+			}
+
 			data.z = glm::mix(win_c0.z, win_c1.z, t);
 			gl_emit_fragment(st, low ? y : x, low ? x : y, data);
 		}
@@ -380,7 +396,31 @@ void rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vert
 				continue;
 
 			data.color = bc_screen.x * v0.color + bc_screen.y * v1.color + bc_screen.z * v2.color;
-			data.tex_coord = bc_screen.x * v0.tex_coord + bc_screen.y * v1.tex_coord + bc_screen.z * v2.tex_coord;
+			//affine
+			//data.tex_coord = bc_screen.x * v0.tex_coord + bc_screen.y * v1.tex_coord + bc_screen.z * v2.tex_coord;
+			//perspective
+			//data.tex_coord = (bc_screen.x * v0.tex_coord / v0.clip.w + bc_screen.y * v1.tex_coord / v1.clip.w + bc_screen.z * v2.tex_coord / v2.clip.w) 
+			//	/ (bc_screen.x * v0.tex_coord.w / v0.clip.w + bc_screen.y * v1.tex_coord.w / v1.clip.w + bc_screen.z * v2.tex_coord.w / v2.clip.w);
+			glm::vec3 bc_clip{ bc_screen.x / v0.clip.w, bc_screen.y / v1.clip.w, bc_screen.z / v2.clip.w };
+			bc_clip = bc_clip / (bc_clip.x + bc_clip.y + bc_clip.z);
+			data.tex_coord = bc_clip.x * v0.tex_coord + bc_clip.y * v1.tex_coord + bc_clip.z * v2.tex_coord;
+
+			data.lod = 0;
+			if (st.texture_2d_enabled && st.texture_2d.is_complete || st.texture_1d_enabled && st.texture_1d.is_complete)
+			{
+				//dx and dy == 1
+				glm::vec3 bc_screen2 = barycentric(win_c, glm::vec2(P) + glm::vec2(1.5f));
+				//affine
+				//glm::vec2 tex_coord2 = bc_screen2.x * v0.tex_coord + bc_screen2.y * v1.tex_coord + bc_screen2.z * v2.tex_coord;
+				//perspective
+				glm::vec3 bc_clip2{ bc_screen2.x / v0.clip.w, bc_screen2.y / v1.clip.w, bc_screen2.z / v2.clip.w };
+				bc_clip2 = bc_clip2 / (bc_clip2.x + bc_clip2.y + bc_clip2.z);
+				glm::vec2 tex_coord2 = bc_clip2.x * v0.tex_coord + bc_clip2.y * v1.tex_coord + bc_clip2.z * v2.tex_coord;
+
+				glm::vec2 duv = (tex_coord2 - glm::vec2(data.tex_coord)) * glm::vec2(st.texture_2d.arrays[0].width, st.texture_2d.arrays[0].height);
+				float scale_factor = glm::sqrt(duv.x * duv.x + duv.y * duv.y);
+				data.lod = glm::log2(scale_factor);
+			}
 			gl_emit_fragment(st, P.x, P.y, data);
 		}
 	}

@@ -332,6 +332,7 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 				fdata.color = gs->raster_pos.color;
 				fdata.tex_coord = gs->raster_pos.tex_coord;
 				fdata.z = gs->raster_pos.coords.z;
+				fdata.lod = 0;
 				if (format == GL_STENCIL_INDEX)
 				{
 					//TODO
@@ -464,6 +465,7 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 				fdata.color = gs->raster_pos.color;
 				fdata.tex_coord = gs->raster_pos.tex_coord;
 				fdata.z = gs->raster_pos.coords.z;
+				fdata.lod = 0;
 				if (format == GL_STENCIL_INDEX)
 				{
 					//TODO
@@ -535,6 +537,7 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 				fdata.color = gs->raster_pos.color;
 				fdata.tex_coord = gs->raster_pos.tex_coord;
 				fdata.z = gs->raster_pos.coords.z;
+				fdata.lod = 0;
 				gl_emit_fragment(*gs, x + ix, y + j, fdata);
 			}
 

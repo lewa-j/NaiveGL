@@ -2,6 +2,7 @@
 #include "pch.h"
 #include "gl_state.h"
 #include "gl_exports.h"
+#include <glm/gtx/integer.hpp>
 
 #define VALIDATE_TEX_IMAGE \
 if (level < 0 || level > gl_max_tex_level) \
@@ -109,6 +110,11 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 	ta.height = height;
 	ta.components = components;
 	ta.border = border;
+
+	if (level == 0)
+	{
+		tex.max_lod = 1 + log2(glm::max(borderless_width, borderless_height));
+	}
 
 	if (!data)
 	{
@@ -320,22 +326,110 @@ void APIENTRY glTexEnvfv(GLenum target, GLenum pname, const GLfloat* params)
 		gs->texture_env_color = glm::vec4(params[0], params[1], params[2], params[3]);
 }
 
-
-glm::vec4 gl_state::sample_tex2d(const gl_texture& tex, const glm::vec4& tex_coord)
+glm::vec4 gl_tex_tap(const gl_texture_array& a, glm::ivec2 uv)
 {
-	const gl_texture_array& a = tex.arrays[0];
-	if (!a.data)
-		return glm::vec4(1, 1, 1, 1);
+	glm::ivec2 c{ glm::clamp(uv, glm::ivec2(0), glm::ivec2(a.width - 1, a.height - 1)) };
+	uint8_t* d = a.data + (c.y * a.width + c.x) * 4;
+	glm::vec4 col{ GLtof(d[0]), GLtof(d[1]), GLtof(d[2]), a.components == 4 ? GLtof(d[3]) : 1 };
+	return col;
+}
 
-	glm::vec2 c = glm::vec2(tex_coord);
+glm::vec4 gl_tex_nearest_tap(const gl_texture& tex, const gl_texture_array& a, glm::vec2 c)
+{
 	if (tex.wrap_s == GL_REPEAT)
 		c.x = glm::fract(c.x);
 	if (tex.wrap_t == GL_REPEAT)
 		c.y = glm::fract(c.y);
 	c = glm::clamp(c, glm::vec2(0), glm::vec2(1));
-	int x = glm::clamp((int)floor(c.x * a.width), 0, a.width - 1);
-	int y = glm::clamp((int)floor(c.y * a.height), 0, a.height - 1);
-	uint8_t* d = a.data + (y * a.width + x) * 4;
-	glm::vec4 col{ GLtof(d[0]), GLtof(d[1]), GLtof(d[2]), a.components == 4 ? GLtof(d[3]) : 1 };
+	glm::ivec2 uv{ floor(c.x * a.width), floor(c.y * a.height) };
+	return gl_tex_tap(a, uv);
+}
+
+glm::vec4 gl_tex_linear_tap(const gl_texture &tex, const gl_texture_array& a, glm::vec2 c)
+{
+	//TODO border color
+
+	glm::vec2 uv{ c.x * a.width, c.y * a.height };
+
+	int i0 = glm::floor(uv.x - 0.5f);
+	int j0 = glm::floor(uv.y - 0.5f);
+	int i1 = i0 + 1;
+	int j1 = j0 + 1;
+	if (tex.wrap_s == GL_REPEAT)
+	{
+		i0 = glm::mod(i0, a.width);
+		i1 = glm::mod(i1, a.width);
+	}
+	if (tex.wrap_t == GL_REPEAT)
+	{
+		j0 = glm::mod(j0, a.height);
+		j1 = glm::mod(j1, a.height);
+	}
+	float al = glm::fract(uv.x - 0.5f);
+	float be = glm::fract(uv.y - 0.5f);
+	return gl_tex_tap(a, { i0,j0 }) * (1 - al) * (1 - be)
+		+ gl_tex_tap(a, { i1,j0 }) * al * (1 - be)
+		+ gl_tex_tap(a, { i0,j1 }) * (1 - al) * be
+		+ gl_tex_tap(a, { i1,j1 }) * al * be;
+}
+
+glm::vec4 gl_state::sample_tex2d(const gl_texture& tex, const glm::vec4& tex_coord, float lod)
+{
+	float c = 0;
+	if (tex.mag_filter == GL_LINEAR && (tex.min_filter == GL_NEAREST_MIPMAP_NEAREST || tex.min_filter == GL_LINEAR_MIPMAP_NEAREST))
+		c = 0.5;
+
+	if (lod < c)
+	{
+		const gl_texture_array& a = tex.arrays[0];
+		if (!a.data)
+			return glm::vec4(1, 1, 1, 1);
+
+		if (tex.mag_filter == GL_NEAREST)
+			return gl_tex_nearest_tap(tex, a, tex_coord);
+		else
+			return gl_tex_linear_tap(tex, a, tex_coord);
+	}
+
+	int ai = 0;
+	if (tex.min_filter == GL_NEAREST_MIPMAP_NEAREST || tex.min_filter == GL_LINEAR_MIPMAP_NEAREST)
+	{
+		if (lod <= 0.5)
+			ai = 0;
+		else
+			ai = glm::clamp((int)glm::floor(lod + 0.5f), 0, tex.max_lod - 1);
+	}
+	else if (tex.min_filter == GL_NEAREST_MIPMAP_LINEAR || tex.min_filter == GL_LINEAR_MIPMAP_LINEAR)
+	{
+		ai = glm::clamp((int)glm::floor(lod), 0, tex.max_lod - 1);
+	}
+
+	const gl_texture_array& a = tex.arrays[ai];
+	if (!a.data)
+		return glm::vec4(1, 1, 1, 1);
+
+	glm::vec4 col;
+	if (tex.min_filter == GL_LINEAR || tex.min_filter == GL_LINEAR_MIPMAP_NEAREST || tex.min_filter == GL_LINEAR_MIPMAP_LINEAR)
+	{
+		if (tex.min_filter == GL_LINEAR_MIPMAP_LINEAR && ai < tex.max_lod - 1 && tex.arrays[ai + 1].data)
+		{
+			float f = glm::fract(lod);
+			col = (1 - f) * gl_tex_linear_tap(tex, a, tex_coord)
+				+ f * gl_tex_linear_tap(tex, tex.arrays[ai + 1], tex_coord);
+		}
+		else
+			col = gl_tex_linear_tap(tex, a, tex_coord);
+	}
+	else if (tex.min_filter == GL_NEAREST_MIPMAP_LINEAR && ai < tex.max_lod - 1 && tex.arrays[ai + 1].data)
+	{
+		float f = glm::fract(lod);
+		col = (1 - f) * gl_tex_nearest_tap(tex, a, tex_coord)
+			+ f * gl_tex_nearest_tap(tex, tex.arrays[ai + 1], tex_coord);
+	}
+	else
+	{
+		col = gl_tex_nearest_tap(tex, a, tex_coord);
+	}
+
 	return col;
 }
