@@ -270,6 +270,7 @@ struct gl_state
 	void update_color_material();
 	void set_material_color(GLenum face, GLenum pname, const glm::vec4& param, bool force = false);
 
+	bool need_tex_lod();
 	glm::vec4 sample_tex2d(const gl_texture &tex, const glm::vec4 &tex_coord, float lod);
 };
 

@@ -50,7 +50,7 @@ static bool gl_is_texture_complete(gl_texture &tex)
 	if (!mipmap)
 		return true;
 
-	int levels = 1 + log2(glm::max(w, h));
+	int levels = 1 + (int)log2(glm::max(w, h));
 
 	for (int i = 1; i < levels; i++)
 	{
@@ -113,7 +113,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 
 	if (level == 0)
 	{
-		tex.max_lod = 1 + log2(glm::max(borderless_width, borderless_height));
+		tex.max_lod = 1 + (int)log2(glm::max(borderless_width, borderless_height));
 	}
 
 	if (!data)
@@ -351,8 +351,8 @@ glm::vec4 gl_tex_linear_tap(const gl_texture &tex, const gl_texture_array& a, gl
 
 	glm::vec2 uv{ c.x * a.width, c.y * a.height };
 
-	int i0 = glm::floor(uv.x - 0.5f);
-	int j0 = glm::floor(uv.y - 0.5f);
+	int i0 = (int)glm::floor(uv.x - 0.5f);
+	int j0 = (int)glm::floor(uv.y - 0.5f);
 	int i1 = i0 + 1;
 	int j1 = j0 + 1;
 	if (tex.wrap_s == GL_REPEAT)
@@ -373,13 +373,26 @@ glm::vec4 gl_tex_linear_tap(const gl_texture &tex, const gl_texture_array& a, gl
 		+ gl_tex_tap(a, { i1,j1 }) * al * be;
 }
 
+bool gl_state::need_tex_lod()
+{
+	if (!texture_2d_enabled && !texture_1d_enabled)
+		return false;
+
+	auto& tex = texture_2d_enabled ? texture_2d : texture_1d;
+
+	if (!tex.is_complete)
+		return false;
+
+	return tex.mag_filter != tex.min_filter;
+}
+
 glm::vec4 gl_state::sample_tex2d(const gl_texture& tex, const glm::vec4& tex_coord, float lod)
 {
 	float c = 0;
 	if (tex.mag_filter == GL_LINEAR && (tex.min_filter == GL_NEAREST_MIPMAP_NEAREST || tex.min_filter == GL_LINEAR_MIPMAP_NEAREST))
 		c = 0.5;
 
-	if (lod < c)
+	if (lod < c || tex.min_filter == tex.mag_filter)
 	{
 		const gl_texture_array& a = tex.arrays[0];
 		if (!a.data)

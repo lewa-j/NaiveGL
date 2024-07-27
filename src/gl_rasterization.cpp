@@ -257,9 +257,9 @@ void rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_proces
 			data.color = glm::mix(v0.color / v0.clip.w, v1.color / v1.clip.w, t) / glm::mix(1.0f / v0.clip.w, 1.0f / v1.clip.w, t);
 			data.tex_coord = glm::mix(v0.tex_coord / v0.clip.w, v1.tex_coord / v1.clip.w, t) / glm::mix(v0.tex_coord.q / v0.clip.w, v1.tex_coord.q / v1.clip.w, t);
 			data.lod = 0;
-			if (st.texture_2d_enabled && st.texture_2d.is_complete || st.texture_1d_enabled && st.texture_1d.is_complete)
+			if (st.need_tex_lod())
 			{
-				float l = glm::sqrt(dx * dx + dy * dy);
+				float l = glm::sqrt(float(dx * dx + dy * dy));
 
 				float t2 = t + fdx;
 				glm::vec2 tex_coord2 = glm::mix(v0.tex_coord / v0.clip.w, v1.tex_coord / v1.clip.w, t2) / glm::mix(v0.tex_coord.q / v0.clip.w, v1.tex_coord.q / v1.clip.w, t2);
@@ -406,7 +406,7 @@ void rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vert
 			data.tex_coord = bc_clip.x * v0.tex_coord + bc_clip.y * v1.tex_coord + bc_clip.z * v2.tex_coord;
 
 			data.lod = 0;
-			if (st.texture_2d_enabled && st.texture_2d.is_complete || st.texture_1d_enabled && st.texture_1d.is_complete)
+			if (st.need_tex_lod())
 			{
 				//dx and dy == 1
 				glm::vec3 bc_screen2 = barycentric(win_c, glm::vec2(P) + glm::vec2(1.5f));
