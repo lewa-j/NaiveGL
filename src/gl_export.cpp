@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "gl_exports.h"
 
-EXPORT void APIENTRY glAlphaFunc(GLenum func, GLfloat ref) {}
 EXPORT void APIENTRY glDepthFunc(GLenum func) {}
 EXPORT void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void *pixels) {}
 EXPORT void APIENTRY glGetFloatv(GLenum pname, GLfloat *data) {}

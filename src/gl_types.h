@@ -237,7 +237,17 @@ inline bool is_pow(int a) { return !(a & (a - 1)); }
 #define GL_FOG_INDEX 0x0B61
 
 #define GL_SCISSOR_TEST 0x0C11
+#define GL_ALPHA_TEST 0x0BC0
 #define GL_BLEND 0x0BE2
+
+#define GL_NEVER 0x0200
+#define GL_LESS 0x0201
+#define GL_EQUAL 0x0202
+#define GL_LEQUAL 0x0203
+#define GL_GREATER 0x0204
+#define GL_NOTEQUAL 0x0205
+#define GL_GEQUAL 0x0206
+#define GL_ALWAYS 0x0207
 
 #define GL_ZERO 0
 #define GL_ONE 1

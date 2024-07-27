@@ -15,6 +15,24 @@ void APIENTRY glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 	gs->scissor_rect = glm::ivec4(x, y, width, height);
 }
 
+#define VALIDATE_TEST_FUNC(func) \
+if (func < GL_NEVER || func > GL_ALWAYS)\
+{\
+	gl_set_error_a(GL_INVALID_ENUM, func);\
+	return;\
+}
+
+void APIENTRY glAlphaFunc(GLenum func, GLfloat ref)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	VALIDATE_TEST_FUNC(func);
+
+	gs->alpha_test_func = func;
+	gs->alpha_test_ref = glm::clamp(ref, 0.f, 1.f);
+}
+
 void APIENTRY glBlendFunc(GLenum sfactor, GLenum dfactor)
 {
 	gl_state* gs = gl_current_state();
@@ -142,8 +160,8 @@ void APIENTRY glClear(GLbitfield mask)
 	{
 		s.x = glm::max(0, s.x);
 		s.y = glm::max(0, s.y);
-		s.z = glm::min(s.z,gs->framebuffer->width - s.x);
-		s.w = glm::min(s.w,gs->framebuffer->height - s.y);
+		s.z = glm::min(s.z, gs->framebuffer->width - s.x);
+		s.w = glm::min(s.w, gs->framebuffer->height - s.y);
 	}
 
 	const glm::bvec4 &cm = gs->color_mask;

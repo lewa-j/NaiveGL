@@ -188,6 +188,25 @@ glm::vec4 gl_state::get_fog_color(const glm::vec4& cr, float c)
 	return glm::vec4(f * glm::vec3(cr) + (1 - f) * glm::vec3(fog_color), cr.w);
 }
 
+bool gl_test_value(GLenum func, int a, int b)
+{
+	if (func == GL_NEVER)
+		return false;
+	if (func == GL_LESS)
+		return a < b;
+	if (func == GL_LEQUAL)
+		return a <= b;
+	if (func == GL_GREATER)
+		return a > b;
+	if (func == GL_NOTEQUAL)
+		return a != b;
+	if (func == GL_GEQUAL)
+		return a >= b;
+	if (func == GL_ALWAYS)
+		return true;
+	return false;
+}
+
 void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 {
 	gl_framebuffer &fb = *st.framebuffer;
@@ -205,6 +224,12 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 
 	if (st.texture_2d_enabled || st.texture_1d_enabled)
 		apply_texture(st, color, data);
+
+	// TODO apply coverage to alpha for antialiasing
+	// NOTE smooth point rasterization already applies coverage to pixel alpha
+
+	if (st.alpha_test && !gl_test_value(st.alpha_test_func, int(color.a * 255), int(st.alpha_test_ref * 255)))
+		return;
 
 	if (st.fog_enabled)
 		color = st.get_fog_color(color, data.fog_z);

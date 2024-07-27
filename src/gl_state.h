@@ -236,6 +236,9 @@ struct gl_state
 
 	bool scissor_test = false;
 	glm::ivec4 scissor_rect;
+	bool alpha_test = false;
+	GLenum alpha_test_func = GL_ALWAYS;
+	GLfloat alpha_test_ref = 0;
 	bool blend = false;
 	GLenum blend_func_src = GL_ONE;
 	GLenum blend_func_dst = GL_ZERO;
