@@ -9,6 +9,7 @@ Work in progress towards 1.0 conformance
 * Wide lines
 * Antiaiasing
 * Full range of formats in tex image
+* 1D tex image
 * Texture border
 * Texture env
 
