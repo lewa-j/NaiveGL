@@ -81,11 +81,13 @@ void APIENTRY glPolygonMode(GLenum face, GLenum mode)
 static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &data)
 {
 	glm::vec4 tex_color(1);
+	int cpts = 0;
 	if (st.texture_2d_enabled)
 	{
 		if (!st.texture_2d.is_complete)
 			return;
 		tex_color = st.sample_tex2d(st.texture_2d, data.tex_coord, data.lod);
+		cpts = st.texture_2d.arrays[0].components;
 	}
 	else if (st.texture_1d_enabled)
 	{
@@ -94,10 +96,29 @@ static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &da
 		glm::vec4 t = data.tex_coord;
 		t.y = 0.5f;
 		tex_color = st.sample_tex2d(st.texture_1d, t, data.lod);
+		cpts = st.texture_1d.arrays[0].components;
 	}
 
-	color *= tex_color;//modulate
-	//TODO tex env
+	if (st.texture_env_function == GL_DECAL)
+	{
+		if (cpts == 4)
+			color = glm::vec4((1 - tex_color.a) * glm::vec3(color) + tex_color.a * glm::vec3(tex_color), color.a);
+		else
+			color = glm::vec4(glm::vec3(tex_color), color.a);
+		// 1 and 2 components are undefined
+	}
+	else if (st.texture_env_function == GL_BLEND)
+	{
+		color = glm::vec4((1 - tex_color.r) * glm::vec3(color) + tex_color.r * glm::vec3(st.texture_env_color), tex_color.a * color.a);
+		// 3 and 4 components are undefined
+	}
+	else //if (st.texture_env_function == GL_MODULATE)
+	{
+		if (cpts < 3)
+			color = glm::vec4(tex_color.r * glm::vec3(color), tex_color.a * color.a);
+		else
+			color *= tex_color;
+	}
 }
 
 void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)

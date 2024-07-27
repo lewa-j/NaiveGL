@@ -159,6 +159,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 		}
 	}
 
+	//TODO
 	printf("glTexImage2D(%d,%d,%d,%d,%d,%X,%X) al=%d unhandled combination\n", level, components, width, height, border, format, type, ps.alignment);
 }
 
@@ -181,6 +182,8 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei
 		gl_set_error_a(GL_INVALID_VALUE, width);
 		return;
 	}
+
+	//TODO
 }
 
 #define VALIDATE_TEX_PARAMETER_V(p) \
@@ -329,9 +332,11 @@ void APIENTRY glTexEnvfv(GLenum target, GLenum pname, const GLfloat* params)
 glm::vec4 gl_tex_tap(const gl_texture_array& a, glm::ivec2 uv)
 {
 	glm::ivec2 c{ glm::clamp(uv, glm::ivec2(0), glm::ivec2(a.width - 1, a.height - 1)) };
-	uint8_t* d = a.data + (c.y * a.width + c.x) * 4;
-	glm::vec4 col{ GLtof(d[0]), GLtof(d[1]), GLtof(d[2]), a.components == 4 ? GLtof(d[3]) : 1 };
-	return col;
+	uint8_t* d = a.data + (c.y * a.width + c.x) * a.components;
+	
+	if (a.components >= 3)
+		return glm::vec4{ GLtof(d[0]), GLtof(d[1]), GLtof(d[2]), a.components == 4 ? GLtof(d[3]) : 1 };
+	return glm::vec4{ GLtof(d[0]), 0, 0, a.components == 2 ? GLtof(d[1]) : 1 };
 }
 
 glm::vec4 gl_tex_nearest_tap(const gl_texture& tex, const gl_texture_array& a, glm::vec2 c)
