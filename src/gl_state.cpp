@@ -145,6 +145,13 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	alpha_test = false;
 	alpha_test_func = GL_ALWAYS;
 	alpha_test_ref = 0;
+	stencil_test = false;
+	stencil_func = GL_ALWAYS;
+	stencil_test_ref = 0;
+	stencil_test_mask = 0xFFFFFFFF;
+	stencil_op_sfail = GL_KEEP;
+	stencil_op_dpfail = GL_KEEP;
+	stencil_op_dppass = GL_KEEP;
 	blend = false;
 	blend_func_src = GL_ONE;
 	blend_func_dst = GL_ZERO;
@@ -247,6 +254,10 @@ void APIENTRY glEnable(GLenum cap)
 	{
 		gs->alpha_test = true;
 	}
+	else if (cap == GL_STENCIL_TEST)
+	{
+		gs->stencil_test = true;
+	}
 	else if (cap == GL_BLEND)
 	{
 		gs->blend = true;
@@ -331,6 +342,10 @@ void APIENTRY glDisable(GLenum cap)
 	else if (cap == GL_ALPHA_TEST)
 	{
 		gs->alpha_test = false;
+	}
+	else if (cap == GL_STENCIL_TEST)
+	{
+		gs->stencil_test = false;
 	}
 	else if (cap == GL_BLEND)
 	{

@@ -33,6 +33,40 @@ void APIENTRY glAlphaFunc(GLenum func, GLfloat ref)
 	gs->alpha_test_ref = glm::clamp(ref, 0.f, 1.f);
 }
 
+void APIENTRY glStencilFunc(GLenum func, GLint ref, GLuint mask)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	VALIDATE_TEST_FUNC(func);
+
+	gs->stencil_func = func;
+	//TODO clamp to actual max stencil buffer value
+	gs->stencil_test_ref = glm::clamp(ref, 0, 0xFF);
+	gs->stencil_test_mask = mask;
+}
+
+#define VALIDATE_STENCIL_OP(op) \
+if ((op < GL_KEEP || op > GL_DECR) && op != GL_ZERO && op != GL_INVERT)\
+{\
+	gl_set_error_a(GL_INVALID_ENUM, op);\
+	return;\
+}
+
+void APIENTRY glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	VALIDATE_STENCIL_OP(sfail);
+	VALIDATE_STENCIL_OP(dpfail);
+	VALIDATE_STENCIL_OP(dppass);
+
+	gs->stencil_op_sfail = sfail;
+	gs->stencil_op_dpfail = dpfail;
+	gs->stencil_op_dppass = dppass;
+}
+
 void APIENTRY glBlendFunc(GLenum sfactor, GLenum dfactor)
 {
 	gl_state* gs = gl_current_state();
@@ -198,7 +232,37 @@ void APIENTRY glClear(GLbitfield mask)
 		}
 	}
 
-	//TODO depth, stencil, accum
+	if (mask & GL_STENCIL_BUFFER_BIT && gs->framebuffer->stencil)
+	{
+		uint8_t* dst = gs->framebuffer->stencil;
+
+		if (!gs->scissor_test || (s.x == 0 && s.x + s.z == gs->framebuffer->width && s.y == 0 && s.y + s.w == gs->framebuffer->height))
+		{
+			int count = gs->framebuffer->width * gs->framebuffer->height;
+			for (int i = 0; i < count; i++)
+			{
+				*dst = gs->clear_stencil;
+				dst++;
+			}
+		}
+		else
+		{
+			dst += gs->framebuffer->width * s.y;
+			dst += s.x;
+			for (int iy = 0; iy < s.w; iy++)
+			{
+				uint8_t* row = dst;
+				for (int ix = 0; ix < s.z; ix++)
+				{
+					*row = gs->clear_stencil;
+					row++;
+				}
+				dst += gs->framebuffer->width;
+			}
+		}
+	}
+
+	//TODO depth, accum
 }
 
 void APIENTRY glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)

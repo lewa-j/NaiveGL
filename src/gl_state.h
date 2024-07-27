@@ -239,6 +239,14 @@ struct gl_state
 	bool alpha_test = false;
 	GLenum alpha_test_func = GL_ALWAYS;
 	GLfloat alpha_test_ref = 0;
+	bool stencil_test = false;
+	GLenum stencil_func = GL_ALWAYS;
+	GLint stencil_test_ref = 0;
+	GLuint stencil_test_mask = 0xFFFFFFFF;
+	GLenum stencil_op_sfail = GL_KEEP;
+	GLenum stencil_op_dpfail = GL_KEEP;
+	GLenum stencil_op_dppass = GL_KEEP;
+
 	bool blend = false;
 	GLenum blend_func_src = GL_ONE;
 	GLenum blend_func_dst = GL_ZERO;

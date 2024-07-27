@@ -243,6 +243,8 @@ EXPORT void APIENTRY glFogfv(GLenum pname, const GLfloat* params);
 
 EXPORT void APIENTRY glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
 EXPORT void APIENTRY glAlphaFunc(GLenum func, GLfloat ref);
+EXPORT void APIENTRY glStencilFunc(GLenum func, GLint ref, GLuint mask);
+EXPORT void APIENTRY glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);
 EXPORT void APIENTRY glDepthFunc(GLenum func);
 EXPORT void APIENTRY glBlendFunc(GLenum sfactor, GLenum dfactor);
 

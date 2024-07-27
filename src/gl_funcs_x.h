@@ -209,6 +209,8 @@ X(glFogfv)
 
 X(glScissor)
 X(glAlphaFunc)
+X(glStencilFunc)
+X(glStencilOp)
 X(glDepthFunc)
 X(glBlendFunc)
 

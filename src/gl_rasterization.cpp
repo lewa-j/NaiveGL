@@ -196,6 +196,8 @@ bool gl_test_value(GLenum func, int a, int b)
 		return a < b;
 	if (func == GL_LEQUAL)
 		return a <= b;
+	if (func == GL_EQUAL)
+		return a == b;
 	if (func == GL_GREATER)
 		return a > b;
 	if (func == GL_NOTEQUAL)
@@ -205,6 +207,20 @@ bool gl_test_value(GLenum func, int a, int b)
 	if (func == GL_ALWAYS)
 		return true;
 	return false;
+}
+
+void gl_stencil_op(GLenum op, GLint ref, GLint& sv)
+{
+	if (op == GL_ZERO)
+		sv = 0;
+	else if (op == GL_REPLACE)
+		sv = ref;
+	else if (op == GL_INCR)
+		sv = glm::clamp(sv + 1, 0, 0xFF);
+	else if (op == GL_DECR)
+		sv = glm::clamp(sv - 1, 0, 0xFF);
+	else if (op == GL_INVERT)
+		sv = ~sv;
 }
 
 void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
@@ -231,14 +247,35 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 	if (st.alpha_test && !gl_test_value(st.alpha_test_func, int(color.a * 255), int(st.alpha_test_ref * 255)))
 		return;
 
+	int pi = (fb.width * y + x);
+
+	if (st.stencil_test && fb.stencil)
+	{
+		int sv = fb.stencil[pi];
+		if (!gl_test_value(st.stencil_func, st.stencil_test_ref & st.stencil_test_mask, sv & st.stencil_test_mask))
+		{
+			gl_stencil_op(st.stencil_op_sfail, st.stencil_test_ref, sv);
+			fb.stencil[pi] = sv & 0xFF;
+			return;
+		}
+	}
+
+	//depth pass
+	if (st.stencil_test && fb.stencil)
+	{
+		int sv = fb.stencil[pi];
+		gl_stencil_op(st.stencil_op_dppass, st.stencil_test_ref, sv);
+		fb.stencil[pi] = sv & 0xFF;
+	}
+
 	if (st.fog_enabled)
 		color = st.get_fog_color(color, data.fog_z);
 
-	int i = (fb.width * y + x) * 4;
-	fb.color[i]     = uint8_t(color.b * 0xFF);
-	fb.color[i + 1] = uint8_t(color.g * 0xFF);
-	fb.color[i + 2] = uint8_t(color.r * 0xFF);
-	fb.color[i + 3] = uint8_t(color.a * 0xFF);
+	int ci = pi * 4;
+	fb.color[ci]     = uint8_t(color.b * 0xFF);
+	fb.color[ci + 1] = uint8_t(color.g * 0xFF);
+	fb.color[ci + 2] = uint8_t(color.r * 0xFF);
+	fb.color[ci + 3] = uint8_t(color.a * 0xFF);
 }
 
 void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)

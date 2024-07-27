@@ -210,6 +210,8 @@ EXPORTS
 
 	glScissor
 	glAlphaFunc
+	glStencilFunc
+	glStencilOp
 	glDepthFunc
 	glBlendFunc
 
