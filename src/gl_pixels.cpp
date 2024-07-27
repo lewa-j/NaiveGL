@@ -315,6 +315,13 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 
 		glm::vec4 bitmap_colors[2]{ index_to_rgba(0, gs->pixel_map_color_table), index_to_rgba(1, gs->pixel_map_color_table) };
 
+		gl_frag_data fdata;
+		fdata.color = gs->raster_pos.color;
+		fdata.tex_coord = gs->raster_pos.tex_coord;
+		fdata.z = gs->raster_pos.coords.z;
+		fdata.fog_z = gs->raster_pos.distance;
+		fdata.lod = 0;
+
 		for (int j = 0; j < height; j++)
 		{
 			const uint8_t* group = pixels;
@@ -328,11 +335,6 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 				else
 					b = !!((*group) & (0x80 >> pixel));
 
-				gl_frag_data fdata;
-				fdata.color = gs->raster_pos.color;
-				fdata.tex_coord = gs->raster_pos.tex_coord;
-				fdata.z = gs->raster_pos.coords.z;
-				fdata.lod = 0;
 				if (format == GL_STENCIL_INDEX)
 				{
 					//TODO
@@ -380,6 +382,13 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 			(ps.alignment / element_size * glm::ceil((element_size * pixel_size * row_length) / (float)ps.alignment)));
 
 		pixels += (ps.skip_pixels * pixel_size + ps.skip_rows * elements_stride) * element_size;
+
+		gl_frag_data fdata;
+		fdata.color = gs->raster_pos.color;
+		fdata.tex_coord = gs->raster_pos.tex_coord;
+		fdata.z = gs->raster_pos.coords.z;
+		fdata.fog_z = gs->raster_pos.distance;
+		fdata.lod = 0;
 
 		for (int j = 0; j < height; j++)
 		{
@@ -461,11 +470,6 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 					}
 				}
 
-				gl_frag_data fdata;
-				fdata.color = gs->raster_pos.color;
-				fdata.tex_coord = gs->raster_pos.tex_coord;
-				fdata.z = gs->raster_pos.coords.z;
-				fdata.lod = 0;
 				if (format == GL_STENCIL_INDEX)
 				{
 					//TODO
@@ -518,6 +522,13 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 	int x = (int)floorf(gs->raster_pos.coords.x - xorig);
 	int y = (int)floorf(gs->raster_pos.coords.y - yorig);
 
+	gl_frag_data fdata;
+	fdata.color = gs->raster_pos.color;
+	fdata.tex_coord = gs->raster_pos.tex_coord;
+	fdata.z = gs->raster_pos.coords.z;
+	fdata.fog_z = gs->raster_pos.distance;
+	fdata.lod = 0;
+
 	for (int j = 0; j < height; j++)
 	{
 		const uint8_t* group = data;
@@ -533,11 +544,6 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 
 			if (b)
 			{
-				gl_frag_data fdata;
-				fdata.color = gs->raster_pos.color;
-				fdata.tex_coord = gs->raster_pos.tex_coord;
-				fdata.z = gs->raster_pos.coords.z;
-				fdata.lod = 0;
 				gl_emit_fragment(*gs, x + ix, y + j, fdata);
 			}
 

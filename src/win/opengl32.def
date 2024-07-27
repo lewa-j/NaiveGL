@@ -203,6 +203,10 @@ EXPORTS
 	glTexEnvf
 	glTexEnviv
 	glTexEnvfv
+	glFogi
+	glFogf
+	glFogiv
+	glFogfv
 
 	glScissor
 	glAlphaFunc

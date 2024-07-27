@@ -133,6 +133,13 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	texture_2d_enabled = false;
 	texture_1d_enabled = false;
 
+	fog_enabled = false;
+	fog_mode = GL_EXP;
+	fog_density = 1;
+	fog_start = 0;
+	fog_end = 1;
+	fog_color = glm::vec4{ 0,0,0,0 };
+
 	scissor_test = false;
 	scissor_rect = glm::ivec4{ 0, 0, window_w, window_h };
 	blend = false;
@@ -225,6 +232,10 @@ void APIENTRY glEnable(GLenum cap)
 	{
 		gs->texture_1d_enabled = true;
 	}
+	else if (cap == GL_FOG)
+	{
+		gs->fog_enabled = true;
+	}
 	else if (cap == GL_SCISSOR_TEST)
 	{
 		gs->scissor_test = true;
@@ -301,6 +312,10 @@ void APIENTRY glDisable(GLenum cap)
 	else if (cap == GL_TEXTURE_1D)
 	{
 		gs->texture_1d_enabled = false;
+	}
+	else if (cap == GL_FOG)
+	{
+		gs->fog_enabled = false;
 	}
 	else if (cap == GL_SCISSOR_TEST)
 	{

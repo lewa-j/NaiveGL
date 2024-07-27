@@ -202,7 +202,10 @@ X(glTexEnvi)
 X(glTexEnvf)
 X(glTexEnviv)
 X(glTexEnvfv)
-
+X(glFogi)
+X(glFogf)
+X(glFogiv)
+X(glFogfv)
 
 X(glScissor)
 X(glAlphaFunc)

@@ -227,6 +227,13 @@ struct gl_state
 	bool texture_2d_enabled = false;
 	bool texture_1d_enabled = false;
 
+	bool fog_enabled = false;
+	int fog_mode = GL_EXP;
+	float fog_density = 1;
+	float fog_start = 0;
+	float fog_end = 1;
+	glm::vec4 fog_color{ 0,0,0,0 };
+
 	bool scissor_test = false;
 	glm::ivec4 scissor_rect;
 	bool blend = false;
@@ -272,6 +279,8 @@ struct gl_state
 
 	bool need_tex_lod();
 	glm::vec4 sample_tex2d(const gl_texture &tex, const glm::vec4 &tex_coord, float lod);
+
+	glm::vec4 get_fog_color(const glm::vec4& cr, float c);
 };
 
 gl_state *gl_current_state();
@@ -287,6 +296,7 @@ struct gl_frag_data
 	glm::vec4 color;
 	glm::vec4 tex_coord;
 	float lod;
+	float fog_z;
 	float z;
 };
 

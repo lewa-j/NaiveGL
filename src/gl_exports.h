@@ -236,6 +236,11 @@ EXPORT void APIENTRY glTexEnvf(GLenum target, GLenum pname, GLfloat param);
 EXPORT void APIENTRY glTexEnviv(GLenum target, GLenum pname, const GLint* params);
 EXPORT void APIENTRY glTexEnvfv(GLenum target, GLenum pname, const GLfloat* params);
 
+EXPORT void APIENTRY glFogi(GLenum pname, GLint param);
+EXPORT void APIENTRY glFogf(GLenum pname, GLfloat param);
+EXPORT void APIENTRY glFogiv(GLenum pname, const GLint* params);
+EXPORT void APIENTRY glFogfv(GLenum pname, const GLfloat* params);
+
 EXPORT void APIENTRY glScissor(GLint x, GLint y, GLsizei width, GLsizei height);
 EXPORT void APIENTRY glAlphaFunc(GLenum func, GLfloat ref);
 EXPORT void APIENTRY glDepthFunc(GLenum func);

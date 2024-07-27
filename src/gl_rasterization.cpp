@@ -78,6 +78,58 @@ void APIENTRY glPolygonMode(GLenum face, GLenum mode)
 		gs->polygon_mode[1] = mode;
 }
 
+void APIENTRY glFogf(GLenum pname, GLfloat param)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (pname != GL_FOG_MODE && pname != GL_FOG_DENSITY && pname != GL_FOG_START && pname != GL_FOG_END && pname != GL_FOG_INDEX)\
+	{
+		gl_set_error_a(GL_INVALID_ENUM, pname);
+		return;
+	}
+	if (pname == GL_FOG_MODE && param != GL_EXP && param != GL_EXP2 && param != GL_LINEAR)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, (int)param);
+		return;
+	}
+	if ((pname == GL_FOG_DENSITY || pname == GL_FOG_START || pname == GL_FOG_END) && param < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
+	if (pname == GL_FOG_MODE)
+		gs->fog_mode = (int)param;
+	else if (pname == GL_FOG_DENSITY)
+		gs->fog_density = param;
+	else if (pname == GL_FOG_START)
+		gs->fog_start = param;
+	else if (pname == GL_FOG_END)
+		gs->fog_end = param;
+	//else GL_FOG_INDEX
+}
+
+void APIENTRY glFogi(GLenum pname, GLint param) { glFogf(pname, (GLfloat)param); }
+
+template<typename T>
+void gl_fogv(GLenum pname, const T* params)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (pname == GL_FOG_COLOR)
+		gs->fog_color = glm::clamp(glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])), 0.0f, 1.0f);
+	else
+		glFogf(pname, (GLfloat)params[0]);
+}
+
+void APIENTRY glFogiv(GLenum pname, const GLint* params) { gl_fogv(pname, params); }
+void APIENTRY glFogfv(GLenum pname, const GLfloat* params) { gl_fogv(pname, params); }
+
+
 static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &data)
 {
 	glm::vec4 tex_color(1);
@@ -121,6 +173,21 @@ static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &da
 	}
 }
 
+glm::vec4 gl_state::get_fog_color(const glm::vec4& cr, float c)
+{
+	float f = 0;
+
+	if (fog_mode == GL_EXP)
+		f = exp(-fog_density * c);
+	else if (fog_mode == GL_EXP2)
+		f = exp(-(fog_density * c) * (fog_density * c));
+	else if (fog_mode == GL_LINEAR)
+		f = (fog_end - c) / (fog_end - fog_start);
+
+	f = glm::clamp(f, 0.f, 1.f);
+	return glm::vec4(f * glm::vec3(cr) + (1 - f) * glm::vec3(fog_color), cr.w);
+}
+
 void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 {
 	gl_framebuffer &fb = *st.framebuffer;
@@ -138,6 +205,9 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 
 	if (st.texture_2d_enabled || st.texture_1d_enabled)
 		apply_texture(st, color, data);
+
+	if (st.fog_enabled)
+		color = st.get_fog_color(color, data.fog_z);
 
 	int i = (fb.width * y + x) * 4;
 	fb.color[i]     = uint8_t(color.b * 0xFF);
@@ -158,6 +228,7 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 	data.color = vertex.color;
 	data.tex_coord = vertex.tex_coord;
 	data.z = win_c.z;
+	data.fog_z = abs(vertex.position.z);
 	data.lod = 0;
 
 	if (!st.point_smooth)
@@ -291,6 +362,9 @@ void rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_proces
 				float scale_factor = glm::sqrt(duxy * duxy + dvxy * dvxy) / l;
 				data.lod = glm::log2(scale_factor);
 			}
+
+			if (st.fog_enabled)
+				data.fog_z = abs(glm::mix(v0.position.z, v1.position.z, t));
 
 			data.z = glm::mix(win_c0.z, win_c1.z, t);
 			gl_emit_fragment(st, low ? y : x, low ? x : y, data);
@@ -442,6 +516,10 @@ void rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vert
 				float scale_factor = glm::sqrt(duv.x * duv.x + duv.y * duv.y);
 				data.lod = glm::log2(scale_factor);
 			}
+
+			if (st.fog_enabled)
+				data.fog_z = abs(bc_screen.x * v0.position.z + bc_screen.y * v1.position.z + bc_screen.z * v2.position.z);
+
 			gl_emit_fragment(st, P.x, P.y, data);
 		}
 	}

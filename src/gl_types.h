@@ -225,6 +225,17 @@ inline bool is_pow(int a) { return !(a & (a - 1)); }
 #define GL_DECAL 0x2101
 //#define GL_BLEND 0x0BE2
 
+#define GL_FOG 0x0B60
+#define GL_FOG_MODE 0x0B65
+#define GL_EXP 0x0800
+#define GL_EXP2 0x0801
+//#define GL_LINEAR 0x2601
+#define GL_FOG_DENSITY 0x0B62
+#define GL_FOG_START 0x0B63
+#define GL_FOG_END 0x0B64
+#define GL_FOG_COLOR 0x0B66
+#define GL_FOG_INDEX 0x0B61
+
 #define GL_SCISSOR_TEST 0x0C11
 #define GL_BLEND 0x0BE2
 
