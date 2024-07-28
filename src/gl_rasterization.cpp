@@ -188,7 +188,7 @@ glm::vec4 gl_state::get_fog_color(const glm::vec4& cr, float c)
 	return glm::vec4(f * glm::vec3(cr) + (1 - f) * glm::vec3(fog_color), cr.w);
 }
 
-bool gl_test_value(GLenum func, int a, int b)
+static bool gl_test_value(GLenum func, int a, int b)
 {
 	if (func == GL_NEVER)
 		return false;
@@ -209,7 +209,7 @@ bool gl_test_value(GLenum func, int a, int b)
 	return false;
 }
 
-void gl_stencil_op(GLenum op, GLint ref, GLint& sv)
+static void gl_stencil_op(GLenum op, GLint ref, GLint& sv)
 {
 	if (op == GL_ZERO)
 		sv = 0;
@@ -221,6 +221,53 @@ void gl_stencil_op(GLenum op, GLint ref, GLint& sv)
 		sv = glm::clamp(sv - 1, 0, 0xFF);
 	else if (op == GL_INVERT)
 		sv = ~sv;
+}
+
+static glm::vec4 gl_blend(GLenum sfactor, GLenum dfactor, glm::vec4 color_src, const glm::vec4 &color_dst)
+{
+	glm::vec4 src;
+	glm::vec4 dst;
+
+	if (sfactor == GL_ZERO)
+		src = glm::vec4(0);
+	else if (sfactor == GL_ONE)
+		src = glm::vec4(1);
+	else if (sfactor == GL_DST_COLOR)
+		src = color_dst;
+	else if (sfactor == GL_ONE_MINUS_DST_COLOR)
+		src = glm::vec4(1) - color_dst;
+	else if (sfactor == GL_SRC_ALPHA)
+		src = glm::vec4(color_src.a);
+	else if(sfactor == GL_ONE_MINUS_SRC_ALPHA)
+		src = glm::vec4(1 - color_src.a);
+	else if (sfactor == GL_DST_ALPHA)
+		src = glm::vec4(color_dst.a);
+	else if (sfactor == GL_ONE_MINUS_DST_ALPHA)
+		src = glm::vec4(1 - color_dst.a);
+	else if (sfactor == GL_SRC_ALPHA_SATURATE)
+	{
+		float f = glm::min(color_src.a, 1 - color_dst.a);
+		src = glm::vec4(f, f, f, 1);
+	}
+
+	if (dfactor == GL_ZERO)
+		dst = glm::vec4(0);
+	else if (dfactor == GL_ONE)
+		dst = glm::vec4(1);
+	else if (dfactor == GL_SRC_COLOR)
+		dst = color_src;
+	else if (dfactor == GL_ONE_MINUS_SRC_COLOR)
+		dst = glm::vec4(1) - color_src;
+	else if (dfactor == GL_SRC_ALPHA)
+		dst = glm::vec4(color_src.a);
+	else if (dfactor == GL_ONE_MINUS_SRC_ALPHA)
+		dst = glm::vec4(1 - color_src.a);
+	else if (dfactor == GL_DST_ALPHA)
+		dst = glm::vec4(color_dst.a);
+	else if (dfactor == GL_ONE_MINUS_DST_ALPHA)
+		dst = glm::vec4(1 - color_dst.a);
+
+	return glm::clamp(color_src * src + color_dst * dst, 0.f, 1.f);
 }
 
 void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
@@ -290,6 +337,21 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 		color = st.get_fog_color(color, data.fog_z);
 
 	int ci = pi * 4;
+	if (st.blend && st.blend_func_src != GL_ONE && st.blend_func_dst != GL_ZERO)
+	{
+		glm::vec4 dst_color;
+		if (st.blend_func_dst != GL_ZERO)
+		{
+			dst_color = glm::vec4(
+				fb.color[ci],
+				fb.color[ci + 1],
+				fb.color[ci + 2],
+				fb.color[ci + 3]) / 255.f;
+		}
+		color = gl_blend(st.blend_func_src, st.blend_func_dst, color, dst_color);
+	}
+
+	
 	fb.color[ci]     = uint8_t(color.b * 0xFF);
 	fb.color[ci + 1] = uint8_t(color.g * 0xFF);
 	fb.color[ci + 2] = uint8_t(color.r * 0xFF);
