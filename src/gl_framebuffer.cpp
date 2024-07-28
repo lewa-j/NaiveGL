@@ -67,6 +67,16 @@ void APIENTRY glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
 	gs->stencil_op_dppass = dppass;
 }
 
+void APIENTRY glDepthFunc(GLenum func)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	VALIDATE_TEST_FUNC(func);
+
+	gs->depth_func = func;
+}
+
 void APIENTRY glBlendFunc(GLenum sfactor, GLenum dfactor)
 {
 	gl_state* gs = gl_current_state();
@@ -255,6 +265,37 @@ void APIENTRY glClear(GLbitfield mask)
 				for (int ix = 0; ix < s.z; ix++)
 				{
 					*row = gs->clear_stencil;
+					row++;
+				}
+				dst += gs->framebuffer->width;
+			}
+		}
+	}
+
+	if (mask & GL_DEPTH_BUFFER_BIT && gs->framebuffer->depth)
+	{
+		uint16_t value = uint16_t(gs->clear_depth * 0xFFFF);
+		uint16_t* dst = gs->framebuffer->depth;
+
+		if (!gs->scissor_test || (s.x == 0 && s.x + s.z == gs->framebuffer->width && s.y == 0 && s.y + s.w == gs->framebuffer->height))
+		{
+			int count = gs->framebuffer->width * gs->framebuffer->height;
+			for (int i = 0; i < count; i++)
+			{
+				*dst = value;
+				dst++;
+			}
+		}
+		else
+		{
+			dst += gs->framebuffer->width * s.y;
+			dst += s.x;
+			for (int iy = 0; iy < s.w; iy++)
+			{
+				uint16_t* row = dst;
+				for (int ix = 0; ix < s.z; ix++)
+				{
+					*row = value;
 					row++;
 				}
 				dst += gs->framebuffer->width;

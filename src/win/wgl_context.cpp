@@ -39,6 +39,7 @@ extern "C" {
 
 EXPORT HGLRC APIENTRY wglCreateContext(HDC device_context)
 {
+	printf("wglCreateContext(%p) pixelformat = %d\n", device_context, current_pixel_format);
 	wgl_context *rc = new wgl_context;
 	rc->device_context = device_context;
 

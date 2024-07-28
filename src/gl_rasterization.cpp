@@ -260,6 +260,24 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 		}
 	}
 
+	if (st.depth_test && fb.depth)
+	{
+		uint16_t dv = fb.depth[pi];
+		uint16_t dn = uint16_t(glm::clamp(data.z,0.f,1.f) * 0xFFFF);
+		if (!gl_test_value(st.depth_func, dn, dv))
+		{
+			//depth fail
+			if (st.stencil_test && fb.stencil)
+			{
+				int sv = fb.stencil[pi];
+				gl_stencil_op(st.stencil_op_dpfail, st.stencil_test_ref, sv);
+				fb.stencil[pi] = sv & 0xFF;
+			}
+			return;
+		}
+		fb.depth[pi] = dn;
+	}
+
 	//depth pass
 	if (st.stencil_test && fb.stencil)
 	{
@@ -428,7 +446,8 @@ void rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_proces
 			if (st.fog_enabled)
 				data.fog_z = abs(glm::mix(v0.position.z, v1.position.z, t));
 
-			data.z = glm::mix(win_c0.z, win_c1.z, t);
+			if (st.depth_test && st.framebuffer->depth)
+				data.z = glm::mix(win_c0.z, win_c1.z, t);
 			gl_emit_fragment(st, low ? y : x, low ? x : y, data);
 		}
 		t += fdx;
@@ -581,6 +600,9 @@ void rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vert
 
 			if (st.fog_enabled)
 				data.fog_z = abs(bc_screen.x * v0.position.z + bc_screen.y * v1.position.z + bc_screen.z * v2.position.z);
+
+			if (st.depth_test && st.framebuffer->depth)
+				data.z = abs(bc_screen.x * win_c[0].z + bc_screen.y * win_c[1].z + bc_screen.z * win_c[2].z);
 
 			gl_emit_fragment(st, P.x, P.y, data);
 		}

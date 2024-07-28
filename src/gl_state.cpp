@@ -152,6 +152,8 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	stencil_op_sfail = GL_KEEP;
 	stencil_op_dpfail = GL_KEEP;
 	stencil_op_dppass = GL_KEEP;
+	depth_test = false;
+	depth_func = GL_LESS;
 	blend = false;
 	blend_func_src = GL_ONE;
 	blend_func_dst = GL_ZERO;
@@ -258,6 +260,10 @@ void APIENTRY glEnable(GLenum cap)
 	{
 		gs->stencil_test = true;
 	}
+	else if (cap == GL_DEPTH_TEST)
+	{
+		gs->depth_test = true;
+	}
 	else if (cap == GL_BLEND)
 	{
 		gs->blend = true;
@@ -346,6 +352,10 @@ void APIENTRY glDisable(GLenum cap)
 	else if (cap == GL_STENCIL_TEST)
 	{
 		gs->stencil_test = false;
+	}
+	else if (cap == GL_DEPTH_TEST)
+	{
+		gs->depth_test = false;
 	}
 	else if (cap == GL_BLEND)
 	{

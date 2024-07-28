@@ -246,7 +246,8 @@ struct gl_state
 	GLenum stencil_op_sfail = GL_KEEP;
 	GLenum stencil_op_dpfail = GL_KEEP;
 	GLenum stencil_op_dppass = GL_KEEP;
-
+	bool depth_test = false;
+	GLenum depth_func = GL_LESS;
 	bool blend = false;
 	GLenum blend_func_src = GL_ONE;
 	GLenum blend_func_dst = GL_ZERO;
