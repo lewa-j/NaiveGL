@@ -22,3 +22,5 @@ generated headers [glad](https://github.com/Dav1dde/glad)
 triangle clipping [McGuire2011Clipping](https://casual-effects.com/research/McGuire2011Clipping/index.html)
 
 line and triangle rasterization [tinyrenderer](https://github.com/ssloy/tinyrenderer)
+
+dither [Algorithm for generating a rectangle-shaped matrix](https://bisqwit.iki.fi/story/howto/dither/jy/)

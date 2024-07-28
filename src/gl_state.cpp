@@ -157,6 +157,7 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	blend = false;
 	blend_func_src = GL_ONE;
 	blend_func_dst = GL_ZERO;
+	dither = true;
 
 	draw_buffer = doublebuffer ? GL_BACK : GL_FRONT;
 	read_buffer = doublebuffer ? GL_BACK : GL_FRONT;
@@ -268,6 +269,10 @@ void APIENTRY glEnable(GLenum cap)
 	{
 		gs->blend = true;
 	}
+	else if (cap == GL_DITHER)
+	{
+		gs->dither = true;
+	}
 	else
 	{
 		gl_set_error_a(GL_INVALID_ENUM, cap);
@@ -360,6 +365,10 @@ void APIENTRY glDisable(GLenum cap)
 	else if (cap == GL_BLEND)
 	{
 		gs->blend = false;
+	}
+	else if (cap == GL_DITHER)
+	{
+		gs->dither = false;
 	}
 	else
 	{

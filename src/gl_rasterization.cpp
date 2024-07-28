@@ -351,6 +351,15 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 		color = gl_blend(st.blend_func_src, st.blend_func_dst, color, dst_color);
 	}
 
+	if (st.dither)
+	{
+		// https://bisqwit.iki.fi/story/howto/dither/jy/
+		int i = x & 0x7;
+		int j = y & 0x7;
+		int ij = i ^ j;
+		uint8_t d = ((j >> 2)&1) | (((ij >> 2)&1) << 1) | (((j >> 1) & 1) << 2) | (((ij >> 1) & 1) << 3) | ((j & 1) << 4) | ((ij & 1) << 5);
+		color += d / (64.f * 256.f);
+	}
 	
 	fb.color[ci]     = uint8_t(color.b * 0xFF);
 	fb.color[ci + 1] = uint8_t(color.g * 0xFF);
