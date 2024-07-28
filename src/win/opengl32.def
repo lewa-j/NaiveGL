@@ -214,6 +214,7 @@ EXPORTS
 	glStencilOp
 	glDepthFunc
 	glBlendFunc
+	glLogicOp
 
 	glDrawBuffer
 	glColorMask

@@ -97,6 +97,20 @@ void APIENTRY glBlendFunc(GLenum sfactor, GLenum dfactor)
 	gs->blend_func_dst = dfactor;
 }
 
+void APIENTRY glLogicOp(GLenum opcode)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (opcode < GL_CLEAR || opcode > GL_SET)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, opcode);
+		return;
+	}
+
+	gs->logic_op_mode = opcode;
+}
+
 #define VALIDATE_DR_BUFFER(buf) \
 if (buf != GL_NONE && (buf < GL_FRONT_LEFT && buf >= (GL_AUX0 + gl_max_aux_buffers)))\
 {\

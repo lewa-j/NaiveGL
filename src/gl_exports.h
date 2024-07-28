@@ -247,6 +247,7 @@ EXPORT void APIENTRY glStencilFunc(GLenum func, GLint ref, GLuint mask);
 EXPORT void APIENTRY glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass);
 EXPORT void APIENTRY glDepthFunc(GLenum func);
 EXPORT void APIENTRY glBlendFunc(GLenum sfactor, GLenum dfactor);
+EXPORT void APIENTRY glLogicOp(GLenum opcode);
 
 EXPORT void APIENTRY glDrawBuffer(GLenum buf);
 EXPORT void APIENTRY glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha);

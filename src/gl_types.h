@@ -242,6 +242,7 @@ inline bool is_pow(int a) { return !(a & (a - 1)); }
 #define GL_DEPTH_TEST 0x0B71
 #define GL_BLEND 0x0BE2
 #define GL_DITHER 0x0BD0
+#define GL_LOGIC_OP 0x0BF1
 
 #define GL_NEVER 0x0200
 #define GL_LESS 0x0201
@@ -270,6 +271,23 @@ inline bool is_pow(int a) { return !(a & (a - 1)); }
 #define GL_DST_COLOR 0x0306
 #define GL_ONE_MINUS_DST_COLOR 0x0307
 #define GL_SRC_ALPHA_SATURATE 0x0308
+
+#define GL_CLEAR 0x1500
+#define GL_AND 0x1501
+#define GL_AND_REVERSE 0x1502
+#define GL_COPY 0x1503
+#define GL_AND_INVERTED 0x1504
+#define GL_NOOP 0x1505
+#define GL_XOR 0x1506
+#define GL_OR 0x1507
+#define GL_NOR 0x1508
+#define GL_EQUIV 0x1509
+#define GL_INVERT 0x150A
+#define GL_OR_REVERSE 0x150B
+#define GL_COPY_INVERTED 0x150C
+#define GL_OR_INVERTED 0x150D
+#define GL_NAND 0x150E
+#define GL_SET 0x150F
 
 #define GL_NONE 0
 #define GL_FRONT_LEFT 0x0400

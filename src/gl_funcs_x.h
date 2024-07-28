@@ -213,6 +213,7 @@ X(glStencilFunc)
 X(glStencilOp)
 X(glDepthFunc)
 X(glBlendFunc)
+X(glLogicOp)
 
 X(glDrawBuffer)
 X(glColorMask)

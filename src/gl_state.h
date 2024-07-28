@@ -252,6 +252,8 @@ struct gl_state
 	GLenum blend_func_src = GL_ONE;
 	GLenum blend_func_dst = GL_ZERO;
 	bool dither = true;
+	bool logic_op = false;
+	GLenum logic_op_mode = GL_COPY;
 
 	int draw_buffer = GL_FRONT;
 	int read_buffer = GL_FRONT;
