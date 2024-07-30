@@ -337,7 +337,7 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 		color = st.get_fog_color(color, data.fog_z);
 
 	int ci = pi * 4;
-	if (st.blend && st.blend_func_src != GL_ONE && st.blend_func_dst != GL_ZERO)
+	if (st.blend && (st.blend_func_src != GL_ONE || st.blend_func_dst != GL_ZERO))
 	{
 		glm::vec4 dst_color;
 		if (st.blend_func_dst != GL_ZERO)
@@ -639,7 +639,7 @@ void rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vert
 			}
 
 			glm::vec3 bc_screen = barycentric(win_c, glm::vec2(P) + glm::vec2(0.5f));
-			if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z < 0)
+			if (bc_screen.x < 0 || bc_screen.y < 0 || bc_screen.z <= 0)
 				continue;
 
 			data.color = bc_screen.x * v0.color + bc_screen.y * v1.color + bc_screen.z * v2.color;
