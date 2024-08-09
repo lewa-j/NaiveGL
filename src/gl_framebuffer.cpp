@@ -131,6 +131,13 @@ void APIENTRY glDrawBuffer(GLenum buf)
 		return;
 	}
 
+	// Monoscopic context
+	if (buf == GL_BACK_RIGHT || buf == GL_FRONT_RIGHT || buf == GL_RIGHT)
+	{
+		gl_set_error_a(GL_INVALID_OPERATION, buf);
+		return;
+	}
+
 	gs->draw_buffer = buf;
 }
 
@@ -223,20 +230,28 @@ void APIENTRY glClear(GLbitfield mask)
 	}
 
 	const glm::bvec4 &cm = gs->color_mask;
-	if (mask & GL_COLOR_BUFFER_BIT && (cm.r || cm.g || cm.b || cm.a))
+	if (mask & GL_COLOR_BUFFER_BIT && (cm.r || cm.g || cm.b || cm.a) && gs->draw_buffer != GL_NONE)
 	{
-		uint32_t value = gl_color_to_framebuffer(gs->clear_color);
+		uint32_t mask = (cm.r ? 0xFF0000 : 0) | (cm.g ? 0xFF00 : 0) | (cm.b ? 0xFF : 0) | (cm.a ? 0xFF0000 : 0);//bgra
+		uint32_t value = gl_color_to_framebuffer(gs->clear_color) & mask;
 		uint32_t *dst = (uint32_t *)gs->framebuffer->color;
 
-		//TODO color mask components
 		//TODO dither
 		if (!gs->scissor_test || (s.x == 0 && s.x + s.z == gs->framebuffer->width && s.y == 0 && s.y + s.w == gs->framebuffer->height))
 		{
 			int count = gs->framebuffer->width * gs->framebuffer->height;
-			for (int i = 0; i < count; i++)
+			if (mask == 0xFFFFFFFF)
 			{
-				*dst = value;
-				dst++;
+				for (int i = 0; i < count; i++)
+					*(dst++) = value;
+			}
+			else
+			{
+				for (int i = 0; i < count; i++)
+				{
+					*dst = value| (*dst & ~mask);
+					dst++;
+				}
 			}
 		}
 		else
@@ -246,27 +261,45 @@ void APIENTRY glClear(GLbitfield mask)
 			for (int iy = 0; iy < s.w; iy++)
 			{
 				uint32_t *row = dst;
-				for (int ix = 0; ix < s.z; ix++)
+				if (mask == 0xFFFFFFFF)
 				{
-					*row = value;
-					row++;
+					for (int ix = 0; ix < s.z; ix++)
+						*(row++) = value;
+				}
+				else
+				{
+					for (int ix = 0; ix < s.z; ix++)
+					{
+						*row = value | (*row & ~mask);
+						row++;
+					}
 				}
 				dst += gs->framebuffer->width;
 			}
 		}
 	}
 
-	if (mask & GL_STENCIL_BUFFER_BIT && gs->framebuffer->stencil)
+	uint8_t stmask = (gs->stencil_writemask & 0xFF);
+	if (mask & GL_STENCIL_BUFFER_BIT && gs->framebuffer->stencil && stmask != 0)
 	{
+		uint8_t val = gs->clear_stencil & stmask;
 		uint8_t* dst = gs->framebuffer->stencil;
 
 		if (!gs->scissor_test || (s.x == 0 && s.x + s.z == gs->framebuffer->width && s.y == 0 && s.y + s.w == gs->framebuffer->height))
 		{
 			int count = gs->framebuffer->width * gs->framebuffer->height;
-			for (int i = 0; i < count; i++)
+			if (stmask == 0xFF)
 			{
-				*dst = gs->clear_stencil;
-				dst++;
+				for (int i = 0; i < count; i++)
+					*(dst++) = val;
+			}
+			else
+			{
+				for (int i = 0; i < count; i++)
+				{
+					*dst = val | (*dst & ~stmask);
+					dst++;
+				}
 			}
 		}
 		else
@@ -276,17 +309,25 @@ void APIENTRY glClear(GLbitfield mask)
 			for (int iy = 0; iy < s.w; iy++)
 			{
 				uint8_t* row = dst;
-				for (int ix = 0; ix < s.z; ix++)
+				if (stmask == 0xFF)
 				{
-					*row = gs->clear_stencil;
-					row++;
+					for (int ix = 0; ix < s.z; ix++)
+						*(row++) = val;
+				}
+				else
+				{
+					for (int ix = 0; ix < s.z; ix++)
+					{
+						*row = val | (*row & ~stmask);
+						row++;
+					}
 				}
 				dst += gs->framebuffer->width;
 			}
 		}
 	}
 
-	if (mask & GL_DEPTH_BUFFER_BIT && gs->framebuffer->depth)
+	if (mask & GL_DEPTH_BUFFER_BIT && gs->framebuffer->depth && gs->depth_mask)
 	{
 		uint16_t value = uint16_t(gs->clear_depth * 0xFFFF);
 		uint16_t* dst = gs->framebuffer->depth;
@@ -295,10 +336,7 @@ void APIENTRY glClear(GLbitfield mask)
 		{
 			int count = gs->framebuffer->width * gs->framebuffer->height;
 			for (int i = 0; i < count; i++)
-			{
-				*dst = value;
-				dst++;
-			}
+				*(dst++) = value;
 		}
 		else
 		{
@@ -308,16 +346,13 @@ void APIENTRY glClear(GLbitfield mask)
 			{
 				uint16_t* row = dst;
 				for (int ix = 0; ix < s.z; ix++)
-				{
-					*row = value;
-					row++;
-				}
+					*(row++) = value;
 				dst += gs->framebuffer->width;
 			}
 		}
 	}
 
-	//TODO depth, accum
+	//TODO accum
 }
 
 void APIENTRY glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)

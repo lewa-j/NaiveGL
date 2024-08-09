@@ -302,7 +302,8 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 		if (!gl_test_value(st.stencil_func, st.stencil_test_ref & st.stencil_test_mask, sv & st.stencil_test_mask))
 		{
 			gl_stencil_op(st.stencil_op_sfail, st.stencil_test_ref, sv);
-			fb.stencil[pi] = sv & 0xFF;
+			if (st.stencil_writemask)
+				fb.stencil[pi] = (sv & 0xFF & st.stencil_writemask) | (fb.stencil[pi] & ~st.stencil_writemask);
 			return;
 		}
 	}
@@ -318,11 +319,13 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 			{
 				int sv = fb.stencil[pi];
 				gl_stencil_op(st.stencil_op_dpfail, st.stencil_test_ref, sv);
-				fb.stencil[pi] = sv & 0xFF;
+				if (st.stencil_writemask)
+					fb.stencil[pi] = (sv & 0xFF & st.stencil_writemask) | (fb.stencil[pi] & ~st.stencil_writemask);
 			}
 			return;
 		}
-		fb.depth[pi] = dn;
+		if (st.depth_mask)
+			fb.depth[pi] = dn;
 	}
 
 	//depth pass
@@ -330,8 +333,12 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 	{
 		int sv = fb.stencil[pi];
 		gl_stencil_op(st.stencil_op_dppass, st.stencil_test_ref, sv);
-		fb.stencil[pi] = sv & 0xFF;
+		if (st.stencil_writemask)
+			fb.stencil[pi] = (sv & 0xFF & st.stencil_writemask) | (fb.stencil[pi] & ~st.stencil_writemask);
 	}
+
+	if (st.draw_buffer == GL_NONE)
+		return;
 
 	if (st.fog_enabled)
 		color = st.get_fog_color(color, data.fog_z);
@@ -342,10 +349,11 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 		glm::vec4 dst_color;
 		if (st.blend_func_dst != GL_ZERO)
 		{
+			//bgra
 			dst_color = glm::vec4(
-				fb.color[ci],
-				fb.color[ci + 1],
 				fb.color[ci + 2],
+				fb.color[ci + 1],
+				fb.color[ci + 0],
 				fb.color[ci + 3]) / 255.f;
 		}
 		color = gl_blend(st.blend_func_src, st.blend_func_dst, color, dst_color);
@@ -361,10 +369,15 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 		color += d / (64.f * 256.f);
 	}
 	
-	fb.color[ci]     = uint8_t(color.b * 0xFF);
-	fb.color[ci + 1] = uint8_t(color.g * 0xFF);
-	fb.color[ci + 2] = uint8_t(color.r * 0xFF);
-	fb.color[ci + 3] = uint8_t(color.a * 0xFF);
+	//bgra
+	if (st.color_mask.b)
+		fb.color[ci]     = uint8_t(color.b * 0xFF);
+	if (st.color_mask.g)
+		fb.color[ci + 1] = uint8_t(color.g * 0xFF);
+	if (st.color_mask.r)
+		fb.color[ci + 2] = uint8_t(color.r * 0xFF);
+	if (st.color_mask.a)
+		fb.color[ci + 3] = uint8_t(color.a * 0xFF);
 }
 
 void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)

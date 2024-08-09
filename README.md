@@ -11,6 +11,8 @@ Work in progress towards 1.0 conformance
 * Full range of formats in tex image
 * 1D tex image
 * Texture border
+* FRONT and AUX color buffers
+* Clear color dithering
 
 ## Acknowledgments
 
