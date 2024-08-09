@@ -395,4 +395,78 @@ void APIENTRY glClearAccum(GLfloat red, GLfloat green, GLfloat blue, GLfloat alp
 	gs->clear_accum = glm::clamp(glm::vec4(red, green, blue, alpha), -1.f, 1.f);
 }
 
-void APIENTRY glAccum(GLenum op, GLfloat value) {}
+void APIENTRY glAccum(GLenum op, GLfloat value)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (op < GL_ACCUM || op > GL_ADD)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, op);
+		return;
+	}
+
+	gl_framebuffer& fb = *gs->framebuffer;
+	glm::vec4* dst = fb.accum;
+
+	if (!dst)
+	{
+		gl_set_error(GL_INVALID_OPERATION);
+		return;
+	}
+
+	int count = fb.width * fb.height * 4;
+	if (op == GL_ACCUM || op == GL_LOAD)
+	{
+		for (int ci = 0; ci < count; ci += 4)
+		{
+			glm::vec4 src_color = glm::vec4(
+				fb.color[ci + 2],
+				fb.color[ci + 1],
+				fb.color[ci + 0],
+				fb.color[ci + 3]) / 255.f;
+
+			if (op == GL_ACCUM)
+				(*dst) += src_color * value;
+			else if(op == GL_LOAD)
+				(*dst) = src_color * value;
+
+			dst++;
+		}
+	}
+	else if (op == GL_RETURN)
+	{
+		if (gs->draw_buffer == GL_NONE)
+			return;
+
+		for (int ci = 0; ci < count; ci += 4)
+		{
+			glm::vec4 color = glm::clamp(*(dst++) * value, 0.f, 1.f);
+
+			if (gs->dither)
+			{
+				gl_dither(color, ci % fb.width, ci / fb.width);
+			}
+
+			//bgra
+			if (gs->color_mask.b)
+				fb.color[ci] = uint8_t(color.b * 0xFF);
+			if (gs->color_mask.g)
+				fb.color[ci + 1] = uint8_t(color.g * 0xFF);
+			if (gs->color_mask.r)
+				fb.color[ci + 2] = uint8_t(color.r * 0xFF);
+			if (gs->color_mask.a)
+				fb.color[ci + 3] = uint8_t(color.a * 0xFF);
+		}
+	}
+	else if (op == GL_MULT)
+	{
+		for (int ci = 0; ci < fb.width * fb.height; ci++)
+			*(dst++) *= value;
+	}
+	else if (op == GL_ADD)
+	{
+		for (int ci = 0; ci < fb.width * fb.height; ci++)
+			*(dst++) += value;
+	}
+}

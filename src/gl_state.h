@@ -37,6 +37,7 @@ struct gl_framebuffer
 	uint8_t *color = nullptr;
 	uint16_t *depth = nullptr;
 	uint8_t *stencil = nullptr;
+	glm::vec4 *accum = nullptr;
 };
 
 struct gl_processed_vertex
@@ -321,10 +322,12 @@ void gl_emit_line(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1
 void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_full_vertex&v2);
 void gl_emit_quad(gl_state& st, gl_full_vertex &v0, gl_full_vertex &v1, gl_full_vertex &v2, gl_full_vertex &v3);
 
-void rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1);
-void rasterize_clipped_line(gl_state& st, gl_processed_vertex v0, gl_processed_vertex v1);
-void rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vertex& v1, gl_processed_vertex& v2);
-void rasterize_clipped_triangle(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1, const gl_processed_vertex& v2);
+void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1);
+void gl_rasterize_clipped_line(gl_state& st, gl_processed_vertex v0, gl_processed_vertex v1);
+void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vertex& v1, gl_processed_vertex& v2);
+void gl_rasterize_clipped_triangle(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1, const gl_processed_vertex& v2);
+
+void gl_dither(glm::vec4& color, int x, int y);
 
 #define VALIDATE_NOT_BEGIN_MODE \
 if (gs->begin_primitive_mode != -1)\

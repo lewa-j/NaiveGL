@@ -270,6 +270,16 @@ static glm::vec4 gl_blend(GLenum sfactor, GLenum dfactor, glm::vec4 color_src, c
 	return glm::clamp(color_src * src + color_dst * dst, 0.f, 1.f);
 }
 
+void gl_dither(glm::vec4& color, int x, int y)
+{
+	// https://bisqwit.iki.fi/story/howto/dither/jy/
+	int i = x & 0x7;
+	int j = y & 0x7;
+	int ij = i ^ j;
+	uint8_t d = ((j >> 2) & 1) | (((ij >> 2) & 1) << 1) | (((j >> 1) & 1) << 2) | (((ij >> 1) & 1) << 3) | ((j & 1) << 4) | ((ij & 1) << 5);
+	color += d / (64.f * 256.f);
+}
+
 void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 {
 	gl_framebuffer &fb = *st.framebuffer;
@@ -361,12 +371,7 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 
 	if (st.dither)
 	{
-		// https://bisqwit.iki.fi/story/howto/dither/jy/
-		int i = x & 0x7;
-		int j = y & 0x7;
-		int ij = i ^ j;
-		uint8_t d = ((j >> 2)&1) | (((ij >> 2)&1) << 1) | (((j >> 1) & 1) << 2) | (((ij >> 1) & 1) << 3) | ((j & 1) << 4) | ((ij & 1) << 5);
-		color += d / (64.f * 256.f);
+		gl_dither(color, x, y);
 	}
 	
 	//bgra
@@ -443,7 +448,7 @@ static bool line_stipple(gl_state &st)
 	return (st.line_stipple_pattern >> b) & 1;
 }
 
-void rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1)
+void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1)
 {
 	glm::vec3 device_c0 = glm::vec3(v0.clip) / v0.clip.w;
 	glm::vec3 win_c0 = st.get_window_coords(device_c0);
@@ -564,9 +569,9 @@ void gl_emit_line(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1
 		v0.color = v1.color;
 
 	if (st.clip_point(v0.position, v0.clip) && st.clip_point(v1.position, v1.clip))
-		rasterize_line(st, v0, v1);
+		gl_rasterize_line(st, v0, v1);
 	else
-		rasterize_clipped_line(st, v0, v1);
+		gl_rasterize_clipped_line(st, v0, v1);
 }
 
 static bool triangle_side(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1, const gl_processed_vertex& v2)
@@ -589,7 +594,7 @@ glm::vec3 barycentric(glm::vec3* pts, glm::vec2 P)
 	return glm::vec3(1.f - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
 }
 
-void rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vertex& v1, gl_processed_vertex& v2)
+void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vertex& v1, gl_processed_vertex& v2)
 {
 	if (st.cull_face)
 	{
@@ -602,9 +607,9 @@ void rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vert
 
 	if (st.polygon_mode[st.last_side] == GL_LINE)
 	{
-		if (v0.edge) rasterize_line(st, v0, v1);
-		if (v1.edge) rasterize_line(st, v1, v2);
-		if (v2.edge) rasterize_line(st, v2, v0);
+		if (v0.edge) gl_rasterize_line(st, v0, v1);
+		if (v1.edge) gl_rasterize_line(st, v1, v2);
+		if (v2.edge) gl_rasterize_line(st, v2, v0);
 		return;
 	}
 
@@ -735,9 +740,9 @@ void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_fu
 	else
 	{
 		if (st.clip_point(v0.position, v0.clip) && st.clip_point(v1.position, v1.clip) && st.clip_point(v2.position, v2.clip))
-			rasterize_triangle(st, v0, v1, v2);
+			gl_rasterize_triangle(st, v0, v1, v2);
 		else
-			rasterize_clipped_triangle(st, v0, v1, v2);
+			gl_rasterize_clipped_triangle(st, v0, v1, v2);
 	}
 }
 

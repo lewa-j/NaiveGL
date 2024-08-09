@@ -48,7 +48,7 @@ static void interpolate(gl_processed_vertex& to, const gl_processed_vertex& v0, 
 	to.edge = v0.edge;
 }
 
-void rasterize_clipped_line(gl_state& st, gl_processed_vertex v0, gl_processed_vertex v1)
+void gl_rasterize_clipped_line(gl_state& st, gl_processed_vertex v0, gl_processed_vertex v1)
 {
 	bool v0_in;
 	bool v1_in;
@@ -98,7 +98,7 @@ void rasterize_clipped_line(gl_state& st, gl_processed_vertex v0, gl_processed_v
 		}
 	}
 
-	rasterize_line(st, v0, v1);
+	gl_rasterize_line(st, v0, v1);
 }
 
 //based on McGuire2011Clipping
@@ -225,10 +225,10 @@ static void clip_triangle(gl_state& st, gl_processed_vertex v0, gl_processed_ver
 		}
 	}
 #endif
-	rasterize_triangle(st, v0, v1, v2);
+	gl_rasterize_triangle(st, v0, v1, v2);
 }
 
-void rasterize_clipped_triangle(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1, const gl_processed_vertex& v2)
+void gl_rasterize_clipped_triangle(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1, const gl_processed_vertex& v2)
 {
 	clip_triangle(st, v0, v1, v2, 0);
 }
