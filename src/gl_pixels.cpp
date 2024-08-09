@@ -267,6 +267,23 @@ static glm::vec4 index_to_rgba(int index, gl_state::pixelMapColor* tables)
 	return r;
 }
 
+static void emit_stencil(gl_state& st, int x, int y, uint8_t index)
+{
+	gl_framebuffer& fb = *st.framebuffer;
+	if (x < 0 || x >= fb.width || y < 0 || y >= fb.height)
+		return;
+
+	if (st.scissor_test)
+	{
+		const glm::ivec4& s = st.scissor_rect;
+		if (x < s.x || x >= s.x + s.z || y < s.y || y >= s.y + s.w)
+			return;
+	}
+
+	int pi = (fb.width * y + x);
+	fb.stencil[pi] = (index & st.stencil_writemask) | (fb.stencil[pi] & ~st.stencil_writemask);
+}
+
 void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum type, const void* data)
 {
 	gl_state* gs = gl_current_state();
@@ -298,6 +315,17 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 	}
 #endif
 
+	if (format == GL_STENCIL_INDEX)
+	{
+		if (!gs->framebuffer->stencil)
+		{
+			gl_set_error(GL_INVALID_OPERATION);
+			return;
+		}
+		if (!(gs->stencil_writemask & 0xFF))
+			return;
+	}
+
 	if (!gs->raster_pos.valid)
 		return;
 
@@ -313,7 +341,12 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 
 		pixels += ps.skip_pixels/8 + ps.skip_rows * stride;
 
-		glm::vec4 bitmap_colors[2]{ index_to_rgba(0, gs->pixel_map_color_table), index_to_rgba(1, gs->pixel_map_color_table) };
+		glm::vec4 bitmap_colors[2];
+		if (format != GL_STENCIL_INDEX)
+		{
+			bitmap_colors[0] = index_to_rgba(0, gs->pixel_map_color_table);
+			bitmap_colors[1] = index_to_rgba(1, gs->pixel_map_color_table);
+		}
 
 		gl_frag_data fdata;
 		fdata.color = gs->raster_pos.color;
@@ -335,20 +368,29 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 				else
 					b = !!((*group) & (0x80 >> pixel));
 
+				int x = (int)(gs->raster_pos.coords.x + gs->pixel_zoom.x * ix);
+				int y = (int)(gs->raster_pos.coords.y + gs->pixel_zoom.y * j);
 				if (format == GL_STENCIL_INDEX)
 				{
-					//TODO
+					uint8_t index = b ? 1 : 0;
+					if (gs->map_stencil)
+					{
+						int ti = index & (gs->pixel_map_index_table[1].size - 1);
+						index = gs->pixel_map_index_table[1].data[ti];
+					}
+
+					for (int sy = 0; sy < gs->pixel_zoom.y; sy++)
+						for (int sx = 0; sx < gs->pixel_zoom.x; sx++)
+							emit_stencil(*gs, x + sx, y + sy, index);
 				}
 				else
 				{
 					fdata.color = bitmap_colors[b];
-				}
 
-				int x = (int)(gs->raster_pos.coords.x + gs->pixel_zoom.x * ix);
-				int y = (int)(gs->raster_pos.coords.y + gs->pixel_zoom.y * j);
-				for (int sy = 0; sy < gs->pixel_zoom.y; sy++)
-					for (int sx = 0; sx < gs->pixel_zoom.x; sx++)
-						gl_emit_fragment(*gs, x + sx, y + sy, fdata);
+					for (int sy = 0; sy < gs->pixel_zoom.y; sy++)
+						for (int sx = 0; sx < gs->pixel_zoom.x; sx++)
+							gl_emit_fragment(*gs, x + sx, y + sy, fdata);
+				}
 
 				pixel++;
 
@@ -470,24 +512,29 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 					}
 				}
 
+				int x = int(gs->raster_pos.coords.x + gs->pixel_zoom.x * i);
+				int y = int(gs->raster_pos.coords.y + gs->pixel_zoom.y * j);
 				if (format == GL_STENCIL_INDEX)
 				{
-					//TODO
-				}
-				else if (format == GL_DEPTH_COMPONENT)
-				{
-					fdata.z = pixel.r;
+					for (int sy = 0; sy < gs->pixel_zoom.y; sy++)
+						for (int sx = 0; sx < gs->pixel_zoom.x; sx++)
+							emit_stencil(*gs, x + sx, y + sy, index);
 				}
 				else
 				{
-					fdata.color = pixel;
-				}
+					if (format == GL_DEPTH_COMPONENT)
+					{
+						fdata.z = pixel.r;
+					}
+					else
+					{
+						fdata.color = pixel;
+					}
 
-				int x = int(gs->raster_pos.coords.x + gs->pixel_zoom.x * i);
-				int y = int(gs->raster_pos.coords.y + gs->pixel_zoom.y * j);
-				for (int sy = 0; sy < gs->pixel_zoom.y; sy++)
-					for (int sx = 0; sx < gs->pixel_zoom.x; sx++)
-						gl_emit_fragment(*gs, x + sx, y + sy, fdata);
+					for (int sy = 0; sy < gs->pixel_zoom.y; sy++)
+						for (int sx = 0; sx < gs->pixel_zoom.x; sx++)
+							gl_emit_fragment(*gs, x + sx, y + sy, fdata);
+				}
 
 				row += pixel_size * element_size;
 			}
