@@ -356,16 +356,12 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 	int ci = pi * 4;
 	if (st.blend && (st.blend_func_src != GL_ONE || st.blend_func_dst != GL_ZERO))
 	{
-		glm::vec4 dst_color;
-		if (st.blend_func_dst != GL_ZERO)
-		{
-			//bgra
-			dst_color = glm::vec4(
-				fb.color[ci + 2],
-				fb.color[ci + 1],
-				fb.color[ci + 0],
-				fb.color[ci + 3]) / 255.f;
-		}
+		//bgra
+		glm::vec4 dst_color = glm::vec4(
+			fb.color[ci + 2],
+			fb.color[ci + 1],
+			fb.color[ci + 0],
+			fb.color[ci + 3]) / 255.f;
 		color = gl_blend(st.blend_func_src, st.blend_func_dst, color, dst_color);
 	}
 
