@@ -160,6 +160,13 @@ void APIENTRY glReadBuffer(GLenum src)
 		return;
 	}
 
+	// Monoscopic context
+	if (src == GL_BACK_RIGHT || src == GL_FRONT_RIGHT || src == GL_RIGHT)
+	{
+		gl_set_error_a(GL_INVALID_OPERATION, src);
+		return;
+	}
+
 	//TODO here or on use?
 	if (src == GL_FRONT || src == GL_LEFT)
 		src = GL_FRONT_LEFT;
@@ -219,14 +226,15 @@ void APIENTRY glClear(GLbitfield mask)
 		gl_set_error_a(GL_INVALID_VALUE, mask);
 		return;
 	}
+	gl_framebuffer& fb = *gs->framebuffer;
 
 	glm::ivec4 s = gs->scissor_rect;
 	if (gs->scissor_test)
 	{
 		s.x = glm::max(0, s.x);
 		s.y = glm::max(0, s.y);
-		s.z = glm::min(s.z, gs->framebuffer->width - gs->scissor_rect.x);
-		s.w = glm::min(s.w, gs->framebuffer->height - gs->scissor_rect.y);
+		s.z = glm::min(s.z, fb.width - gs->scissor_rect.x);
+		s.w = glm::min(s.w, fb.height - gs->scissor_rect.y);
 	}
 
 	const glm::bvec4 &cm = gs->color_mask;
@@ -234,12 +242,12 @@ void APIENTRY glClear(GLbitfield mask)
 	{
 		uint32_t mask = (cm.r ? 0xFF0000 : 0) | (cm.g ? 0xFF00 : 0) | (cm.b ? 0xFF : 0) | (cm.a ? 0xFF0000 : 0);//bgra
 		uint32_t value = gl_color_to_framebuffer(gs->clear_color) & mask;
-		uint32_t *dst = (uint32_t *)gs->framebuffer->color;
+		uint32_t *dst = (uint32_t *)fb.color;
 
 		//TODO dither
-		if (!gs->scissor_test || (s.x == 0 && s.x + s.z == gs->framebuffer->width && s.y == 0 && s.y + s.w == gs->framebuffer->height))
+		if (!gs->scissor_test || (s.x == 0 && s.x + s.z == fb.width && s.y == 0 && s.y + s.w == fb.height))
 		{
-			int count = gs->framebuffer->width * gs->framebuffer->height;
+			int count = fb.width * fb.height;
 			if (mask == 0xFFFFFFFF)
 			{
 				for (int i = 0; i < count; i++)
@@ -256,7 +264,7 @@ void APIENTRY glClear(GLbitfield mask)
 		}
 		else
 		{
-			dst += gs->framebuffer->width * s.y;
+			dst += fb.width * s.y;
 			dst += s.x;
 			for (int iy = 0; iy < s.w; iy++)
 			{
@@ -274,20 +282,20 @@ void APIENTRY glClear(GLbitfield mask)
 						row++;
 					}
 				}
-				dst += gs->framebuffer->width;
+				dst += fb.width;
 			}
 		}
 	}
 
 	uint8_t stmask = (gs->stencil_writemask & 0xFF);
-	if (mask & GL_STENCIL_BUFFER_BIT && gs->framebuffer->stencil && stmask != 0)
+	if (mask & GL_STENCIL_BUFFER_BIT && fb.stencil && stmask != 0)
 	{
 		uint8_t val = gs->clear_stencil & stmask;
-		uint8_t* dst = gs->framebuffer->stencil;
+		uint8_t* dst = fb.stencil;
 
-		if (!gs->scissor_test || (s.x == 0 && s.x + s.z == gs->framebuffer->width && s.y == 0 && s.y + s.w == gs->framebuffer->height))
+		if (!gs->scissor_test || (s.x == 0 && s.x + s.z == fb.width && s.y == 0 && s.y + s.w == fb.height))
 		{
-			int count = gs->framebuffer->width * gs->framebuffer->height;
+			int count = fb.width * fb.height;
 			if (stmask == 0xFF)
 			{
 				for (int i = 0; i < count; i++)
@@ -304,7 +312,7 @@ void APIENTRY glClear(GLbitfield mask)
 		}
 		else
 		{
-			dst += gs->framebuffer->width * s.y;
+			dst += fb.width * s.y;
 			dst += s.x;
 			for (int iy = 0; iy < s.w; iy++)
 			{
@@ -322,32 +330,32 @@ void APIENTRY glClear(GLbitfield mask)
 						row++;
 					}
 				}
-				dst += gs->framebuffer->width;
+				dst += fb.width;
 			}
 		}
 	}
 
-	if (mask & GL_DEPTH_BUFFER_BIT && gs->framebuffer->depth && gs->depth_mask)
+	if (mask & GL_DEPTH_BUFFER_BIT && fb.depth && gs->depth_mask)
 	{
 		uint16_t value = uint16_t(gs->clear_depth * 0xFFFF);
-		uint16_t* dst = gs->framebuffer->depth;
+		uint16_t* dst = fb.depth;
 
-		if (!gs->scissor_test || (s.x == 0 && s.x + s.z == gs->framebuffer->width && s.y == 0 && s.y + s.w == gs->framebuffer->height))
+		if (!gs->scissor_test || (s.x == 0 && s.x + s.z == fb.width && s.y == 0 && s.y + s.w == fb.height))
 		{
-			int count = gs->framebuffer->width * gs->framebuffer->height;
+			int count = fb.width * fb.height;
 			for (int i = 0; i < count; i++)
 				*(dst++) = value;
 		}
 		else
 		{
-			dst += gs->framebuffer->width * s.y;
+			dst += fb.width * s.y;
 			dst += s.x;
 			for (int iy = 0; iy < s.w; iy++)
 			{
 				uint16_t* row = dst;
 				for (int ix = 0; ix < s.z; ix++)
 					*(row++) = value;
-				dst += gs->framebuffer->width;
+				dst += fb.width;
 			}
 		}
 	}
