@@ -225,8 +225,8 @@ void APIENTRY glClear(GLbitfield mask)
 	{
 		s.x = glm::max(0, s.x);
 		s.y = glm::max(0, s.y);
-		s.z = glm::min(s.z, gs->framebuffer->width - s.x);
-		s.w = glm::min(s.w, gs->framebuffer->height - s.y);
+		s.z = glm::min(s.z, gs->framebuffer->width - gs->scissor_rect.x);
+		s.w = glm::min(s.w, gs->framebuffer->height - gs->scissor_rect.y);
 	}
 
 	const glm::bvec4 &cm = gs->color_mask;
@@ -415,23 +415,41 @@ void APIENTRY glAccum(GLenum op, GLfloat value)
 		return;
 	}
 
-	int count = fb.width * fb.height * 4;
+	glm::ivec4 s{ 0, 0, fb.width, fb.height };
+	if (gs->scissor_test)
+	{
+		s = gs->scissor_rect;
+		s.x = glm::max(0, s.x);
+		s.y = glm::max(0, s.y);
+		s.z = glm::min(s.z, fb.width - gs->scissor_rect.x);
+		s.w = glm::min(s.w, fb.height - gs->scissor_rect.y);
+	}
+
+	uint8_t* src = fb.color + (fb.width * s.y + s.x) * 4;
+	dst += fb.width * s.y;
+	dst += s.x;
+
 	if (op == GL_ACCUM || op == GL_LOAD)
 	{
-		for (int ci = 0; ci < count; ci += 4)
+		for (int iy = 0; iy < s.w; iy++)
 		{
-			glm::vec4 src_color = glm::vec4(
-				fb.color[ci + 2],
-				fb.color[ci + 1],
-				fb.color[ci + 0],
-				fb.color[ci + 3]) / 255.f;
+			glm::vec4* row = dst;
+				
+			for (int ix = 0; ix < s.z; ix++)
+			{
+				glm::vec4 src_color = glm::vec4(src[2], src[1], src[0], src[3]) / 255.f;
 
-			if (op == GL_ACCUM)
-				(*dst) += src_color * value;
-			else if(op == GL_LOAD)
-				(*dst) = src_color * value;
-
-			dst++;
+				if (op == GL_ACCUM)
+					(*row) += src_color * value;
+				else if (op == GL_LOAD)
+					(*row) = src_color * value;
+					
+				src += 4;
+				row++;
+			}
+				
+			src += fb.width * 4;
+			dst += fb.width;
 		}
 	}
 	else if (op == GL_RETURN)
@@ -439,34 +457,55 @@ void APIENTRY glAccum(GLenum op, GLfloat value)
 		if (gs->draw_buffer == GL_NONE)
 			return;
 
-		for (int ci = 0; ci < count; ci += 4)
+		for (int iy = 0; iy < s.w; iy++)
 		{
-			glm::vec4 color = glm::clamp(*(dst++) * value, 0.f, 1.f);
+			glm::vec4* row = dst;
 
-			if (gs->dither)
+			for (int ix = 0; ix < s.z; ix++)
 			{
-				gl_dither(color, ci % fb.width, ci / fb.width);
-			}
+				glm::vec4 color = glm::clamp(*(row++) * value, 0.f, 1.f);
 
-			//bgra
-			if (gs->color_mask.b)
-				fb.color[ci] = uint8_t(color.b * 0xFF);
-			if (gs->color_mask.g)
-				fb.color[ci + 1] = uint8_t(color.g * 0xFF);
-			if (gs->color_mask.r)
-				fb.color[ci + 2] = uint8_t(color.r * 0xFF);
-			if (gs->color_mask.a)
-				fb.color[ci + 3] = uint8_t(color.a * 0xFF);
+				if (gs->dither)
+					gl_dither(color, s.x + ix, s.y + iy);
+
+				//bgra
+				if (gs->color_mask.b)
+					src[0] = uint8_t(color.b * 0xFF);
+				if (gs->color_mask.g)
+					src[1] = uint8_t(color.g * 0xFF);
+				if (gs->color_mask.r)
+					src[2] = uint8_t(color.r * 0xFF);
+				if (gs->color_mask.a)
+					src[3] = uint8_t(color.a * 0xFF);
+
+				src += 4;
+			}
+			src += fb.width * 4;
+			dst += fb.width;
 		}
 	}
 	else if (op == GL_MULT)
 	{
-		for (int ci = 0; ci < fb.width * fb.height; ci++)
-			*(dst++) *= value;
+		for (int iy = 0; iy < s.w; iy++)
+		{
+			glm::vec4* row = dst;
+
+			for (int ix = 0; ix < s.z; ix++)
+				*(row++) *= value;
+
+			dst += fb.width;
+		}
 	}
 	else if (op == GL_ADD)
 	{
-		for (int ci = 0; ci < fb.width * fb.height; ci++)
-			*(dst++) += value;
+		for (int iy = 0; iy < s.w; iy++)
+		{
+			glm::vec4* row = dst;
+
+			for (int ix = 0; ix < s.z; ix++)
+				*(row++) += value;
+
+			dst += fb.width;
+		}
 	}
 }
