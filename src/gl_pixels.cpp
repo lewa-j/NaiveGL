@@ -479,7 +479,7 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 						//only in rgba mode
 						pixel = index_to_rgba(index, gs->pixel_map_color_table);
 					}
-					else if(format == GL_STENCIL_INDEX && gs->map_stencil)
+					else if (format == GL_STENCIL_INDEX && gs->map_stencil)
 					{
 						int ti = index & (gs->pixel_map_index_table[1].size - 1);
 						index = gs->pixel_map_index_table[1].data[ti];
@@ -606,4 +606,191 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 	}
 
 	gs->raster_pos.coords += glm::vec4(xmove, ymove, 0, 0);
+}
+
+
+void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void* data)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	//rgba mode context
+	if (format == GL_COLOR_INDEX)
+	{
+		gl_set_error(GL_INVALID_OPERATION);
+		return;
+	}
+
+	if (format == GL_DEPTH_COMPONENT && !gs->framebuffer->depth)
+	{
+		gl_set_error(GL_INVALID_OPERATION);
+		return;
+	}
+
+	if (format == GL_STENCIL_INDEX && !gs->framebuffer->stencil)
+	{
+		gl_set_error(GL_INVALID_OPERATION);
+		return;
+	}
+
+	if (type == GL_BITMAP && format != GL_COLOR_INDEX && format != GL_STENCIL_INDEX)
+	{
+		//undefined
+		return;
+	}
+
+	if (type == GL_BITMAP)
+	{
+		//TODO unimplemented
+		return;
+	}
+
+	const gl_framebuffer& fb = *gs->framebuffer;
+
+	const gl_state::pixelStore& ps = gs->pixel_pack;
+	int row_length = (ps.row_length > 0) ? ps.row_length : width;
+
+	uint8_t* pixels = (uint8_t*)data;
+
+	int pixel_size = 1;
+	if (format == GL_LUMINANCE_ALPHA)
+		pixel_size = 2;
+	else if (format == GL_RGB)
+		pixel_size = 3;
+	else if (format == GL_RGBA)
+		pixel_size = 4;
+
+	int element_size = 1;
+	if (type == GL_UNSIGNED_SHORT || type == GL_SHORT)
+		element_size = 2;
+	else if (type == GL_UNSIGNED_INT || type == GL_INT || type == GL_FLOAT)
+		element_size = 4;
+
+	int elements_stride = int((element_size >= ps.alignment) ?
+		(pixel_size * row_length) :
+		(ps.alignment / element_size * glm::ceil((element_size * pixel_size * row_length) / (float)ps.alignment)));
+
+	pixels += (ps.skip_pixels * pixel_size + ps.skip_rows * elements_stride) * element_size;
+
+	if (y < 0)
+	{
+		pixels += (-y * elements_stride) * element_size;
+		height += y;
+		y = 0;
+	}
+	if (x < 0)
+	{
+		pixels += (-x * pixel_size) * element_size;
+		width += x;
+		x = 0;
+	}
+
+	for (int iy = 0; iy < height; iy++)
+	{
+		int fbi = (y + iy) * fb.width + x;
+		uint8_t* row = pixels;
+		for (int ix = 0; ix < width; ix++)
+		{
+			glm::vec4 col;
+			uint8_t index;
+			if (format == GL_STENCIL_INDEX)
+			{
+				index = fb.stencil[fbi];
+
+				if (gs->index_shift > 0)
+					index <<= gs->index_shift;
+				else if (gs->index_shift < 0)
+					index >>= -gs->index_shift;
+
+				index += gs->index_offset;
+
+				if (gs->map_stencil)
+				{
+					int ti = index & (gs->pixel_map_index_table[1].size - 1);
+					index = gs->pixel_map_index_table[1].data[ti];
+				}
+			}
+			else if (format == GL_DEPTH_COMPONENT)
+			{
+				float depth = fb.depth[fbi] / (float)0xffff;
+				depth = depth * gs->depth_scale + gs->depth_bias;
+				col.r = depth;
+			}
+			else
+			{
+				const int ci = fbi * 4;
+				
+				glm::ivec4 icol(fb.color[ci + 2], fb.color[ci + 1], fb.color[ci + 0], fb.color[ci + 3]);//bgra
+				col = glm::vec4(icol) / (float)0xff;
+				col = col * gs->color_scale + gs->color_bias;
+				if (gs->map_color)
+					col = remap_color(col, gs->pixel_map_color_table + 4);
+
+				if (format == GL_LUMINANCE || format == GL_LUMINANCE_ALPHA)
+				{
+					col.r = glm::clamp(col.r + col.g + col.b, 0.f, 1.f);
+					col.g = col.a;
+				}
+				else if (format == GL_GREEN)
+					col.r = col.g;
+				else if (format == GL_BLUE)
+					col.r = col.b;
+				else if (format == GL_ALPHA)
+					col.r = col.a;
+			}
+
+			if (format == GL_STENCIL_INDEX)
+			{
+				if (type == GL_BYTE)
+					*(GLbyte*)row = index & 0x7F;
+				else if (type == GL_UNSIGNED_BYTE)
+					*(GLubyte*)row = index & 0xFF;
+				else if (type == GL_SHORT)
+					*(GLshort*)row = index & 0x7FFF;
+				else if (type == GL_UNSIGNED_SHORT)
+					*(GLushort*)row = index & 0xFFFF;
+				else if (type == GL_INT)
+					*(GLint*)row = index & 0x7FFFFFFF;
+				else if (type == GL_UNSIGNED_INT)
+					*(GLuint*)row = index & 0xFFFFFFFF;
+				else if (type == GL_FLOAT)
+					*(float*)row = index;
+			}
+			else
+			{
+				for (int ci = 0; ci < pixel_size; ci++)
+				{
+					if (type == GL_BYTE)
+						((GLbyte*)row)[ci] = (GLbyte)((0xFF * col[ci] - 1) / 2);
+					else if (type == GL_UNSIGNED_BYTE)
+						((GLubyte*)row)[ci] = (GLubyte)(col[ci] * 0xFF);
+					else if (type == GL_SHORT)
+						((GLshort*)row)[ci] = GLshort((0xFFFF * col[ci] - 1) / 2);
+					else if (type == GL_UNSIGNED_SHORT)
+						((GLushort*)row)[ci] = (GLushort)(col[ci] * 0xFFFF);
+					else if (type == GL_INT)
+						((GLint*)row)[ci] = (GLint)((0xFFFFFFFF * col[ci] - 1) / 2);
+					else if (type == GL_UNSIGNED_INT)
+						((GLuint*)row)[ci] = (GLuint)(col[ci] * 0xFFFFFFFF);
+					else if (type == GL_FLOAT)
+						((float*)row)[ci] = (float)col[ci];
+				}
+			}
+
+			if (ps.swap_bytes && element_size > 1)
+			{
+				for (int c = 0; c < pixel_size; c++)
+				{
+					std::swap(row[c * element_size], row[(c + 1) * element_size - 1]);
+					if (element_size == 4)
+						std::swap(row[c * element_size + 1], row[c * element_size + 2]);
+				}
+			}
+
+			fbi++;
+			row += pixel_size * element_size;
+		}
+		pixels += elements_stride * element_size;
+	}
 }
