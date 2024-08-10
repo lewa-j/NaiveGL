@@ -615,6 +615,17 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
 
+	if (format < GL_COLOR_INDEX || format > GL_LUMINANCE_ALPHA)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, format);
+		return;
+	}
+	if (type != GL_BITMAP && (type < GL_BYTE || type > GL_FLOAT))
+	{
+		gl_set_error_a(GL_INVALID_ENUM, type);
+		return;
+	}
+
 	//rgba mode context
 	if (format == GL_COLOR_INDEX)
 	{
@@ -627,7 +638,6 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 		gl_set_error(GL_INVALID_OPERATION);
 		return;
 	}
-
 	if (format == GL_STENCIL_INDEX && !gs->framebuffer->stencil)
 	{
 		gl_set_error(GL_INVALID_OPERATION);
@@ -693,7 +703,7 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 		for (int ix = 0; ix < width; ix++)
 		{
 			glm::vec4 col;
-			uint8_t index;
+			uint8_t index = 0;
 			if (format == GL_STENCIL_INDEX)
 			{
 				index = fb.stencil[fbi];
@@ -729,7 +739,7 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 
 				if (format == GL_LUMINANCE || format == GL_LUMINANCE_ALPHA)
 				{
-					col.r = glm::clamp(col.r + col.g + col.b, 0.f, 1.f);
+					col.r = col.r + col.g + col.b;
 					col.g = col.a;
 				}
 				else if (format == GL_GREEN)
@@ -759,6 +769,7 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 			}
 			else
 			{
+				col = glm::clamp(col, 0.f, 1.f);
 				for (int ci = 0; ci < pixel_size; ci++)
 				{
 					if (type == GL_BYTE)

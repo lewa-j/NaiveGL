@@ -425,12 +425,6 @@ static const char *error_to_str(GLenum e)
 	return "?";
 }
 
-#if NAGL_DEBUG_LOG
-#define gl_log printf
-#else
-#define gl_log(...)
-#endif
-
 void gl_set_error_a_(GLenum error, GLenum arg, const char *func)
 {
 	gl_state *gs = gl_current_state();

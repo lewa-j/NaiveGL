@@ -13,6 +13,7 @@ Work in progress towards 1.0 conformance
 * Texture border
 * FRONT and AUX color buffers
 * Clear color dithering
+* ReadPixels BITMAP
 
 ## Acknowledgments
 

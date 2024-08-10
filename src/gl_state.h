@@ -301,6 +301,12 @@ struct gl_state
 
 gl_state *gl_current_state();
 
+#if NAGL_DEBUG_LOG
+#define gl_log printf
+#else
+#define gl_log(...)
+#endif
+
 #define gl_set_error(e) gl_set_error_(e, __FUNCTION__)
 #define gl_set_error_a(e, a) gl_set_error_a_(e, a, __FUNCTION__)
 void gl_set_error_(GLenum error, const char *func);

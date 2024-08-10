@@ -39,7 +39,7 @@ extern "C" {
 
 EXPORT HGLRC APIENTRY wglCreateContext(HDC device_context)
 {
-	printf("wglCreateContext(%p) pixelformat = %d\n", device_context, current_pixel_format);
+	gl_log("wglCreateContext(%p) pixelformat = %d\n", device_context, current_pixel_format);
 	wgl_context *rc = new wgl_context;
 	rc->device_context = device_context;
 
@@ -135,6 +135,9 @@ EXPORT PROC APIENTRY wglGetProcAddress(LPCSTR func_name)
 			break;
 		}
 	}
+
+	if (!r)
+		gl_log("wglGetProcAddress(%s) = %p\n", func_name, r);
 
 	return r;
 }
@@ -252,7 +255,7 @@ EXPORT BOOL WINAPI wglSwapBuffers(HDC device_context)
 			wgl_context* rc = current_context;
 			if (w != rc->framebuffer.width || h != rc->framebuffer.height)
 			{
-				printf("wglSwapBuffers: need resize %dx%d %dx%d\n", rc->framebuffer.width, rc->framebuffer.height, w, h);
+				gl_log("wglSwapBuffers: need resize %dx%d %dx%d\n", rc->framebuffer.width, rc->framebuffer.height, w, h);
 				resize_context(rc, w, h);
 			}
 		}
