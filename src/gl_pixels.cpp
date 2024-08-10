@@ -250,7 +250,7 @@ static glm::vec4 remap_color(const glm::vec4 &c, gl_state::pixelMapColor *tables
 	glm::vec4 r;
 	for (int i = 0; i < 4; i++)
 	{
-		int ci = (int)roundf(glm::clamp(c[i], 0.f, 1.f) * tables[i].size - 1);
+		int ci = (int)roundf(glm::clamp(c[i], 0.f, 1.f) * (tables[i].size - 1));
 		r[i] = tables[i].data[ci];
 	}
 	return r;
@@ -623,6 +623,12 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 	if (type != GL_BITMAP && (type < GL_BYTE || type > GL_FLOAT))
 	{
 		gl_set_error_a(GL_INVALID_ENUM, type);
+		return;
+	}
+
+	if (width < 0 || height < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
 		return;
 	}
 
