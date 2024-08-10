@@ -229,6 +229,7 @@ X(glClearAccum)
 X(glAccum)
 X(glReadPixels)
 X(glReadBuffer)
+X(glCopyPixels)
 
 X(glNewList)
 X(glEndList)

@@ -263,6 +263,7 @@ EXPORT void APIENTRY glClearAccum(GLfloat red, GLfloat green, GLfloat blue, GLfl
 EXPORT void APIENTRY glAccum(GLenum op, GLfloat value);
 EXPORT void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void* pixels);
 EXPORT void APIENTRY glReadBuffer(GLenum src);
+EXPORT void APIENTRY glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type);
 
 EXPORT void APIENTRY glNewList(GLuint list, GLenum mode);
 EXPORT void APIENTRY glEndList(void);

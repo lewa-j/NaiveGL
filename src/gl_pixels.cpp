@@ -811,3 +811,70 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 		pixels += elements_stride * element_size;
 	}
 }
+
+void APIENTRY glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (type < GL_COLOR || type > GL_STENCIL)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, type);
+		return;
+	}
+
+	if (width < 0 || height < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
+	// may be optimized
+
+	// map_color, scale, bias and index arithmetic will be applied twise, first on Read and then on Draw.
+	// So disable them after Read and restore after Draw
+
+	if (type == GL_COLOR)
+	{
+		std::vector<uint8_t> pixels(width * height * 4);
+		glReadPixels(x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+		bool save_map_color = false;
+		glm::vec4 save_color_scale(1);
+		glm::vec4 save_color_bias(0);
+		std::swap(save_map_color, gs->map_color);
+		std::swap(save_color_scale, gs->color_scale);
+		std::swap(save_color_bias, gs->color_bias);
+		glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+		gs->map_color = save_map_color;
+		gs->color_scale = save_color_scale;
+		gs->color_bias = save_color_bias;
+	}
+	else if (type == GL_DEPTH)
+	{
+		std::vector<uint16_t> pixels(width * height);
+		glReadPixels(x, y, width, height, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, pixels.data());
+		float save_depth_scale = 1;
+		float save_depth_bias = 0;
+		std::swap(save_depth_scale, gs->depth_scale);
+		std::swap(save_depth_bias, gs->depth_bias);
+		glDrawPixels(width, height, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, pixels.data());
+		gs->depth_scale = save_depth_scale;
+		gs->depth_bias = save_depth_bias;
+	}
+	else if (type == GL_STENCIL)
+	{
+		std::vector<uint8_t> pixels(width * height);
+		glReadPixels(x, y, width, height, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, pixels.data());
+		bool save_map_stencil = false;
+		int save_index_shift = 0;
+		int save_index_offset = 0;
+		std::swap(save_map_stencil, gs->map_stencil);
+		std::swap(save_index_shift, gs->index_shift);
+		std::swap(save_index_offset, gs->index_offset);
+		glDrawPixels(width, height, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, pixels.data());
+		gs->map_stencil = save_map_stencil;
+		gs->index_shift = save_index_shift;
+		gs->index_offset = save_index_offset;
+	}
+}
