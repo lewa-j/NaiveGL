@@ -265,6 +265,27 @@ EXPORT void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei heigh
 EXPORT void APIENTRY glReadBuffer(GLenum src);
 EXPORT void APIENTRY glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type);
 
+EXPORT void APIENTRY glMap1f(GLenum target, GLfloat u1, GLfloat u2, GLint stride, GLint order, const GLfloat *points);
+EXPORT void APIENTRY glMap1d(GLenum target, GLdouble u1, GLdouble u2, GLint stride, GLint order, const GLdouble *points);
+EXPORT void APIENTRY glMap2f(GLenum target, GLfloat u1, GLfloat u2, GLint ustride, GLint uorder, GLfloat v1, GLfloat v2, GLint vstride, GLint vorder, const GLfloat *points);
+EXPORT void APIENTRY glMap2d(GLenum target, GLdouble u1, GLdouble u2, GLint ustride, GLint uorder, GLdouble v1, GLdouble v2, GLint vstride, GLint vorder, const GLdouble *points);
+EXPORT void APIENTRY glEvalCoord1f(GLfloat u);
+EXPORT void APIENTRY glEvalCoord1d(GLdouble u);
+EXPORT void APIENTRY glEvalCoord1fv(const GLfloat *u);
+EXPORT void APIENTRY glEvalCoord1dv(const GLdouble *u);
+EXPORT void APIENTRY glEvalCoord2f(GLfloat u, GLfloat v);
+EXPORT void APIENTRY glEvalCoord2d(GLdouble u, GLdouble v);
+EXPORT void APIENTRY glEvalCoord2fv(const GLfloat *u);
+EXPORT void APIENTRY glEvalCoord2dv(const GLdouble *u);
+EXPORT void APIENTRY glMapGrid1f(GLint un, GLfloat u1, GLfloat u2);
+EXPORT void APIENTRY glMapGrid1d(GLint un, GLdouble u1, GLdouble u2);
+EXPORT void APIENTRY glMapGrid2f(GLint un, GLfloat u1, GLfloat u2, GLint vn, GLfloat v1, GLfloat v2);
+EXPORT void APIENTRY glMapGrid2d(GLint un, GLdouble u1, GLdouble u2, GLint vn, GLdouble v1, GLdouble v2);
+EXPORT void APIENTRY glEvalMesh1(GLenum mode, GLint p1, GLint p2);
+EXPORT void APIENTRY glEvalMesh2(GLenum mode, GLint p1, GLint p2, GLint q1, GLint q2);
+EXPORT void APIENTRY glEvalPoint1(GLint p);
+EXPORT void APIENTRY glEvalPoint2(GLint p, GLint q);
+
 EXPORT void APIENTRY glNewList(GLuint list, GLenum mode);
 EXPORT void APIENTRY glEndList(void);
 EXPORT void APIENTRY glCallList(GLuint list);

@@ -232,6 +232,27 @@ EXPORTS
 	glReadBuffer
 	glCopyPixels
 
+	glMap1f
+	glMap1d
+	glMap2f
+	glMap2d
+	glEvalCoord1f
+	glEvalCoord1d
+	glEvalCoord1fv
+	glEvalCoord1dv
+	glEvalCoord2f
+	glEvalCoord2d
+	glEvalCoord2fv
+	glEvalCoord2dv
+	glMapGrid1f
+	glMapGrid1d
+	glMapGrid2f
+	glMapGrid2d
+	glEvalMesh1
+	glEvalMesh2
+	glEvalPoint1
+	glEvalPoint2
+
 	glNewList
 	glEndList
 	glCallList
