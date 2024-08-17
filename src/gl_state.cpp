@@ -171,6 +171,23 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	clear_stencil = 0;
 	clear_accum = glm::vec4{ 0, 0, 0, 0 };
 
+	enabled_eval_maps = 0;
+	for (int i = 0; i < 9; i++)
+	{
+		eval_maps_1d[i] = mapSpec1D{};
+		eval_maps_2d[i] = mapSpec2D{};
+	}
+	eval_auto_normal = false;
+	eval_1d_grid_segments = 1;
+	eval_1d_grid_domain[0] = 0;
+	eval_1d_grid_domain[1] = 1;
+	eval_2d_grid_segments[0] = 1;
+	eval_2d_grid_segments[1] = 1;
+	eval_2d_grid_domain_u[0] = 0;
+	eval_2d_grid_domain_u[1] = 1;
+	eval_2d_grid_domain_v[0] = 0;
+	eval_2d_grid_domain_v[1] = 1;
+
 	display_list_begun = 0;
 	display_list_execute = false;
 	display_list_base = 0;
@@ -279,6 +296,18 @@ void APIENTRY glEnable(GLenum cap)
 	{
 		gs->logic_op = true;
 	}
+	else if (cap >= GL_MAP1_COLOR_4 && cap <= GL_MAP1_VERTEX_4)
+	{
+		gs->enabled_eval_maps |= (1 << (cap - GL_MAP1_COLOR_4));
+	}
+	else if (cap >= GL_MAP2_COLOR_4 && cap <= GL_MAP2_VERTEX_4)
+	{
+		gs->enabled_eval_maps |= (1 << (cap - GL_MAP2_COLOR_4 + 9));
+	}
+	else if (cap == GL_AUTO_NORMAL)
+	{
+		gs->eval_auto_normal = true;
+	}
 	else
 	{
 		gl_set_error_a(GL_INVALID_ENUM, cap);
@@ -379,6 +408,18 @@ void APIENTRY glDisable(GLenum cap)
 	else if (cap == GL_LOGIC_OP)
 	{
 		gs->logic_op = false;
+	}
+	else if (cap >= GL_MAP1_COLOR_4 && cap <= GL_MAP1_VERTEX_4)
+	{
+		gs->enabled_eval_maps &= ~(1 << (cap - GL_MAP1_COLOR_4));
+	}
+	else if (cap >= GL_MAP2_COLOR_4 && cap <= GL_MAP2_VERTEX_4)
+	{
+		gs->enabled_eval_maps &= ~(1 << (cap - GL_MAP2_COLOR_4 + 9));
+	}
+	else if (cap == GL_AUTO_NORMAL)
+	{
+		gs->eval_auto_normal = false;
 	}
 	else
 	{

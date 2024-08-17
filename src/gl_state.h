@@ -29,6 +29,8 @@ constexpr int gl_max_tex_level = 6;// log2(gl_max_texture_size)
 
 constexpr int gl_max_aux_buffers = 0;
 
+constexpr int gl_max_eval_order = 8;
+
 struct gl_framebuffer
 {
 	int width = 0;
@@ -200,7 +202,7 @@ struct gl_state
 		int skip_rows = 0;
 		int skip_pixels = 0;
 		int alignment = 4;
-	} pixel_unpack, pixel_pack;
+	} pixel_unpack, pixel_pack; //client state
 	bool map_color = false;
 	bool map_stencil = false;
 	int index_shift = 0;
@@ -265,6 +267,28 @@ struct gl_state
 	float clear_depth = 1;
 	int clear_stencil = 0;
 	glm::vec4 clear_accum{ 0,0,0,0 };
+
+	uint32_t enabled_eval_maps = 0;// bits 0-8 1D maps, bits 9-17 2D maps
+	struct mapSpec1D
+	{
+		int order_u = 1;
+		GLfloat domain_u[2]{ 0, 1 };
+		std::vector<float> control_points;
+	} eval_maps_1d[9];
+	struct mapSpec2D
+	{
+		int order_u = 1;
+		GLfloat domain_u[2]{ 0, 1 };
+		int order_v = 1;
+		GLfloat domain_v[2]{ 0, 1 };
+		std::vector<float> control_points;
+	} eval_maps_2d[9];
+	bool eval_auto_normal = false;
+	GLint eval_1d_grid_segments = 1;
+	GLfloat eval_1d_grid_domain[2]{ 0, 1 };
+	GLint eval_2d_grid_segments[2]{ 1, 1 };
+	GLfloat eval_2d_grid_domain_u[2]{ 0, 1 };
+	GLfloat eval_2d_grid_domain_v[2]{ 0, 1 };
 
 	int display_list_begun = 0;
 	bool display_list_execute = false;
