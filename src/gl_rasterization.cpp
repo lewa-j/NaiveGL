@@ -741,36 +741,3 @@ void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_fu
 			gl_rasterize_clipped_triangle(st, v0, v1, v2);
 	}
 }
-
-void gl_emit_quad(gl_state& st, gl_full_vertex &v0, gl_full_vertex &v1, gl_full_vertex &v2, gl_full_vertex &v3)
-{
-	//TODO clip
-	//TODO side
-
-	if (st.shade_model_flat)
-	{
-		v0.color = v3.color;
-		v1.color = v3.color;
-		v2.color = v3.color;
-	}
-
-	if (st.polygon_mode[0] == GL_POINT)
-	{
-		if (v0.edge) gl_emit_point(st, v0);
-		if (v1.edge) gl_emit_point(st, v1);
-		if (v2.edge) gl_emit_point(st, v2);
-		if (v3.edge) gl_emit_point(st, v3);
-	}
-	else if(st.polygon_mode[0] == GL_LINE)
-	{
-		if (v0.edge) gl_emit_line(st, v0, v1);
-		if (v1.edge) gl_emit_line(st, v1, v2);
-		if (v2.edge) gl_emit_line(st, v2, v3);
-		if (v3.edge) gl_emit_line(st, v3, v0);
-	}
-	else
-	{
-		gl_emit_triangle(st, v0, v1, v2);
-		gl_emit_triangle(st, v0, v2, v3);
-	}
-}

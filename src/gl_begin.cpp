@@ -161,7 +161,24 @@ void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 t
 		if (j < 3)
 			gs->last_vertices[j] = vertex;
 		else
-			gl_emit_quad(*gs, gs->last_vertices[0], gs->last_vertices[1], gs->last_vertices[2], vertex);
+		{
+			if (gs->shade_model_flat)
+			{
+				if (gs->light_model_two_side)
+					gs->last_vertices[2].original_color = vertex.original_color;
+				else
+					gs->last_vertices[2].color = vertex.color;
+			}
+
+			bool save = gs->last_vertices[2].edge;
+			gs->last_vertices[2].edge = false;
+			gl_emit_triangle(*gs, gs->last_vertices[0], gs->last_vertices[1], gs->last_vertices[2]);
+			gs->last_vertices[2].edge = save;
+			save = gs->last_vertices[0].edge;
+			gs->last_vertices[0].edge = false;
+			gl_emit_triangle(*gs, gs->last_vertices[0], gs->last_vertices[2], vertex);
+			gs->last_vertices[0].edge = save;
+		}
 	}
 	break;
 	case GL_QUAD_STRIP:
@@ -170,9 +187,23 @@ void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 t
 		if (gs->begin_vertex_count >= 3)
 		{
 			if (j == 3)
-				gl_emit_quad(*gs, gs->last_vertices[2], gs->last_vertices[0], gs->last_vertices[1], vertex);
+			{
+				gs->last_vertices[0].edge = false;
+				gl_emit_triangle(*gs, gs->last_vertices[2], gs->last_vertices[0], vertex);
+				gs->last_vertices[0].edge = true;
+				vertex.edge = false;
+				gl_emit_triangle(*gs, gs->last_vertices[0], gs->last_vertices[1], vertex);
+				vertex.edge = true;
+			}
 			else if (j == 1)
-				gl_emit_quad(*gs, gs->last_vertices[0], gs->last_vertices[2], gs->last_vertices[1], vertex);
+			{
+				gs->last_vertices[2].edge = false;
+				gl_emit_triangle(*gs, gs->last_vertices[0], gs->last_vertices[2], vertex);
+				gs->last_vertices[2].edge = true;
+				vertex.edge = false;
+				gl_emit_triangle(*gs, gs->last_vertices[2], gs->last_vertices[1], vertex);
+				vertex.edge = true;
+			}
 		}
 
 		gs->last_vertices[j < 3 ? j : 1] = vertex;

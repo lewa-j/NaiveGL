@@ -350,7 +350,6 @@ void gl_emit_fragment(gl_state& st, int x, int y, gl_frag_data& data);
 void gl_emit_point(gl_state &st, const gl_processed_vertex &vertex);
 void gl_emit_line(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1);
 void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_full_vertex&v2);
-void gl_emit_quad(gl_state& st, gl_full_vertex &v0, gl_full_vertex &v1, gl_full_vertex &v2, gl_full_vertex &v3);
 
 void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1);
 void gl_rasterize_clipped_line(gl_state& st, gl_processed_vertex v0, gl_processed_vertex v1);
