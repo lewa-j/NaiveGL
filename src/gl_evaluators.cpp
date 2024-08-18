@@ -310,10 +310,50 @@ void APIENTRY glEvalCoord2fv(const GLfloat *u)
 void APIENTRY glEvalCoord2dv(const GLdouble *u)
 { glEvalCoord2f((float)u[0], (float)u[1]); }
 
-void APIENTRY glMapGrid1f(GLint un, GLfloat u1, GLfloat u2) {}
-void APIENTRY glMapGrid1d(GLint un, GLdouble u1, GLdouble u2) {}
-void APIENTRY glMapGrid2f(GLint un, GLfloat u1, GLfloat u2, GLint vn, GLfloat v1, GLfloat v2) {}
-void APIENTRY glMapGrid2d(GLint un, GLdouble u1, GLdouble u2, GLint vn, GLdouble v1, GLdouble v2) {}
+void APIENTRY glMapGrid1f(GLint un, GLfloat u1, GLfloat u2)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (un <= 0)
+	{
+		gl_set_error_a(GL_INVALID_VALUE, un);
+		return;
+	}
+
+	gs->eval_1d_grid_segments = un;
+	gs->eval_1d_grid_domain[0] = u1;
+	gs->eval_1d_grid_domain[1] = u2;
+}
+void APIENTRY glMapGrid1d(GLint un, GLdouble u1, GLdouble u2)
+{ glMapGrid1f(un, (float)u1, (float)u2); }
+
+void APIENTRY glMapGrid2f(GLint un, GLfloat u1, GLfloat u2, GLint vn, GLfloat v1, GLfloat v2)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (un <= 0)
+	{
+		gl_set_error_a(GL_INVALID_VALUE, un);
+		return;
+	}
+	if (vn <= 0)
+	{
+		gl_set_error_a(GL_INVALID_VALUE, vn);
+		return;
+	}
+
+	gs->eval_2d_grid_segments[0] = un;
+	gs->eval_2d_grid_domain_u[0] = u1;
+	gs->eval_2d_grid_domain_u[1] = u2;
+	gs->eval_2d_grid_segments[1] = vn;
+	gs->eval_2d_grid_domain_v[0] = v1;
+	gs->eval_2d_grid_domain_v[1] = v2;
+}
+void APIENTRY glMapGrid2d(GLint un, GLdouble u1, GLdouble u2, GLint vn, GLdouble v1, GLdouble v2)
+{ glMapGrid2f(un, (float)u1, (float)u2, vn, (float)v1, (float)v2); }
+
 void APIENTRY glEvalMesh1(GLenum mode, GLint p1, GLint p2) {}
 void APIENTRY glEvalMesh2(GLenum mode, GLint p1, GLint p2, GLint q1, GLint q2) {}
 void APIENTRY glEvalPoint1(GLint p) {}
