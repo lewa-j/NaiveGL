@@ -2,10 +2,10 @@
 #include "gl_state.h"
 #include "gl_exports.h"
 
-glm::vec3 gl_state::get_eye_normal()
+glm::vec3 gl_state::get_eye_normal(const glm::vec3 &norm)
 {
 	//TODO cache. May be used twice per vertex when spheremap and lighting are enabled
-	glm::vec3 eye_normal = current_normal * glm::mat3(get_inv_modelview());
+	glm::vec3 eye_normal = norm * glm::mat3(get_inv_modelview());
 
 	if (normalize)
 		eye_normal = glm::normalize(eye_normal);
@@ -42,40 +42,23 @@ void APIENTRY glBegin(GLenum mode)
 	gs->line_stipple_counter = 0;
 }
 
-void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 tex, glm::vec3 norm)
 {
-	gl_state *gs = gl_current_state();
-	if (!gs) return;
-
-	if (gs->display_list_begun)
-	{
-		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tVertex, {x,y,z,w} });
-		if (!gs->display_list_execute)
-			return;
-	}
-
-	if (gs->begin_primitive_mode == -1)
-	{
-		//undefined behaviour
-		return;
-	}
-
-	glm::vec4 v_object(x, y, z, w);
 	gl_full_vertex vertex;
 	vertex.position = gs->get_modelview() * v_object;
-	vertex.tex_coord = gs->get_vertex_texcoord(v_object, vertex.position);
+	vertex.tex_coord = gs->get_vertex_texcoord(tex, norm, v_object, vertex.position);
 	if (!gs->light_model_two_side
 		|| gs->begin_primitive_mode == GL_POINTS
 		|| gs->begin_primitive_mode == GL_LINES
 		|| gs->begin_primitive_mode == GL_LINE_LOOP
 		|| gs->begin_primitive_mode == GL_LINE_STRIP)
 	{
-		vertex.color = gs->get_vertex_color_current(vertex.position, true);
+		vertex.color = gs->get_vertex_color(vertex.position, col, gs->get_eye_normal(norm), true);
 	}
 	else
 	{
-		vertex.original_color = gs->current_color;
-		vertex.normal = gs->get_eye_normal();
+		vertex.original_color = col;
+		vertex.normal = gs->get_eye_normal(norm);
 	}
 	vertex.clip = gs->get_projection() * vertex.position;
 
@@ -128,7 +111,7 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 #if 0
 		if (gs->polygon_mode[0] == GL_POINT)
 		{
-			if(gs->begin_vertex_count < 2)
+			if (gs->begin_vertex_count < 2)
 				gs->last_vertices[gs->begin_vertex_count ? 1 : 0] = vertex;
 			else if (gs->begin_vertex_count == 2)
 			{
@@ -180,7 +163,7 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 		else
 			gl_emit_quad(*gs, gs->last_vertices[0], gs->last_vertices[1], gs->last_vertices[2], vertex);
 	}
-		break;
+	break;
 	case GL_QUAD_STRIP:
 	{
 		int j = gs->begin_vertex_count & 3;
@@ -194,12 +177,34 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 
 		gs->last_vertices[j < 3 ? j : 1] = vertex;
 	}
-		break;
+	break;
 	default:
 		break;
 	}
 
 	gs->begin_vertex_count++;
+}
+
+void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+
+	if (gs->display_list_begun)
+	{
+		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tVertex, {x,y,z,w} });
+		if (!gs->display_list_execute)
+			return;
+	}
+
+	if (gs->begin_primitive_mode == -1)
+	{
+		//undefined behaviour
+		return;
+	}
+
+	glm::vec4 v_object(x, y, z, w);
+	gl_emit_vertex(gs, v_object, gs->current_color, gs->current_tex_coord, gs->current_normal);
 }
 
 void APIENTRY glEnd()

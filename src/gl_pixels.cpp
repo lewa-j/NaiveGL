@@ -13,8 +13,8 @@ void APIENTRY glRasterPos4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 	if (!gs->raster_pos.valid)
 		return;
 
-	gs->raster_pos.tex_coord = gs->get_vertex_texcoord(p_object, p_eye);
-	gs->raster_pos.color = gs->get_vertex_color_current(p_eye, true);
+	gs->raster_pos.tex_coord = gs->get_vertex_texcoord(gs->current_tex_coord, gs->current_normal, p_object, p_eye);
+	gs->raster_pos.color = gs->get_vertex_color(p_eye, gs->current_color, gs->get_eye_normal(gs->current_normal), true);
 	gs->raster_pos.distance = glm::length(glm::vec3(p_eye));//can be approximated p_eye.z
 	gs->raster_pos.coords = glm::vec4(gs->get_window_coords(glm::vec3(p_clip) / p_clip.w), p_clip.w);
 }

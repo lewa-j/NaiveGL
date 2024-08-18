@@ -3,12 +3,6 @@
 #include "gl_exports.h"
 #include <glm/trigonometric.hpp>
 
-
-glm::vec4 gl_state::get_vertex_color_current(const glm::vec4& vertex_view, bool front_face)
-{
-	return get_vertex_color(vertex_view, current_color, get_eye_normal(), front_face);
-}
-
 glm::vec4 gl_state::get_vertex_color(const glm::vec4& vertex_view, const glm::vec4& color, glm::vec3 normal, bool front_face)
 {
 	if (!lighting_enabled)

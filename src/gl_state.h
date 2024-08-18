@@ -308,10 +308,9 @@ struct gl_state
 	glm::mat4 get_inv_modelview();
 	const glm::mat4 &get_projection();
 	const glm::mat4 &get_mtx_texture();
-	glm::vec3 get_eye_normal();
-	glm::vec4 get_vertex_color_current(const glm::vec4 &vertex_view, bool front_face);
+	glm::vec3 get_eye_normal(const glm::vec3 &norm);
 	glm::vec4 get_vertex_color(const glm::vec4& vertex_view, const glm::vec4& color, glm::vec3 normal, bool front_face);
-	glm::vec4 get_vertex_texcoord(const glm::vec4 &v_object, const glm::vec4 &v_eye);
+	glm::vec4 get_vertex_texcoord(glm::vec4 tc_in, const glm::vec3 &norm, const glm::vec4 &v_object, const glm::vec4 &v_eye);
 	glm::vec3 get_window_coords(glm::vec3 device_coords);
 	bool clip_point(const glm::vec4 &v_eye, const glm::vec4 &v_clip);
 	void update_color_material();
@@ -346,6 +345,7 @@ struct gl_frag_data
 	float z;
 };
 
+void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 tex, glm::vec3 norm);
 void gl_emit_fragment(gl_state& st, int x, int y, gl_frag_data& data);
 void gl_emit_point(gl_state &st, const gl_processed_vertex &vertex);
 void gl_emit_line(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1);

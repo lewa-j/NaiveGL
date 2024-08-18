@@ -2,10 +2,8 @@
 #include "gl_state.h"
 #include "gl_exports.h"
 
-glm::vec4 gl_state::get_vertex_texcoord(const glm::vec4 &vertex_object, const glm::vec4 &vertex_eye)
+glm::vec4 gl_state::get_vertex_texcoord(glm::vec4 tr, const glm::vec3 &norm, const glm::vec4 &vertex_object, const glm::vec4 &vertex_eye)
 {
-	glm::vec4 tr = current_tex_coord;
-
 	for (int i = 0; i < 4; i++)
 	{
 		const gl_state::texGen &tg = texgen[i];
@@ -26,7 +24,7 @@ glm::vec4 gl_state::get_vertex_texcoord(const glm::vec4 &vertex_object, const gl
 		|| (texgen[1].enabled && texgen[1].mode == GL_SPHERE_MAP))
 	{
 		glm::vec3 u = glm::normalize(glm::vec3(vertex_eye));
-		glm::vec3 eye_normal = get_eye_normal();
+		glm::vec3 eye_normal = get_eye_normal(norm);
 		glm::vec3 r = u - 2.0f * eye_normal * glm::dot(eye_normal, u);//same as reflect(u, eye_normal)
 		r.z += 1;
 		float im = 1.0f / (2.0f * glm::length(r));//for normalization
