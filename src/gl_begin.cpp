@@ -42,8 +42,30 @@ void APIENTRY glBegin(GLenum mode)
 	gs->line_stipple_counter = 0;
 }
 
+void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+
+	if (gs->display_list_begun)
+	{
+		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tVertex, {x,y,z,w} });
+		if (!gs->display_list_execute)
+			return;
+	}
+
+	glm::vec4 v_object(x, y, z, w);
+	gl_emit_vertex(gs, v_object, gs->current_color, gs->current_tex_coord, gs->current_normal);
+}
+
 void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 tex, glm::vec3 norm)
 {
+	if (gs->begin_primitive_mode == -1)
+	{
+		//undefined behaviour
+		return;
+	}
+
 	gl_full_vertex vertex;
 	vertex.position = gs->get_modelview() * v_object;
 	vertex.tex_coord = gs->get_vertex_texcoord(tex, norm, v_object, vertex.position);
@@ -214,28 +236,6 @@ void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 t
 	}
 
 	gs->begin_vertex_count++;
-}
-
-void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
-{
-	gl_state *gs = gl_current_state();
-	if (!gs) return;
-
-	if (gs->display_list_begun)
-	{
-		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tVertex, {x,y,z,w} });
-		if (!gs->display_list_execute)
-			return;
-	}
-
-	if (gs->begin_primitive_mode == -1)
-	{
-		//undefined behaviour
-		return;
-	}
-
-	glm::vec4 v_object(x, y, z, w);
-	gl_emit_vertex(gs, v_object, gs->current_color, gs->current_tex_coord, gs->current_normal);
 }
 
 void APIENTRY glEnd()
