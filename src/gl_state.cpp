@@ -177,6 +177,23 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 		eval_maps_1d[i] = mapSpec1D{};
 		eval_maps_2d[i] = mapSpec2D{};
 	}
+	eval_maps_1d[0].control_points = { 1,1,1,1 };
+	eval_maps_1d[2].control_points = { 0,0,1 };
+	eval_maps_1d[3].control_points = { 0 };
+	eval_maps_1d[4].control_points = { 0,0};
+	eval_maps_1d[5].control_points = { 0,0,0 };
+	eval_maps_1d[6].control_points = { 0,0,0,1 };
+	eval_maps_1d[7].control_points = { 0,0,0 };
+	eval_maps_1d[8].control_points = { 0,0,0,1 };
+
+	eval_maps_2d[0].control_points = { 1,1,1,1 };
+	eval_maps_2d[2].control_points = { 0,0,1 };
+	eval_maps_2d[3].control_points = { 0 };
+	eval_maps_2d[4].control_points = { 0,0 };
+	eval_maps_2d[5].control_points = { 0,0,0 };
+	eval_maps_2d[6].control_points = { 0,0,0,1 };
+	eval_maps_2d[7].control_points = { 0,0,0 };
+	eval_maps_2d[8].control_points = { 0,0,0,1 };
 	eval_auto_normal = false;
 	eval_1d_grid_segments = 1;
 	eval_1d_grid_domain[0] = 0;
