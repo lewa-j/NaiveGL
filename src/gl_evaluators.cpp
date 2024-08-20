@@ -354,7 +354,136 @@ void APIENTRY glMapGrid2f(GLint un, GLfloat u1, GLfloat u2, GLint vn, GLfloat v1
 void APIENTRY glMapGrid2d(GLint un, GLdouble u1, GLdouble u2, GLint vn, GLdouble v1, GLdouble v2)
 { glMapGrid2f(un, (float)u1, (float)u2, vn, (float)v1, (float)v2); }
 
-void APIENTRY glEvalMesh1(GLenum mode, GLint p1, GLint p2) {}
-void APIENTRY glEvalMesh2(GLenum mode, GLint p1, GLint p2, GLint q1, GLint q2) {}
-void APIENTRY glEvalPoint1(GLint p) {}
-void APIENTRY glEvalPoint2(GLint p, GLint q) {}
+static void gl_evalPoint1(gl_state *gs, float du, GLint p)
+{
+	if (p == 0)
+		glEvalCoord1f(gs->eval_1d_grid_domain[0]);
+	else if (p == gs->eval_1d_grid_segments)
+		glEvalCoord1f(gs->eval_1d_grid_domain[1]);
+	else
+		glEvalCoord1f(p * du + gs->eval_1d_grid_domain[0]);
+}
+
+void APIENTRY glEvalMesh1(GLenum mode, GLint p1, GLint p2)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (mode != GL_POINT && mode != GL_LINE)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, mode);
+		return;
+	}
+
+	float du = (gs->eval_1d_grid_domain[1] - gs->eval_1d_grid_domain[0]) / gs->eval_1d_grid_segments;
+
+	glBegin((mode == GL_POINT) ? GL_POINTS : GL_LINE_STRIP);
+	for (int i = p1; i <= p2; i++)
+	{
+		gl_evalPoint1(gs, du, i);
+	}
+	glEnd();
+}
+
+static void gl_evalPoint2(gl_state *gs, float du, float dv, GLint p, GLint q)
+{
+	float u;
+	float v;
+	if (p == 0)
+		u = gs->eval_2d_grid_domain_u[0];
+	else if (p == gs->eval_2d_grid_segments[0])
+		u = gs->eval_2d_grid_domain_u[1];
+	else
+		u = p * du + gs->eval_2d_grid_domain_u[0];
+
+	if (q == 0)
+		v = gs->eval_2d_grid_domain_v[0];
+	else if (q == gs->eval_2d_grid_segments[1])
+		v = gs->eval_2d_grid_domain_v[1];
+	else
+		v = q * dv + gs->eval_2d_grid_domain_v[0];
+
+	glEvalCoord2f(u, v);
+}
+
+void APIENTRY glEvalMesh2(GLenum mode, GLint p1, GLint p2, GLint q1, GLint q2)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (mode != GL_POINT && mode != GL_LINE && mode != GL_FILL)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, mode);
+		return;
+	}
+
+	float du = (gs->eval_2d_grid_domain_u[1] - gs->eval_2d_grid_domain_u[0]) / gs->eval_2d_grid_segments[0];
+	float dv = (gs->eval_2d_grid_domain_v[1] - gs->eval_2d_grid_domain_v[0]) / gs->eval_2d_grid_segments[1];
+	if (mode == GL_FILL)
+	{
+		for (int i = q1; i < q2; i++)
+		{
+			glBegin(GL_QUAD_STRIP);
+			for (int j = p1; i <= p2; i++)
+			{
+				gl_evalPoint2(gs, du, dv, j, i);
+				gl_evalPoint2(gs, du, dv, j, (i + 1));
+			}
+			glEnd();
+		}
+	}
+	else if (mode == GL_LINE)
+	{
+		for (int i = q1; i <= q2; i++)
+		{
+			glBegin(GL_LINE_STRIP);
+			for (int j = p1; i <= p2; i++)
+			{
+				gl_evalPoint2(gs, du, dv, j, i);
+			}
+			glEnd();
+		}
+		for (int i = p1; i <= p2; i++)
+		{
+			glBegin(GL_LINE_STRIP);
+			for (int j = q1; i <= q2; i++)
+			{
+				gl_evalPoint2(gs, du, dv, i, j);
+			}
+			glEnd();
+		}
+	}
+	else if (mode == GL_POINT)
+	{
+		glBegin(GL_POINTS);
+		for (int i = q1; i <= q2; i++)
+		{
+			for (int j = p1; i <= p2; i++)
+			{
+				gl_evalPoint2(gs, du, dv, j, i);
+			}
+		}
+		glEnd();
+	}
+}
+
+void APIENTRY glEvalPoint1(GLint p)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+
+	float du = (gs->eval_1d_grid_domain[1] - gs->eval_1d_grid_domain[0]) / gs->eval_1d_grid_segments;
+	gl_evalPoint1(gs, du, p);
+}
+
+void APIENTRY glEvalPoint2(GLint p, GLint q)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+
+	float du = (gs->eval_2d_grid_domain_u[1] - gs->eval_2d_grid_domain_u[0]) / gs->eval_2d_grid_segments[0];
+	float dv = (gs->eval_2d_grid_domain_v[1] - gs->eval_2d_grid_domain_v[0]) / gs->eval_2d_grid_segments[1];
+	gl_evalPoint2(gs, du, dv, p, q);
+}
