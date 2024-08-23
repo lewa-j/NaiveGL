@@ -253,6 +253,13 @@ X(glEvalMesh2)
 X(glEvalPoint1)
 X(glEvalPoint2)
 
+X(glInitNames)
+X(glPopName)
+X(glPushName)
+X(glLoadName)
+X(glRenderMode)
+X(glSelectBuffer)
+
 X(glNewList)
 X(glEndList)
 X(glCallList)

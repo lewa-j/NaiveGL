@@ -31,6 +31,8 @@ constexpr int gl_max_aux_buffers = 0;
 
 constexpr int gl_max_eval_order = 8;
 
+constexpr int gl_max_name_stack_depth = 64;
+
 struct gl_framebuffer
 {
 	int width = 0;
@@ -290,6 +292,20 @@ struct gl_state
 	GLfloat eval_2d_grid_domain_u[2]{ 0, 1 };
 	GLfloat eval_2d_grid_domain_v[2]{ 0, 1 };
 
+	GLint render_mode = GL_RENDER;
+	GLint select_name_stack[gl_max_name_stack_depth];
+	int select_name_sp = 0;
+	GLuint select_min_depth = 0;
+	GLuint select_max_depth = 0;
+	bool select_hit = false;
+	//client state
+	GLuint *selection_array = nullptr;
+	GLsizei selection_array_max_size = 0;
+	bool select_overflow = false;
+
+	GLuint *selection_array_pos = nullptr;
+	int select_hit_records = 0;
+
 	int display_list_begun = 0;
 	bool display_list_execute = false;
 	GLuint display_list_base = 0;
@@ -357,6 +373,8 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 void gl_rasterize_clipped_triangle(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1, const gl_processed_vertex& v2);
 
 void gl_dither(glm::vec4& color, int x, int y);
+
+void gl_write_selection_hit_record(gl_state &st);
 
 #define VALIDATE_NOT_BEGIN_MODE \
 if (gs->begin_primitive_mode != -1)\

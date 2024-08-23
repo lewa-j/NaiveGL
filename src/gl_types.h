@@ -341,6 +341,10 @@ inline bool is_pow(int a) { return !(a & (a - 1)); }
 
 #define GL_AUTO_NORMAL 0x0D80
 
+#define GL_RENDER 0x1C00
+#define GL_FEEDBACK 0x1C01
+#define GL_SELECT 0x1C02
+
 #define GL_COMPILE 0x1300
 #define GL_COMPILE_AND_EXECUTE 0x1301
 

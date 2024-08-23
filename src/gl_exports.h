@@ -285,6 +285,12 @@ EXPORT void APIENTRY glEvalMesh1(GLenum mode, GLint p1, GLint p2);
 EXPORT void APIENTRY glEvalMesh2(GLenum mode, GLint p1, GLint p2, GLint q1, GLint q2);
 EXPORT void APIENTRY glEvalPoint1(GLint p);
 EXPORT void APIENTRY glEvalPoint2(GLint p, GLint q);
+EXPORT void APIENTRY glInitNames(void);
+EXPORT void APIENTRY glPopName(void);
+EXPORT void APIENTRY glPushName(GLuint name);
+EXPORT void APIENTRY glLoadName(GLuint name);
+EXPORT GLint APIENTRY glRenderMode(GLenum mode);
+EXPORT void APIENTRY glSelectBuffer(GLsizei size, GLuint *buffer);
 
 EXPORT void APIENTRY glNewList(GLuint list, GLenum mode);
 EXPORT void APIENTRY glEndList(void);

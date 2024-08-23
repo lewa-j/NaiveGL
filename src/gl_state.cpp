@@ -205,6 +205,17 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	eval_2d_grid_domain_v[0] = 0;
 	eval_2d_grid_domain_v[1] = 1;
 
+	render_mode = GL_RENDER;
+	select_name_sp = 0;
+	select_min_depth = UINT_MAX;
+	select_max_depth = 0;
+	bool select_hit = false;
+	selection_array = nullptr;
+	selection_array_pos = nullptr;
+	selection_array_max_size = 0;
+	select_overflow = false;
+	select_hit_records = 0;
+
 	display_list_begun = 0;
 	display_list_execute = false;
 	display_list_base = 0;
@@ -214,6 +225,51 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 void gl_state::destroy()
 {
 	display_list_indices.clear();
+}
+
+GLint APIENTRY glRenderMode(GLenum mode)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return 0;
+	if (gs->begin_primitive_mode != -1)
+	{
+		gl_set_error(GL_INVALID_OPERATION);
+		return 0;
+	}
+
+	if (mode < GL_RENDER || mode > GL_SELECT)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, mode);
+		return 0;
+	}
+
+	if (mode == GL_SELECT && !gs->selection_array)
+	{
+		gl_set_error(GL_INVALID_OPERATION);
+		return 0;
+	}
+
+	GLint ret = 0;
+
+	if (gs->render_mode == GL_SELECT)
+	{
+		if (gs->select_hit)
+			gl_write_selection_hit_record(*gs);
+
+		ret = gs->select_overflow ? -1 : gs->select_hit_records;
+		gs->select_overflow = false;
+		gs->select_name_sp = 0;
+		gs->selection_array_pos = gs->selection_array;
+	}
+
+	if (mode == GL_SELECT)
+	{
+		gs->select_hit = false;
+		gs->select_overflow = false;
+	}
+
+	gs->render_mode = mode;
+	return ret;
 }
 
 void APIENTRY glEnable(GLenum cap)

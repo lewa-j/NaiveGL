@@ -252,6 +252,12 @@ EXPORTS
 	glEvalMesh2
 	glEvalPoint1
 	glEvalPoint2
+	glInitNames
+	glPopName
+	glPushName
+	glLoadName
+	glRenderMode
+	glSelectBuffer
 
 	glNewList
 	glEndList

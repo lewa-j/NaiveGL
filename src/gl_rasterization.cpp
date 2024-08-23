@@ -389,6 +389,15 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 	glm::vec3 device_c = glm::vec3(vertex.clip) / vertex.clip.w;
 	glm::vec3 win_c = st.get_window_coords(device_c);
 
+	if (st.render_mode == GL_SELECT)
+	{
+		GLuint d = (GLuint)roundf(win_c.z * UINT_MAX);
+		st.select_min_depth = glm::min(st.select_min_depth, d);
+		st.select_max_depth = glm::max(st.select_max_depth, d);
+		st.select_hit = true;
+		return;
+	}
+
 	gl_frag_data data;
 	data.color = vertex.color;
 	data.tex_coord = vertex.tex_coord;
@@ -451,6 +460,18 @@ void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_pro
 
 	glm::vec3 device_c1 = glm::vec3(v1.clip) / v1.clip.w;
 	glm::vec3 win_c1 = st.get_window_coords(device_c1);
+
+	if (st.render_mode == GL_SELECT)
+	{
+		GLuint d = (GLuint)roundf(win_c0.z * UINT_MAX);
+		st.select_min_depth = glm::min(st.select_min_depth, d);
+		st.select_max_depth = glm::max(st.select_max_depth, d);
+		d = (GLuint)roundf(win_c1.z * UINT_MAX);
+		st.select_min_depth = glm::min(st.select_min_depth, d);
+		st.select_max_depth = glm::max(st.select_max_depth, d);
+		st.select_hit = true;
+		return;
+	}
 
 	glm::ivec2 ic0(floor(win_c0));
 	glm::ivec2 ic1(floor(win_c1));
@@ -599,6 +620,21 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 
 		if (st.last_side != (st.cull_face_mode == GL_FRONT))
 			return;
+	}
+
+	if (st.render_mode == GL_SELECT)
+	{
+		GLuint d = (GLuint)roundf(st.get_window_coords(glm::vec3(v0.clip) / v0.clip.w).z * UINT_MAX);
+		st.select_min_depth = glm::min(st.select_min_depth, d);
+		st.select_max_depth = glm::max(st.select_max_depth, d);
+		d = (GLuint)roundf(st.get_window_coords(glm::vec3(v1.clip) / v1.clip.w).z * UINT_MAX);
+		st.select_min_depth = glm::min(st.select_min_depth, d);
+		st.select_max_depth = glm::max(st.select_max_depth, d);
+		d = (GLuint)roundf(st.get_window_coords(glm::vec3(v2.clip) / v2.clip.w).z * UINT_MAX);
+		st.select_min_depth = glm::min(st.select_min_depth, d);
+		st.select_max_depth = glm::max(st.select_max_depth, d);
+		st.select_hit = true;
+		return;
 	}
 
 	if (st.polygon_mode[st.last_side] == GL_LINE)
