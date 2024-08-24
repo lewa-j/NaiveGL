@@ -226,6 +226,10 @@ void APIENTRY glClear(GLbitfield mask)
 		gl_set_error_a(GL_INVALID_VALUE, mask);
 		return;
 	}
+
+	if (gs->render_mode == GL_SELECT)
+		return;
+
 	gl_framebuffer& fb = *gs->framebuffer;
 
 	glm::ivec4 s = gs->scissor_rect;

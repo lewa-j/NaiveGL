@@ -374,7 +374,8 @@ void gl_rasterize_clipped_triangle(gl_state& st, const gl_processed_vertex& v0, 
 
 void gl_dither(glm::vec4& color, int x, int y);
 
-void gl_write_selection_hit_record(gl_state &st);
+void gl_add_selection_depth(gl_state &st, float z);
+void gl_flush_selection_hit_record(gl_state &st);
 
 #define VALIDATE_NOT_BEGIN_MODE \
 if (gs->begin_primitive_mode != -1)\

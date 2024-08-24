@@ -254,7 +254,7 @@ GLint APIENTRY glRenderMode(GLenum mode)
 	if (gs->render_mode == GL_SELECT)
 	{
 		if (gs->select_hit)
-			gl_write_selection_hit_record(*gs);
+			gl_flush_selection_hit_record(*gs);
 
 		ret = gs->select_overflow ? -1 : gs->select_hit_records;
 		gs->select_overflow = false;

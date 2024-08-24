@@ -17,6 +17,13 @@ void APIENTRY glRasterPos4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 	gs->raster_pos.color = gs->get_vertex_color(p_eye, gs->current_color, gs->get_eye_normal(gs->current_normal), true);
 	gs->raster_pos.distance = glm::length(glm::vec3(p_eye));//can be approximated p_eye.z
 	gs->raster_pos.coords = glm::vec4(gs->get_window_coords(glm::vec3(p_clip) / p_clip.w), p_clip.w);
+
+	if (gs->render_mode == GL_SELECT)
+	{
+		gl_add_selection_depth(*gs, gs->raster_pos.coords.z);
+		gs->select_hit = true;
+		return;
+	}
 }
 
 #define grp4f(x,y,z,w) glRasterPos4f((GLfloat)(x), (GLfloat)(y), (GLfloat)(z), (GLfloat)(w))
@@ -329,6 +336,9 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 	if (!gs->raster_pos.valid)
 		return;
 
+	if (gs->render_mode == GL_SELECT)
+		return;
+
 	const gl_state::pixelStore& ps = gs->pixel_unpack;
 	int row_length = (ps.row_length > 0) ? ps.row_length : width;
 
@@ -557,6 +567,9 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 		gs->raster_pos.coords += glm::vec4(xmove, ymove, 0, 0);
 		return;
 	}
+
+	if (gs->render_mode == GL_SELECT)
+		return;
 
 	const gl_state::pixelStore& ps = gs->pixel_unpack;
 	int row_length = (ps.row_length > 0) ? ps.row_length : width;

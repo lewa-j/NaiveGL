@@ -12,7 +12,7 @@ void APIENTRY glInitNames(void)
 		return;
 
 	if (gs->select_hit)
-		gl_write_selection_hit_record(*gs);
+		gl_flush_selection_hit_record(*gs);
 	gs->select_name_sp = 0;
 }
 
@@ -32,7 +32,7 @@ void APIENTRY glPopName(void)
 	}
 
 	if (gs->select_hit)
-		gl_write_selection_hit_record(*gs);
+		gl_flush_selection_hit_record(*gs);
 	gs->select_name_sp--;
 }
 
@@ -52,7 +52,7 @@ void APIENTRY glPushName(GLuint name)
 	}
 
 	if (gs->select_hit)
-		gl_write_selection_hit_record(*gs);
+		gl_flush_selection_hit_record(*gs);
 	gs->select_name_stack[gs->select_name_sp] = name;
 	gs->select_name_sp++;
 }
@@ -73,7 +73,7 @@ void APIENTRY glLoadName(GLuint name)
 	}
 
 	if (gs->select_hit)
-		gl_write_selection_hit_record(*gs);
+		gl_flush_selection_hit_record(*gs);
 	gs->select_name_stack[gs->select_name_sp - 1] = name;
 }
 
@@ -93,6 +93,13 @@ void APIENTRY glSelectBuffer(GLsizei size, GLuint *buffer)
 	gs->selection_array_max_size = size;
 }
 
+void gl_add_selection_depth(gl_state &st, float z)
+{
+	GLuint d = (GLuint)roundf(z * UINT_MAX);
+	st.select_min_depth = glm::min(st.select_min_depth, d);
+	st.select_max_depth = glm::max(st.select_max_depth, d);
+}
+
 void gl_sel_write(gl_state &st, GLuint val)
 {
 	if (st.selection_array_pos >= st.selection_array + st.selection_array_max_size)
@@ -105,7 +112,7 @@ void gl_sel_write(gl_state &st, GLuint val)
 	st.selection_array_pos++;
 }
 
-void gl_write_selection_hit_record(gl_state &st)
+void gl_flush_selection_hit_record(gl_state &st)
 {
 	if (!st.selection_array)
 		return;

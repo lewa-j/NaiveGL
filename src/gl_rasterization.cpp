@@ -391,9 +391,7 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 
 	if (st.render_mode == GL_SELECT)
 	{
-		GLuint d = (GLuint)roundf(win_c.z * UINT_MAX);
-		st.select_min_depth = glm::min(st.select_min_depth, d);
-		st.select_max_depth = glm::max(st.select_max_depth, d);
+		gl_add_selection_depth(st, win_c.z);
 		st.select_hit = true;
 		return;
 	}
@@ -463,12 +461,8 @@ void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_pro
 
 	if (st.render_mode == GL_SELECT)
 	{
-		GLuint d = (GLuint)roundf(win_c0.z * UINT_MAX);
-		st.select_min_depth = glm::min(st.select_min_depth, d);
-		st.select_max_depth = glm::max(st.select_max_depth, d);
-		d = (GLuint)roundf(win_c1.z * UINT_MAX);
-		st.select_min_depth = glm::min(st.select_min_depth, d);
-		st.select_max_depth = glm::max(st.select_max_depth, d);
+		gl_add_selection_depth(st, win_c0.z);
+		gl_add_selection_depth(st, win_c1.z);
 		st.select_hit = true;
 		return;
 	}
@@ -624,15 +618,9 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 
 	if (st.render_mode == GL_SELECT)
 	{
-		GLuint d = (GLuint)roundf(st.get_window_coords(glm::vec3(v0.clip) / v0.clip.w).z * UINT_MAX);
-		st.select_min_depth = glm::min(st.select_min_depth, d);
-		st.select_max_depth = glm::max(st.select_max_depth, d);
-		d = (GLuint)roundf(st.get_window_coords(glm::vec3(v1.clip) / v1.clip.w).z * UINT_MAX);
-		st.select_min_depth = glm::min(st.select_min_depth, d);
-		st.select_max_depth = glm::max(st.select_max_depth, d);
-		d = (GLuint)roundf(st.get_window_coords(glm::vec3(v2.clip) / v2.clip.w).z * UINT_MAX);
-		st.select_min_depth = glm::min(st.select_min_depth, d);
-		st.select_max_depth = glm::max(st.select_max_depth, d);
+		gl_add_selection_depth(st, st.get_window_coords(glm::vec3(v0.clip) / v0.clip.w).z);
+		gl_add_selection_depth(st, st.get_window_coords(glm::vec3(v1.clip) / v1.clip.w).z);
+		gl_add_selection_depth(st, st.get_window_coords(glm::vec3(v2.clip) / v2.clip.w).z);
 		st.select_hit = true;
 		return;
 	}
