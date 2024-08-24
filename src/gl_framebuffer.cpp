@@ -227,7 +227,7 @@ void APIENTRY glClear(GLbitfield mask)
 		return;
 	}
 
-	if (gs->render_mode == GL_SELECT)
+	if (gs->render_mode != GL_RENDER)
 		return;
 
 	gl_framebuffer& fb = *gs->framebuffer;

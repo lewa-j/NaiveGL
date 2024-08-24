@@ -345,6 +345,21 @@ inline bool is_pow(int a) { return !(a & (a - 1)); }
 #define GL_FEEDBACK 0x1C01
 #define GL_SELECT 0x1C02
 
+#define GL_2D 0x0600
+#define GL_3D 0x0601
+#define GL_3D_COLOR 0x0602
+#define GL_3D_COLOR_TEXTURE 0x0603
+#define GL_4D_COLOR_TEXTURE 0x0604
+
+#define GL_PASS_THROUGH_TOKEN 0x0700
+#define GL_POINT_TOKEN 0x0701
+#define GL_LINE_TOKEN 0x0702
+#define GL_POLYGON_TOKEN 0x0703
+#define GL_BITMAP_TOKEN 0x0704
+#define GL_DRAW_PIXEL_TOKEN 0x0705
+#define GL_COPY_PIXEL_TOKEN 0x0706
+#define GL_LINE_RESET_TOKEN 0x0707
+
 #define GL_COMPILE 0x1300
 #define GL_COMPILE_AND_EXECUTE 0x1301
 

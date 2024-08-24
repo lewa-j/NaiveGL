@@ -83,6 +83,12 @@ void APIENTRY glSelectBuffer(GLsizei size, GLuint *buffer)
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
 
+	if (size <= 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
 	if (gs->render_mode == GL_SELECT)
 	{
 		gl_set_error(GL_INVALID_OPERATION);

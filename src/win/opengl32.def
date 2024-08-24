@@ -258,6 +258,8 @@ EXPORTS
 	glLoadName
 	glRenderMode
 	glSelectBuffer
+	glFeedbackBuffer
+	glPassThrough
 
 	glNewList
 	glEndList

@@ -338,6 +338,12 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 
 	if (gs->render_mode == GL_SELECT)
 		return;
+	else if (gs->render_mode == GL_FEEDBACK)
+	{
+		gl_feedback_write(*gs, GL_DRAW_PIXEL_TOKEN);
+		gl_feedback_write_vertex(*gs, gs->raster_pos.coords, gs->raster_pos.color, gs->raster_pos.tex_coord);
+		return;
+	}
 
 	const gl_state::pixelStore& ps = gs->pixel_unpack;
 	int row_length = (ps.row_length > 0) ? ps.row_length : width;
@@ -570,6 +576,12 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 
 	if (gs->render_mode == GL_SELECT)
 		return;
+	else if (gs->render_mode == GL_FEEDBACK)
+	{
+		gl_feedback_write(*gs, GL_BITMAP_TOKEN);
+		gl_feedback_write_vertex(*gs, gs->raster_pos.coords, gs->raster_pos.color, gs->raster_pos.tex_coord);
+		return;
+	}
 
 	const gl_state::pixelStore& ps = gs->pixel_unpack;
 	int row_length = (ps.row_length > 0) ? ps.row_length : width;
@@ -840,6 +852,18 @@ void APIENTRY glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 	if (width < 0 || height < 0)
 	{
 		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
+	if (!gs->raster_pos.valid)
+		return;
+
+	if (gs->render_mode == GL_SELECT)
+		return;
+	else if (gs->render_mode == GL_FEEDBACK)
+	{
+		gl_feedback_write(*gs, GL_COPY_PIXEL_TOKEN);
+		gl_feedback_write_vertex(*gs, gs->raster_pos.coords, gs->raster_pos.color, gs->raster_pos.tex_coord);
 		return;
 	}
 

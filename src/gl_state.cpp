@@ -216,6 +216,13 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	select_overflow = false;
 	select_hit_records = 0;
 
+	feedback_array_max_size = 0;
+	feedback_type = 0;
+	feedback_array = nullptr;
+	feedback_overflow = false;
+	feedback_array_pos = nullptr;
+	feedback_reset_line = true;
+
 	display_list_begun = 0;
 	display_list_execute = false;
 	display_list_base = 0;
@@ -243,12 +250,6 @@ GLint APIENTRY glRenderMode(GLenum mode)
 		return 0;
 	}
 
-	if (mode == GL_SELECT && !gs->selection_array)
-	{
-		gl_set_error(GL_INVALID_OPERATION);
-		return 0;
-	}
-
 	GLint ret = 0;
 
 	if (gs->render_mode == GL_SELECT)
@@ -258,14 +259,39 @@ GLint APIENTRY glRenderMode(GLenum mode)
 
 		ret = gs->select_overflow ? -1 : gs->select_hit_records;
 		gs->select_overflow = false;
+		gs->select_hit_records = 0;
 		gs->select_name_sp = 0;
 		gs->selection_array_pos = gs->selection_array;
+	}
+	else if (gs->render_mode == GL_FEEDBACK)
+	{
+		ret = gs->feedback_overflow ? -1 : (int)(gs->feedback_array_pos - gs->feedback_array);
+		gs->feedback_overflow = false;
+		gs->feedback_array_pos = gs->feedback_array;
+	}
+
+	if (mode == GL_SELECT && !gs->selection_array)
+	{
+		gl_set_error(GL_INVALID_OPERATION);
+		return ret;
+	}
+
+	if (mode == GL_FEEDBACK && !gs->feedback_array)
+	{
+		gl_set_error(GL_INVALID_OPERATION);
+		return ret;
 	}
 
 	if (mode == GL_SELECT)
 	{
 		gs->select_hit = false;
 		gs->select_overflow = false;
+		gs->selection_array_pos = gs->selection_array;
+	}
+	else if (mode == GL_FEEDBACK)
+	{
+		gs->feedback_overflow = false;
+		gs->feedback_array_pos = gs->feedback_array;
 	}
 
 	gs->render_mode = mode;

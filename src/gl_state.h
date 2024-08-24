@@ -146,7 +146,7 @@ struct gl_state
 	} texgen[4];
 	glm::vec4 clipplanes[gl_max_user_clip_planes];
 	uint32_t enabled_clipplanes = 0;
-	struct {
+	struct rasterPos {
 		glm::vec4 coords{ 0,0,0,1 }; //window xyz, clip w
 		float distance = 0;
 		bool valid = true;
@@ -302,9 +302,16 @@ struct gl_state
 	GLuint *selection_array = nullptr;
 	GLsizei selection_array_max_size = 0;
 	bool select_overflow = false;
-
 	GLuint *selection_array_pos = nullptr;
 	int select_hit_records = 0;
+
+	//client state
+	GLsizei feedback_array_max_size = 0;
+	GLenum feedback_type = 0;
+	GLfloat *feedback_array = nullptr;
+	bool feedback_overflow = false;
+	GLfloat *feedback_array_pos = nullptr;
+	bool feedback_reset_line = true;
 
 	int display_list_begun = 0;
 	bool display_list_execute = false;
@@ -376,6 +383,11 @@ void gl_dither(glm::vec4& color, int x, int y);
 
 void gl_add_selection_depth(gl_state &st, float z);
 void gl_flush_selection_hit_record(gl_state &st);
+
+void gl_feedback_write(gl_state &st, float f);
+void gl_feedback_write_vertex(gl_state &st, glm::vec4 pos, glm::vec4 color, glm::vec4 tex_coord);
+void gl_feedback_write_vertex(gl_state &st, const gl_processed_vertex &v);
+
 
 #define VALIDATE_NOT_BEGIN_MODE \
 if (gs->begin_primitive_mode != -1)\

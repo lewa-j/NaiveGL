@@ -395,6 +395,12 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 		st.select_hit = true;
 		return;
 	}
+	else if (st.render_mode == GL_FEEDBACK)
+	{
+		gl_feedback_write(st, GL_POINT_TOKEN);
+		gl_feedback_write_vertex(st, vertex);
+		return;
+	}
 
 	gl_frag_data data;
 	data.color = vertex.color;
@@ -453,6 +459,15 @@ static bool line_stipple(gl_state &st)
 
 void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1)
 {
+	if (st.render_mode == GL_FEEDBACK)
+	{
+		gl_feedback_write(st, (float) (st.feedback_reset_line ? GL_LINE_RESET_TOKEN : GL_LINE_TOKEN));
+		st.feedback_reset_line = false;
+		gl_feedback_write_vertex(st, v0);
+		gl_feedback_write_vertex(st, v1);
+		return;
+	}
+
 	glm::vec3 device_c0 = glm::vec3(v0.clip) / v0.clip.w;
 	glm::vec3 win_c0 = st.get_window_coords(device_c0);
 
@@ -630,6 +645,16 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 		if (v0.edge) gl_rasterize_line(st, v0, v1);
 		if (v1.edge) gl_rasterize_line(st, v1, v2);
 		if (v2.edge) gl_rasterize_line(st, v2, v0);
+		return;
+	}
+
+	if (st.render_mode == GL_FEEDBACK)
+	{
+		gl_feedback_write(st, GL_POLYGON_TOKEN);
+		gl_feedback_write(st, 3);
+		gl_feedback_write_vertex(st, v0);
+		gl_feedback_write_vertex(st, v1);
+		gl_feedback_write_vertex(st, v2);
 		return;
 	}
 

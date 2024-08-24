@@ -291,7 +291,8 @@ EXPORT void APIENTRY glPushName(GLuint name);
 EXPORT void APIENTRY glLoadName(GLuint name);
 EXPORT GLint APIENTRY glRenderMode(GLenum mode);
 EXPORT void APIENTRY glSelectBuffer(GLsizei size, GLuint *buffer);
-
+EXPORT void APIENTRY glFeedbackBuffer(GLsizei size, GLenum type, GLfloat *buffer);
+EXPORT void APIENTRY glPassThrough(GLfloat token);
 EXPORT void APIENTRY glNewList(GLuint list, GLenum mode);
 EXPORT void APIENTRY glEndList(void);
 EXPORT void APIENTRY glCallList(GLuint list);

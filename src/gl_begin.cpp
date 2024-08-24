@@ -40,6 +40,7 @@ void APIENTRY glBegin(GLenum mode)
 	gs->begin_primitive_mode = mode;
 	gs->begin_vertex_count = 0;
 	gs->line_stipple_counter = 0;
+	gs->feedback_reset_line = true;
 }
 
 void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
@@ -99,6 +100,7 @@ void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 t
 		{
 			gl_emit_line(*gs, gs->last_vertices[0], vertex);
 			gs->line_stipple_counter = 0;
+			gs->feedback_reset_line = true;
 		}
 		else
 			gs->last_vertices[0] = vertex;

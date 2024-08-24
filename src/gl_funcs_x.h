@@ -259,6 +259,8 @@ X(glPushName)
 X(glLoadName)
 X(glRenderMode)
 X(glSelectBuffer)
+X(glFeedbackBuffer)
+X(glPassThrough)
 
 X(glNewList)
 X(glEndList)
