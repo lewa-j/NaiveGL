@@ -158,7 +158,7 @@ if (pname != GL_SHININESS)\
 }
 
 #define VALIDATE_MAT_PNAME_V \
-if ((pname < GL_EMISSION || pname > GL_AMBIENT_AND_DIFFUSE) && (pname < GL_AMBIENT && pname > GL_SPECULAR))\
+if ((pname < GL_EMISSION || pname > GL_COLOR_INDEXES) && (pname < GL_AMBIENT && pname > GL_SPECULAR))\
 {\
 	gl_set_error_a(GL_INVALID_ENUM, pname);\
 	return;\
@@ -218,6 +218,7 @@ void APIENTRY glMaterialf(GLenum face, GLenum pname, GLfloat param)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+
 	if (gs->display_list_begun)
 	{
 		gl_display_list_call call{ gl_display_list_call::tMaterial };
@@ -242,6 +243,10 @@ void APIENTRY glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+
+	if (pname == GL_COLOR_INDEXES)
+		return;
+
 	if (gs->display_list_begun)
 	{
 		gl_display_list_call call{ gl_display_list_call::tMaterial };
@@ -249,7 +254,7 @@ void APIENTRY glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
 		call.argsi[1] = pname;
 		if (pname == GL_SHININESS)
 			call.argsf[0] = params[0];
-		else
+		else if (pname == GL_EMISSION || pname == GL_AMBIENT_AND_DIFFUSE || (pname >= GL_AMBIENT && pname <= GL_SPECULAR))
 			memcpy(call.argsf, params, 16);
 
 		gs->display_list_indices[0].calls.push_back(call);
@@ -270,6 +275,10 @@ void APIENTRY glMaterialiv(GLenum face, GLenum pname, const GLint *params)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+
+	if (pname == GL_COLOR_INDEXES)
+		return;
+
 	if (gs->display_list_begun)
 	{
 		gl_display_list_call call{ gl_display_list_call::tMaterial };
@@ -277,7 +286,7 @@ void APIENTRY glMaterialiv(GLenum face, GLenum pname, const GLint *params)
 		call.argsi[1] = pname;
 		if (pname == GL_SHININESS)
 			call.argsf[0] = (GLfloat)params[0];
-		else
+		else if (pname == GL_EMISSION || pname == GL_AMBIENT_AND_DIFFUSE || (pname >= GL_AMBIENT && pname <= GL_SPECULAR))
 		{
 			call.argsf[0] = GLtof(params[0]);
 			call.argsf[1] = GLtof(params[1]);

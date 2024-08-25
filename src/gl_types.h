@@ -110,6 +110,7 @@ inline bool is_pow(int a) { return !(a & (a - 1)); }
 #define GL_EMISSION 0x1600
 #define GL_SHININESS 0x1601
 #define GL_AMBIENT_AND_DIFFUSE 0x1602
+#define GL_COLOR_INDEXES 0x1603
 
 #define GL_LIGHT_MODEL_LOCAL_VIEWER 0x0B51
 #define GL_LIGHT_MODEL_TWO_SIDE 0x0B52
