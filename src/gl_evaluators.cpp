@@ -173,6 +173,12 @@ void APIENTRY glEvalCoord1f(GLfloat u)
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 
+	if (gs->begin_primitive_mode == -1)
+	{
+		//undefined behaviour
+		return;
+	}
+
 	if (!(gs->enabled_eval_maps & 0x180)) // GL_MAP1_VERTEX_3 and GL_MAP1_VERTEX_4 disabled
 		return;
 
@@ -244,6 +250,12 @@ void APIENTRY glEvalCoord2f(GLfloat u, GLfloat v)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+
+	if (gs->begin_primitive_mode == -1)
+	{
+		//undefined behaviour
+		return;
+	}
 
 	if (!(gs->enabled_eval_maps & 0x30000)) // GL_MAP2_VERTEX_3 and GL_MAP2_VERTEX_4 disabled
 		return;
