@@ -2,7 +2,7 @@
 #include "gl_state.h"
 #include "gl_exports.h"
 
-EXPORT void APIENTRY glNewList(GLuint list, GLenum mode)
+void APIENTRY glNewList(GLuint list, GLenum mode)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
@@ -32,7 +32,7 @@ EXPORT void APIENTRY glNewList(GLuint list, GLenum mode)
 	gs->display_list_indices[0] = {};
 }
 
-EXPORT void APIENTRY glEndList(void)
+void APIENTRY glEndList(void)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
@@ -122,7 +122,7 @@ void gl_callList(GLuint list)
 	}
 }
 
-EXPORT void APIENTRY glCallList(GLuint list)
+void APIENTRY glCallList(GLuint list)
 {
 	if (list == 0)
 	{
@@ -133,7 +133,7 @@ EXPORT void APIENTRY glCallList(GLuint list)
 	gl_callList(list);
 }
 
-EXPORT void APIENTRY glCallLists(GLsizei n, GLenum type, const void* lists)
+void APIENTRY glCallLists(GLsizei n, GLenum type, const void* lists)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
@@ -210,7 +210,7 @@ EXPORT void APIENTRY glCallLists(GLsizei n, GLenum type, const void* lists)
 	}
 }
 
-EXPORT void APIENTRY glListBase(GLuint base)
+void APIENTRY glListBase(GLuint base)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
@@ -219,7 +219,7 @@ EXPORT void APIENTRY glListBase(GLuint base)
 	gs->display_list_base = base;
 }
 
-EXPORT GLuint APIENTRY glGenLists(GLsizei range)
+GLuint APIENTRY glGenLists(GLsizei range)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return 0;
@@ -235,6 +235,9 @@ EXPORT GLuint APIENTRY glGenLists(GLsizei range)
 		gl_set_error(GL_INVALID_VALUE);
 		return 0;
 	}
+
+	if (range == 0)
+		return 0;
 
 	int start = 1;
 	while (start < 0xFFFFFF)
@@ -262,7 +265,7 @@ EXPORT GLuint APIENTRY glGenLists(GLsizei range)
 	return 0;
 }
 
-EXPORT GLboolean APIENTRY glIsList(GLuint list)
+GLboolean APIENTRY glIsList(GLuint list)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return GL_FALSE;
@@ -280,7 +283,7 @@ EXPORT GLboolean APIENTRY glIsList(GLuint list)
 	return it->second.recorded ? GL_TRUE : GL_FALSE;
 }
 
-EXPORT void APIENTRY glDeleteLists(GLuint list, GLsizei range)
+void APIENTRY glDeleteLists(GLuint list, GLsizei range)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
