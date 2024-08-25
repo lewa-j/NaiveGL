@@ -103,6 +103,14 @@ EXPORTS
 	glColor4uiv
 	glColor4us
 	glColor4usv
+	glIndexs
+	glIndexsv
+	glIndexi
+	glIndexiv
+	glIndexf
+	glIndexfv
+	glIndexd
+	glIndexdv
 	glRects
 	glRecti
 	glRectf
