@@ -84,8 +84,8 @@ struct gl_texture
 struct gl_display_list_call
 {
 	int type;
-	float argsf[4];
-	int argsi[4];
+	float argsf[8];
+	int argsi[8];
 
 	enum eType
 	{
@@ -96,13 +96,25 @@ struct gl_display_list_call
 		tTexCoord,
 		tNormal,
 		tColor,
-		tMaterial,
-		tShadeModel,
+		tRect,
+		tDepthRange,
+		tViewport,
 		tMatrixMode,
+		tLoadMatrix,
+		tMultMatrix,
 		tLoadIdentity,
 		tRotate,
 		tTranslate,
-		tScale
+		tScale,
+		tFrustum,
+		tOrtho,
+		tPushMatrix,
+		tPopMatrix,
+		tEnable,
+		tDisable,
+		tTexGen,
+		tShadeModel,
+		tMaterial
 	};
 };
 
@@ -401,4 +413,12 @@ if (face != GL_FRONT && face != GL_BACK && face != GL_FRONT_AND_BACK)\
 {\
 	gl_set_error_a(GL_INVALID_ENUM, face);\
 	return;\
+}
+
+#define WRITE_DISPLAY_LIST(func_name, ...) \
+if (gs->display_list_begun) \
+{ \
+	gs->display_list_indices[0].calls.push_back({ gl_display_list_call::t##func_name, ##__VA_ARGS__ }); \
+	if (!gs->display_list_execute) \
+		return; \
 }

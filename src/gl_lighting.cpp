@@ -120,6 +120,7 @@ void APIENTRY glFrontFace(GLenum mode)
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
+
 	if (mode != GL_CW && mode != GL_CCW)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, mode);
@@ -133,14 +134,9 @@ void APIENTRY glShadeModel(GLenum mode)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-	if (gs->display_list_begun)
-	{
-		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tShadeModel, {}, {(int)mode} });
-		if (!gs->display_list_execute)
-			return;
-	}
-
+	WRITE_DISPLAY_LIST(ShadeModel, {}, { (int)mode });
 	VALIDATE_NOT_BEGIN_MODE;
+
 	if (mode != GL_FLAT && mode != GL_SMOOTH)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, mode);
@@ -148,13 +144,6 @@ void APIENTRY glShadeModel(GLenum mode)
 	}
 
 	gs->shade_model_flat = (mode == GL_FLAT);
-}
-
-#define VALIDATE_MAT_PNAME \
-if (pname != GL_SHININESS)\
-{\
-	gl_set_error(GL_INVALID_ENUM);\
-	return;\
 }
 
 #define VALIDATE_MAT_PNAME_V \
@@ -221,21 +210,21 @@ void APIENTRY glMaterialf(GLenum face, GLenum pname, GLfloat param)
 
 	if (gs->display_list_begun)
 	{
-		gl_display_list_call call{ gl_display_list_call::tMaterial };
-		call.argsi[0] = face;
-		call.argsi[1] = pname;
+		gl_display_list_call call{ gl_display_list_call::tMaterial, {}, {(int)face, (int)pname} };
 		if (pname == GL_SHININESS)
 			call.argsf[0] = param;
+
 		gs->display_list_indices[0].calls.push_back(call);
 		if (!gs->display_list_execute)
 			return;
 	}
 
 	VALIDATE_FACE;
-	VALIDATE_MAT_PNAME;
 
 	if (pname == GL_SHININESS)
 		set_material_shininess(gs, face, param);
+	else
+		gl_set_error(GL_INVALID_ENUM);
 }
 void APIENTRY glMateriali(GLenum face, GLenum pname, GLint param) { glMaterialf(face, pname, (GLfloat)param); }
 
@@ -249,9 +238,7 @@ void APIENTRY glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
 
 	if (gs->display_list_begun)
 	{
-		gl_display_list_call call{ gl_display_list_call::tMaterial };
-		call.argsi[0] = face;
-		call.argsi[1] = pname;
+		gl_display_list_call call{ gl_display_list_call::tMaterial, {}, {(int)face, (int)pname} };
 		if (pname == GL_SHININESS)
 			call.argsf[0] = params[0];
 		else if (pname == GL_EMISSION || pname == GL_AMBIENT_AND_DIFFUSE || (pname >= GL_AMBIENT && pname <= GL_SPECULAR))

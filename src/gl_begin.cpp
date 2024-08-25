@@ -16,15 +16,7 @@ void APIENTRY glBegin(GLenum mode)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-
-	if (gs->display_list_begun)
-	{
-		gl_display_list_call call{ gl_display_list_call::tBegin };
-		call.argsi[0] = mode;
-		gs->display_list_indices[0].calls.push_back(call);
-		if (!gs->display_list_execute)
-			return;
-	}
+	WRITE_DISPLAY_LIST(Begin, {}, { (int)mode });
 
 	if (gs->begin_primitive_mode != -1)
 	{
@@ -47,13 +39,7 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-
-	if (gs->display_list_begun)
-	{
-		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tVertex, {x,y,z,w} });
-		if (!gs->display_list_execute)
-			return;
-	}
+	WRITE_DISPLAY_LIST(Vertex, { x,y,z,w });
 
 	glm::vec4 v_object(x, y, z, w);
 	gl_emit_vertex(gs, v_object, gs->current_color, gs->current_tex_coord, gs->current_normal);
@@ -244,13 +230,7 @@ void APIENTRY glEnd()
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-
-	if (gs->display_list_begun)
-	{
-		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tEnd });
-		if (!gs->display_list_execute)
-			return;
-	}
+	WRITE_DISPLAY_LIST(End);
 
 	if (gs->begin_primitive_mode == -1)
 	{
@@ -275,14 +255,8 @@ void APIENTRY glEdgeFlag(GLboolean flag)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-	if (gs->display_list_begun)
-	{
-		gl_display_list_call call{ gl_display_list_call::tEdgeFlag };
-		call.argsi[0] = flag;
-		gs->display_list_indices[0].calls.push_back(call);
-		if (!gs->display_list_execute)
-			return;
-	}
+	WRITE_DISPLAY_LIST(EdgeFlag, {}, {flag});
+
 	gs->edge_flag = !!flag;
 }
 void APIENTRY glEdgeFlagv(GLboolean *flag) { glEdgeFlag(*flag); }
@@ -322,13 +296,7 @@ void APIENTRY glTexCoord4f(GLfloat s, GLfloat t, GLfloat r, GLfloat q)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-
-	if (gs->display_list_begun)
-	{
-		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tTexCoord, {s,t,r,q} });
-		if (!gs->display_list_execute)
-			return;
-	}
+	WRITE_DISPLAY_LIST(TexCoord, { s,t,r,q });
 
 	gs->current_tex_coord = glm::vec4(s, t, r, q);
 }
@@ -377,13 +345,7 @@ void APIENTRY glNormal3f(GLfloat nx, GLfloat ny, GLfloat nz)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-
-	if (gs->display_list_begun)
-	{
-		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tNormal, {nx, ny, nz} });
-		if (!gs->display_list_execute)
-			return;
-	}
+	WRITE_DISPLAY_LIST(Normal, { nx, ny, nz });
 
 	gs->current_normal = glm::vec3(nx, ny, nz);
 }
@@ -404,13 +366,7 @@ void APIENTRY glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-
-	if (gs->display_list_begun)
-	{
-		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tColor, {red,green,blue,alpha} });
-		if (!gs->display_list_execute)
-			return;
-	}
+	WRITE_DISPLAY_LIST(Color, { red,green,blue,alpha });
 
 	gs->current_color = glm::vec4(red, green, blue, alpha);
 
@@ -462,12 +418,28 @@ void APIENTRY glIndexdv(const GLdouble *c) {}
 
 void APIENTRY glRectf(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2)
 {
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+
+	int save_dl = gs->display_list_begun;
+	if (gs->display_list_begun)
+	{
+		gs->display_list_indices[0].calls.push_back({ gl_display_list_call::tRect, {x1,y1,x2,y2} });
+		if (!gs->display_list_execute)
+			return;
+
+		// prevent glBegin, glVertex, glEnd from writing this rect a second time
+		gs->display_list_begun = 0;
+	}
+
 	glBegin(GL_POLYGON);
 	glVertex2f(x1, y1);
 	glVertex2f(x2, y1);
 	glVertex2f(x2, y2);
 	glVertex2f(x1, y2);
 	glEnd();
+
+	gs->display_list_begun = save_dl;
 }
 
 #define grf(x1,y1,x2,y2) glRectf((GLfloat)(x1), (GLfloat)(y1), (GLfloat)(x2), (GLfloat)(y2))

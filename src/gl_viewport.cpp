@@ -24,6 +24,7 @@ void APIENTRY glDepthRange(GLdouble n, GLdouble f)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(DepthRange, { (float)n, (float)f });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	gs->viewport.dnear = (float)glm::clamp(n, 0.0, 1.0);
@@ -34,6 +35,7 @@ void APIENTRY glViewport(GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(Viewport, {}, { x,y,width,height });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (width < 0 || height < 0)

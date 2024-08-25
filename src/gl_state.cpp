@@ -302,6 +302,7 @@ void APIENTRY glEnable(GLenum cap)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(Enable, {}, {(int)cap});
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (cap == GL_NORMALIZE)
@@ -418,6 +419,7 @@ void APIENTRY glDisable(GLenum cap)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(Disable, {}, { (int)cap });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (cap == GL_NORMALIZE)
