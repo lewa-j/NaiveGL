@@ -119,6 +119,7 @@ void APIENTRY glFrontFace(GLenum mode)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(FrontFace, {}, { (int)mode });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (mode != GL_CW && mode != GL_CCW)
@@ -185,6 +186,7 @@ void APIENTRY glColorMaterial(GLenum face, GLenum mode)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(ColorMaterial, {}, { (int)face, (int)mode });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_FACE;
 
@@ -207,18 +209,7 @@ void APIENTRY glMaterialf(GLenum face, GLenum pname, GLfloat param)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-
-	if (gs->display_list_begun)
-	{
-		gl_display_list_call call{ gl_display_list_call::tMaterial, {}, {(int)face, (int)pname} };
-		if (pname == GL_SHININESS)
-			call.argsf[0] = param;
-
-		gs->display_list_indices[0].calls.push_back(call);
-		if (!gs->display_list_execute)
-			return;
-	}
-
+	WRITE_DISPLAY_LIST(Material, { param }, { (int)face, (int)pname });
 	VALIDATE_FACE;
 
 	if (pname == GL_SHININESS)
@@ -242,7 +233,7 @@ void APIENTRY glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
 		if (pname == GL_SHININESS)
 			call.argsf[0] = params[0];
 		else if (pname == GL_EMISSION || pname == GL_AMBIENT_AND_DIFFUSE || (pname >= GL_AMBIENT && pname <= GL_SPECULAR))
-			memcpy(call.argsf, params, 16);
+			memcpy(call.argsf, params, 4 * sizeof(float));
 
 		gs->display_list_indices[0].calls.push_back(call);
 		if (!gs->display_list_execute)
@@ -268,9 +259,7 @@ void APIENTRY glMaterialiv(GLenum face, GLenum pname, const GLint *params)
 
 	if (gs->display_list_begun)
 	{
-		gl_display_list_call call{ gl_display_list_call::tMaterial };
-		call.argsi[0] = face;
-		call.argsi[1] = pname;
+		gl_display_list_call call{ gl_display_list_call::tMaterial, {}, {(int)face, (int)pname} };
 		if (pname == GL_SHININESS)
 			call.argsf[0] = (GLfloat)params[0];
 		else if (pname == GL_EMISSION || pname == GL_AMBIENT_AND_DIFFUSE || (pname >= GL_AMBIENT && pname <= GL_SPECULAR))
@@ -295,21 +284,13 @@ void APIENTRY glMaterialiv(GLenum face, GLenum pname, const GLint *params)
 		gs->set_material_color(face, pname, glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])));
 }
 
-void APIENTRY glLightf(GLenum light, GLenum pname, GLfloat param)
+static void gl_light_scalar(const char *func, gl_state::light &l, GLenum pname, GLfloat param)
 {
-	gl_state *gs = gl_current_state();
-	if (!gs) return;
-	VALIDATE_NOT_BEGIN_MODE;
-	VALIDATE_LIGHT_NUM;
-	VALIDATE_LIGHT_PNAME;
-
-	gl_state::light &l = gs->lights[light - GL_LIGHT0];
-
 	if (pname == GL_SPOT_EXPONENT)
 	{
 		if (param < 0 || param > 128)
 		{
-			gl_set_error(GL_INVALID_VALUE);
+			gl_set_error_(GL_INVALID_VALUE, func);
 			return;
 		}
 		l.spot_exponent = param;
@@ -318,7 +299,7 @@ void APIENTRY glLightf(GLenum light, GLenum pname, GLfloat param)
 	{
 		if ((param < 0 || param > 90) && param != 180)
 		{
-			gl_set_error(GL_INVALID_VALUE);
+			gl_set_error_(GL_INVALID_VALUE, func);
 			return;
 		}
 		l.spot_cutoff = param;
@@ -327,11 +308,25 @@ void APIENTRY glLightf(GLenum light, GLenum pname, GLfloat param)
 	{
 		if (param < 0)
 		{
-			gl_set_error(GL_INVALID_VALUE);
+			gl_set_error_(GL_INVALID_VALUE, func);
 			return;
 		}
 		l.attenuation[pname - GL_CONSTANT_ATTENUATION] = param;
 	}
+}
+
+void APIENTRY glLightf(GLenum light, GLenum pname, GLfloat param)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST(Lightf, { param }, { (int)light, (int)pname });
+	VALIDATE_NOT_BEGIN_MODE;
+	VALIDATE_LIGHT_NUM;
+	VALIDATE_LIGHT_PNAME;
+
+	gl_state::light &l = gs->lights[light - GL_LIGHT0];
+
+	gl_light_scalar(__FUNCTION__, l, pname, param);
 }
 void APIENTRY glLighti(GLenum light, GLenum pname, GLint param) { glLightf(light, pname, (GLfloat)param); }
 
@@ -346,10 +341,8 @@ static void gl_light_color(gl_state::light &l, GLenum pname, glm::vec4 param)
 }
 
 template<typename T>
-void gl_lightv(GLenum light, GLenum pname, const T *params)
+void gl_lightv(gl_state *gs, GLenum light, GLenum pname, const T *params)
 {
-	gl_state *gs = gl_current_state();
-	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_LIGHT_NUM;
 	VALIDATE_LIGHT_PNAME_V;
@@ -363,15 +356,57 @@ void gl_lightv(GLenum light, GLenum pname, const T *params)
 	else if (pname == GL_SPOT_DIRECTION)
 		l.spot_direction = glm::mat3(gs->get_modelview()) * glm::vec3(params[0], params[1], params[2]);
 	else
-		glLightf(light, pname, (GLfloat)params[0]);
+		gl_light_scalar(__FUNCTION__, l, pname, (GLfloat)params[0]);
 }
-void APIENTRY glLightfv(GLenum light, GLenum pname, const GLfloat *params) { gl_lightv(light, pname, params); }
-void APIENTRY glLightiv(GLenum light, GLenum pname, const GLint *params) { gl_lightv(light, pname, params); }
+void APIENTRY glLightfv(GLenum light, GLenum pname, const GLfloat *params)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	if (gs->display_list_begun)
+	{
+		gl_display_list_call call{ gl_display_list_call::tLightf, {}, {(int)light, (int)pname} };
+		if (pname >= GL_AMBIENT && pname <= GL_POSITION)
+			memcpy(call.argsf, params, 4 * sizeof(float));
+		else if (pname == GL_SPOT_DIRECTION)
+			memcpy(call.argsf, params, 3 * sizeof(float));
+		else if (pname >= GL_SPOT_EXPONENT && pname <= GL_QUADRATIC_ATTENUATION)
+			call.argsf[0] = params[0];
+
+		gs->display_list_indices[0].calls.push_back(call);
+		if (!gs->display_list_execute)
+			return;
+	}
+
+	gl_lightv(gs, light, pname, params);
+}
+void APIENTRY glLightiv(GLenum light, GLenum pname, const GLint *params)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	if (gs->display_list_begun)
+	{
+		gl_display_list_call call{ gl_display_list_call::tLighti, {}, {(int)light, (int)pname} };
+		if (pname >= GL_AMBIENT && pname <= GL_POSITION)
+			memcpy(call.argsi + 2, params, 4 * sizeof(GLint));
+		else if (pname == GL_SPOT_DIRECTION)
+			memcpy(call.argsi + 2, params, 3 * sizeof(GLint));
+		else if (pname >= GL_SPOT_EXPONENT && pname <= GL_QUADRATIC_ATTENUATION)
+			call.argsi[2] = params[0];
+
+		gs->display_list_indices[0].calls.push_back(call);
+		if (!gs->display_list_execute)
+			return;
+	}
+
+	gl_lightv(gs, light, pname, params);
+}
 
 void APIENTRY glLightModelf(GLenum pname, GLfloat param)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(LightModel, { param }, { (int)pname });
+
 	VALIDATE_NOT_BEGIN_MODE;
 	if (pname != GL_LIGHT_MODEL_LOCAL_VIEWER && pname != GL_LIGHT_MODEL_TWO_SIDE)
 	{
@@ -391,6 +426,14 @@ void APIENTRY gl_lightModelv(GLenum pname, const T *params)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	if (pname == GL_LIGHT_MODEL_AMBIENT)
+	{
+		WRITE_DISPLAY_LIST(LightModel, { GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3]) }, { (int)pname });
+	}
+	else if (pname == GL_LIGHT_MODEL_LOCAL_VIEWER || pname == GL_LIGHT_MODEL_TWO_SIDE)
+	{
+		WRITE_DISPLAY_LIST(LightModel, { (float)params[0] }, { (int)pname });
+	}
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_LIGHT_MODEL_PNAME_V;
 

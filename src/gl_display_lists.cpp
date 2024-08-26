@@ -97,14 +97,23 @@ void gl_callList(GLuint list)
 		case gl_display_list_call::tColor:
 			glColor4fv(call.argsf);
 			break;
-		case gl_display_list_call::tMaterial:
-			glMaterialfv(call.argsi[0], call.argsi[1], call.argsf);
+		case gl_display_list_call::tRect:
+			glRectfv(call.argsf, call.argsf + 2);
 			break;
-		case gl_display_list_call::tShadeModel:
-			glShadeModel(call.argsi[0]);
+		case gl_display_list_call::tDepthRange:
+			glDepthRange(call.argsf[0], call.argsf[1]);
+			break;
+		case gl_display_list_call::tViewport:
+			glViewport(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3]);
 			break;
 		case gl_display_list_call::tMatrixMode:
 			glMatrixMode(call.argsi[0]);
+			break;
+		case gl_display_list_call::tLoadMatrix:
+			glLoadMatrixf(call.argsf);
+			break;
+		case gl_display_list_call::tMultMatrix:
+			glMultMatrixf(call.argsf);
 			break;
 		case gl_display_list_call::tLoadIdentity:
 			glLoadIdentity();
@@ -117,6 +126,54 @@ void gl_callList(GLuint list)
 			break;
 		case gl_display_list_call::tScale:
 			glScalef(call.argsf[0], call.argsf[1], call.argsf[2]);
+			break;
+		case gl_display_list_call::tFrustum:
+			glFrustum(call.argsf[0], call.argsf[1], call.argsf[2], call.argsf[3], call.argsf[4], call.argsf[5]);
+			break;
+		case gl_display_list_call::tOrtho:
+			glOrtho(call.argsf[0], call.argsf[1], call.argsf[2], call.argsf[3], call.argsf[4], call.argsf[5]);
+			break;
+		case gl_display_list_call::tPushMatrix:
+			glPushMatrix();
+			break;
+		case gl_display_list_call::tPopMatrix:
+			glPopMatrix();
+			break;
+		case gl_display_list_call::tEnable:
+			glEnable(call.argsi[0]);
+			break;
+		case gl_display_list_call::tDisable:
+			glDisable(call.argsi[0]);
+			break;
+		case gl_display_list_call::tTexGen:
+			glTexGenfv(call.argsi[0], call.argsi[1], call.argsf);
+			break;
+		case gl_display_list_call::tClipPlane:
+			glClipPlane(call.argsi[0], (double *)call.argsf);
+			break;
+		case gl_display_list_call::tRasterPos:
+			glRasterPos4fv(call.argsf);
+			break;
+		case gl_display_list_call::tFrontFace:
+			glFrontFace(call.argsi[0]);
+			break;
+		case gl_display_list_call::tColorMaterial:
+			glColorMaterial(call.argsi[0], call.argsi[1]);
+			break;
+		case gl_display_list_call::tShadeModel:
+			glShadeModel(call.argsi[0]);
+			break;
+		case gl_display_list_call::tMaterial:
+			glMaterialfv(call.argsi[0], call.argsi[1], call.argsf);
+			break;
+		case gl_display_list_call::tLightf:
+			glLightfv(call.argsi[0], call.argsi[1], call.argsf);
+			break;
+		case gl_display_list_call::tLighti:
+			glLightiv(call.argsi[0], call.argsi[1], call.argsi + 2);
+			break;
+		case gl_display_list_call::tLightModel:
+			glLightModelfv(call.argsi[0], call.argsf);
 			break;
 		}
 	}

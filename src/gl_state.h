@@ -113,8 +113,15 @@ struct gl_display_list_call
 		tEnable,
 		tDisable,
 		tTexGen,
+		tClipPlane,
+		tRasterPos,
+		tFrontFace,
+		tColorMaterial,
 		tShadeModel,
-		tMaterial
+		tMaterial,
+		tLightf,
+		tLighti,
+		tLightModel
 	};
 };
 

@@ -6,6 +6,7 @@ void APIENTRY glRasterPos4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(RasterPos, { x,y,z,w });
 	VALIDATE_NOT_BEGIN_MODE
 
 	glm::vec4 p_object(x, y, z, w);

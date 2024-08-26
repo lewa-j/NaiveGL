@@ -49,6 +49,7 @@ void APIENTRY glTexGeni(GLenum coord, GLenum pname, GLint param)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(TexGen, {(float)param }, {(int)coord, (int)pname});
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEXGEN_COORD;
 	if (pname != GL_TEXTURE_GEN_MODE)
@@ -76,6 +77,20 @@ void APIENTRY gl_texGenv(GLenum coord, GLenum pname, const T * params)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	
+	if (gs->display_list_begun)
+	{
+		gl_display_list_call call{ gl_display_list_call::tTexGen, {}, {(int)coord, (int)pname} };
+		if (pname == GL_TEXTURE_GEN_MODE)
+			call.argsf[0] = (float)params[0];
+		else if (pname == GL_OBJECT_PLANE || pname == GL_EYE_PLANE)
+			memcpy(call.argsf, params, 4 * sizeof(float));
+
+		gs->display_list_indices[0].calls.push_back(call);
+		if (!gs->display_list_execute)
+			return;
+	}
+
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEXGEN_COORD;
 	if (pname < GL_TEXTURE_GEN_MODE || pname > GL_EYE_PLANE)
