@@ -434,6 +434,10 @@ void APIENTRY gl_lightModelv(GLenum pname, const T *params)
 	{
 		WRITE_DISPLAY_LIST(LightModel, { (float)params[0] }, { (int)pname });
 	}
+	else // delay error until list execution
+	{
+		WRITE_DISPLAY_LIST(LightModel, { }, { (int)pname });
+	}
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_LIGHT_MODEL_PNAME_V;
 

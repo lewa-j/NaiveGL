@@ -71,6 +71,7 @@ void gl_callList(GLuint list)
 	if (!it->second.recorded)
 		return;
 
+	const uint8_t *data = it->second.data.data();
 	for (size_t i = 0; i < it->second.calls.size(); i++)
 	{
 		const gl_display_list_call& call = it->second.calls[i];
@@ -110,10 +111,12 @@ void gl_callList(GLuint list)
 			glMatrixMode(call.argsi[0]);
 			break;
 		case gl_display_list_call::tLoadMatrix:
-			glLoadMatrixf(call.argsf);
+			glLoadMatrixf((const float*)data);
+			data += 16 * sizeof(float);
 			break;
 		case gl_display_list_call::tMultMatrix:
-			glMultMatrixf(call.argsf);
+			glMultMatrixf((const float *)data);
+			data += 16 * sizeof(float);
 			break;
 		case gl_display_list_call::tLoadIdentity:
 			glLoadIdentity();
@@ -149,7 +152,8 @@ void gl_callList(GLuint list)
 			glTexGenfv(call.argsi[0], call.argsi[1], call.argsf);
 			break;
 		case gl_display_list_call::tClipPlane:
-			glClipPlane(call.argsi[0], (double *)call.argsf);
+			glClipPlane(call.argsi[0], (const double *)data);
+			data += 4 * sizeof(double);
 			break;
 		case gl_display_list_call::tRasterPos:
 			glRasterPos4fv(call.argsf);
@@ -174,6 +178,25 @@ void gl_callList(GLuint list)
 			break;
 		case gl_display_list_call::tLightModel:
 			glLightModelfv(call.argsi[0], call.argsf);
+			break;
+		case gl_display_list_call::tPointSize:
+			glPointSize(call.argsf[0]);
+			break;
+		case gl_display_list_call::tLineWidth:
+			glLineWidth(call.argsf[0]);
+			break;
+		case gl_display_list_call::tLineStipple:
+			glLineStipple(call.argsi[0], call.argsi[1]);
+			break;
+		case gl_display_list_call::tCullFace:
+			glCullFace(call.argsi[0]);
+			break;
+		case gl_display_list_call::tPolygonStipple:
+			glPolygonStipple(data);
+			data += 4 * 32;
+			break;
+		case gl_display_list_call::tPolygonMode:
+			glPolygonMode(call.argsi[0], call.argsi[1]);
 			break;
 		}
 	}

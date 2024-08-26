@@ -91,16 +91,7 @@ void APIENTRY glLoadMatrixf(const GLfloat *m)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-
-	if (gs->display_list_begun)
-	{
-		gl_display_list_call call{ gl_display_list_call::tLoadMatrix };
-		memcpy(call.argsf, m, 16 * sizeof(float));
-		gs->display_list_indices[0].calls.push_back(call);
-		if (!gs->display_list_execute)
-			return;
-	}
-
+	WRITE_DISPLAY_LIST_BULK(LoadMatrix, m, sizeof(float) * 16);
 	VALIDATE_NOT_BEGIN_MODE;
 	memcpy(&get_current_mtx(gs), m, 16 * sizeof(float));
 }
@@ -110,19 +101,12 @@ void APIENTRY glMultMatrixd(const GLdouble *m)
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 
-	if (gs->display_list_begun)
-	{
-		gl_display_list_call call{ gl_display_list_call::tMultMatrix };
-		glm::mat4 fm{ *(glm::dmat4 *)m };
-		memcpy(call.argsf, &fm[0].x, 16 * sizeof(float));
-		gs->display_list_indices[0].calls.push_back(call);
-		if (!gs->display_list_execute)
-			return;
-	}
+	glm::mat4 fm{ *(glm::dmat4 *)m };
+	WRITE_DISPLAY_LIST_BULK(LoadMatrix, &fm[0].x, 16 * sizeof(float));
 
 	VALIDATE_NOT_BEGIN_MODE;
 	glm::mat4 &dst = get_current_mtx(gs);
-	dst = dst * glm::mat4(*(glm::dmat4 *)m);
+	dst = dst * fm;
 }
 
 void APIENTRY glMultMatrixf(const GLfloat *m)
@@ -130,15 +114,7 @@ void APIENTRY glMultMatrixf(const GLfloat *m)
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
-
-	if (gs->display_list_begun)
-	{
-		gl_display_list_call call{ gl_display_list_call::tMultMatrix };
-		memcpy(call.argsf, m, 16 * sizeof(float));
-		gs->display_list_indices[0].calls.push_back(call);
-		if (!gs->display_list_execute)
-			return;
-	}
+	WRITE_DISPLAY_LIST_BULK(MultMatrix, m, sizeof(float) * 16);
 
 	glm::mat4 &dst = get_current_mtx(gs);
 	dst = dst * (*(glm::mat4 *)m);

@@ -28,16 +28,7 @@ void APIENTRY glClipPlane(GLenum plane, const GLdouble *equation)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-	if (gs->display_list_begun)
-	{
-		gl_display_list_call call{ gl_display_list_call::tClipPlane, {}, {(int)plane} };
-		if (plane >= GL_CLIP_PLANE0 && plane <= (GL_CLIP_PLANE0 + gl_max_user_clip_planes))
-			memcpy(call.argsf, equation, sizeof(double) * 4);
-
-		gs->display_list_indices[0].calls.push_back(call);
-		if (!gs->display_list_execute)
-			return;
-	}
+	WRITE_DISPLAY_LIST_BULK(ClipPlane, equation, sizeof(double) * 4);
 	VALIDATE_NOT_BEGIN_MODE;
 	if (plane < GL_CLIP_PLANE0 || plane >= (GL_CLIP_PLANE0 + gl_max_user_clip_planes))
 	{

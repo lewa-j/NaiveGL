@@ -83,46 +83,103 @@ struct gl_texture
 
 struct gl_display_list_call
 {
-	int type;
-	float argsf[8];
-	int argsi[8];
-
 	enum eType
 	{
-		tBegin,
+		tBegin,//1i
 		tEnd,
-		tVertex,
-		tEdgeFlag,
-		tTexCoord,
-		tNormal,
-		tColor,
-		tRect,
-		tDepthRange,
-		tViewport,
-		tMatrixMode,
-		tLoadMatrix,
-		tMultMatrix,
+		tVertex,//4f
+		tEdgeFlag,//1i
+		tTexCoord,//4f
+		tNormal,//3f
+		tColor,//4f
+		tRect,//4f
+		tDepthRange,//2f
+		tViewport,//4i
+		tMatrixMode,//1i
+		tLoadMatrix,//16f big
+		tMultMatrix,//16f big
 		tLoadIdentity,
-		tRotate,
-		tTranslate,
-		tScale,
-		tFrustum,
-		tOrtho,
+		tRotate,//4f
+		tTranslate,//3f
+		tScale,//3f
+		tFrustum,//6f
+		tOrtho,//6f
 		tPushMatrix,
 		tPopMatrix,
-		tEnable,
-		tDisable,
-		tTexGen,
-		tClipPlane,
-		tRasterPos,
-		tFrontFace,
-		tColorMaterial,
-		tShadeModel,
-		tMaterial,
-		tLightf,
-		tLighti,
-		tLightModel
+		tEnable,//1i
+		tDisable,//1i
+		tTexGen,//2i+1f/4f
+		tClipPlane,//4d		big
+		tRasterPos,//4f
+		tFrontFace,//1i
+		tColorMaterial,//2i
+		tShadeModel,//1i
+		tMaterial,//2i+1f/4f/4i
+		tLightf,//2i+1f/3f/4f
+		tLighti,//2i+1i/3i/4i
+		tLightModel,//1i+1f/4f
+		tPointSize,//1f
+		tLineWidth,//1f
+		tLineStipple,//2i
+		tCullFace,//1i
+		tPolygonStipple,//128b	big
+		tPolygonMode,//2i
+		tPixelTransfer,//1i,1f
+		tPixelMap,//2i+n*ui/us/f big
+		tPixelZoom,//2f
+		tDrawPixels,//4i+n	big
+		tBitmap,//2i+4f+n	big
+		tTexImage,//8i+n	big
+		tTexParameter,//2i+1i/4i/4f
+		tTexEnv,//2i+1i/4i/4f
+		tFog,//1i+1f/4f
+		tScissor,//4i
+		tAlphaFunc,//1i,1f
+		tStencilFunc,//3i
+		tStencilOp,//3i
+		tDepthFunc,//1i
+		tBlendFunc,//2i
+		tLogicOp,//1i
+		tDrawBuffer,//1i
+		tColorMask,//4i
+		tIndexMask,//1i
+		tDepthMask,//1i
+		tStencilMask,//1i
+		tClear,//1i
+		tClearColor,//4f
+		tClearIndex,//1f
+		tClearDepth,//1f
+		tClearStencil,//1i
+		tClearAccum,//4f
+		tAccum,//1i,1f
+		tReadBuffer,//1i
+		tCopyPixels,//5i
+		tMap1,//3i,2f+n big
+		tMap2,//5i,4f+n
+		tEvalCoord1,//1f
+		tEvalCoord2,//2f
+		tMapGrid1,//1i,2f
+		tMapGrid2,//2i,4f
+		tEvalMesh1,//3i
+		tEvalMesh2,//5i
+		tEvalPoint1,//1i
+		tEvalPoint2,//2i
+		tInitNames,
+		tPopName,
+		tPushName,//1i
+		tLoadName,//1i
+		tPassThrough,//1f
+		tNewList,//2i
+		tEndList,
+		tCallList,//1i
+		tCallLists,//2i+n big
+		tListBase,//1i
+		tHint,//2i
 	};
+
+	eType type;
+	float argsf[8];
+	int argsi[8];
 };
 
 struct gl_state
@@ -339,6 +396,7 @@ struct gl_state
 	{
 		bool recorded = false;
 		std::vector<gl_display_list_call> calls;
+		std::vector<uint8_t> data;
 	};
 	std::map<int, displayList> display_list_indices;
 
@@ -426,6 +484,18 @@ if (face != GL_FRONT && face != GL_BACK && face != GL_FRONT_AND_BACK)\
 if (gs->display_list_begun) \
 { \
 	gs->display_list_indices[0].calls.push_back({ gl_display_list_call::t##func_name, ##__VA_ARGS__ }); \
+	if (!gs->display_list_execute) \
+		return; \
+}
+
+#define WRITE_DISPLAY_LIST_BULK(func_name, src_data, src_size, ...) \
+if (gs->display_list_begun) \
+{ \
+	auto &dl = gs->display_list_indices[0]; \
+	dl.calls.push_back({ gl_display_list_call::t##func_name, ##__VA_ARGS__ }); \
+	size_t old_size = dl.data.size(); \
+	dl.data.resize(old_size + (src_size)); \
+	memcpy(dl.data.data() + old_size, (src_data), (src_size)); \
 	if (!gs->display_list_execute) \
 		return; \
 }

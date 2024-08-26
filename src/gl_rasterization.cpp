@@ -55,6 +55,7 @@ void APIENTRY glPolygonStipple(const GLubyte *mask)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST_BULK(PolygonStipple, mask, 4 * 32);
 	VALIDATE_NOT_BEGIN_MODE;
 
 	memcpy(gs->polygon_stipple_mask, mask, sizeof(gs->polygon_stipple_mask));
@@ -78,25 +79,21 @@ void APIENTRY glPolygonMode(GLenum face, GLenum mode)
 		gs->polygon_mode[1] = mode;
 }
 
-void APIENTRY glFogf(GLenum pname, GLfloat param)
+static void gl_fog_scalar(const char *func, gl_state *gs, GLenum pname, GLfloat param)
 {
-	gl_state* gs = gl_current_state();
-	if (!gs) return;
-	VALIDATE_NOT_BEGIN_MODE;
-
 	if (pname != GL_FOG_MODE && pname != GL_FOG_DENSITY && pname != GL_FOG_START && pname != GL_FOG_END && pname != GL_FOG_INDEX)\
 	{
-		gl_set_error_a(GL_INVALID_ENUM, pname);
+		gl_set_error_a_(GL_INVALID_ENUM, pname, func);
 		return;
 	}
 	if (pname == GL_FOG_MODE && param != GL_EXP && param != GL_EXP2 && param != GL_LINEAR)
 	{
-		gl_set_error_a(GL_INVALID_ENUM, (int)param);
+		gl_set_error_a_(GL_INVALID_ENUM, (int)param, func);
 		return;
 	}
 	if ((pname == GL_FOG_DENSITY || pname == GL_FOG_START || pname == GL_FOG_END) && param < 0)
 	{
-		gl_set_error(GL_INVALID_VALUE);
+		gl_set_error_(GL_INVALID_VALUE, func);
 		return;
 	}
 
@@ -111,6 +108,15 @@ void APIENTRY glFogf(GLenum pname, GLfloat param)
 	//else GL_FOG_INDEX
 }
 
+void APIENTRY glFogf(GLenum pname, GLfloat param)
+{
+	gl_state* gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	gl_fog_scalar(__FUNCTION__, gs, pname, param);
+}
+
 void APIENTRY glFogi(GLenum pname, GLint param) { glFogf(pname, (GLfloat)param); }
 
 template<typename T>
@@ -123,7 +129,7 @@ void gl_fogv(GLenum pname, const T* params)
 	if (pname == GL_FOG_COLOR)
 		gs->fog_color = glm::clamp(glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])), 0.0f, 1.0f);
 	else
-		glFogf(pname, (GLfloat)params[0]);
+		gl_fog_scalar(__FUNCTION__, gs, pname, (GLfloat)params[0]);
 }
 
 void APIENTRY glFogiv(GLenum pname, const GLint* params) { gl_fogv(pname, params); }
