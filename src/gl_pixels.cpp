@@ -6,6 +6,8 @@ void APIENTRY glRasterPos4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE
+
 	glm::vec4 p_object(x, y, z, w);
 	glm::vec4 p_eye{ gs->get_modelview() * p_object };
 	glm::vec4 p_clip{ gs->get_projection() * p_eye };
