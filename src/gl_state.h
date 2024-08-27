@@ -108,16 +108,21 @@ struct gl_display_list_call
 		tPopMatrix,
 		tEnable,//1i
 		tDisable,//1i
-		tTexGen,//2i+1f/4f
+		tTexGeni,//2i+1i
+		tTexGenfv,//2i+1f/4f
 		tClipPlane,//4d		big
 		tRasterPos,//4f
 		tFrontFace,//1i
 		tColorMaterial,//2i
 		tShadeModel,//1i
-		tMaterial,//2i+1f/4f/4i
-		tLightf,//2i+1f/3f/4f
-		tLighti,//2i+1i/3i/4i
-		tLightModel,//1i+1f/4f
+		tMaterial,//2i+1f
+		tMaterialv,//2i+1f/4f/4i
+		tLightf,//2i+1f
+		tLightfv,//2i+1f/3f/4f
+		tLightiv,//2i+1i/3i/4i
+		tLightModeli,//1i+1i
+		tLightModelfv,//1i+1f/4f
+		tLightModeliv,//1i+1i/4i
 		tPointSize,//1f
 		tLineWidth,//1f
 		tLineStipple,//2i
@@ -480,22 +485,39 @@ if (face != GL_FRONT && face != GL_BACK && face != GL_FRONT_AND_BACK)\
 	return;\
 }
 
-#define WRITE_DISPLAY_LIST(func_name, ...) \
+#define WRITE_DISPLAY_LIST(FUNC_NAME, ...) \
 if (gs->display_list_begun) \
 { \
-	gs->display_list_indices[0].calls.push_back({ gl_display_list_call::t##func_name, ##__VA_ARGS__ }); \
+	gs->display_list_indices[0].calls.push_back({ gl_display_list_call::t##FUNC_NAME, __VA_ARGS__ }); \
 	if (!gs->display_list_execute) \
 		return; \
 }
 
-#define WRITE_DISPLAY_LIST_BULK(func_name, src_data, src_size, ...) \
+#define WRITE_DISPLAY_LIST_V(FUNC_NAME, ARR, COUNT, CAST, DST, DST_OFF, ...) \
+if (gs->display_list_begun) \
+{ \
+	gl_display_list_call call{ gl_display_list_call::t##FUNC_NAME, __VA_ARGS__}; \
+	int n = (COUNT); \
+	for (int i = 0; i < n; i++) \
+		call.DST[DST_OFF + i] = CAST(ARR[i]); \
+	gs->display_list_indices[0].calls.push_back(call); \
+	if (!gs->display_list_execute) \
+		return; \
+}
+
+#define WRITE_DISPLAY_LIST_FV(FUNC_NAME, ARR, COUNT, ...) WRITE_DISPLAY_LIST_V(FUNC_NAME, ARR, COUNT, (float), argsf, 0, __VA_ARGS__)
+
+#define WRITE_DISPLAY_LIST_IV(FUNC_NAME, ARR, COUNT, DST_OFF, ...) WRITE_DISPLAY_LIST_V(FUNC_NAME, ARR, COUNT, (int), argsi, DST_OFF, __VA_ARGS__)
+
+#define WRITE_DISPLAY_LIST_BULK(FUNC_NAME, SRC_DATA, SRC_SIZE, ...) \
 if (gs->display_list_begun) \
 { \
 	auto &dl = gs->display_list_indices[0]; \
-	dl.calls.push_back({ gl_display_list_call::t##func_name, ##__VA_ARGS__ }); \
+	dl.calls.push_back({ gl_display_list_call::t##FUNC_NAME, ##__VA_ARGS__ }); \
 	size_t old_size = dl.data.size(); \
-	dl.data.resize(old_size + (src_size)); \
-	memcpy(dl.data.data() + old_size, (src_data), (src_size)); \
+	size_t n = (SRC_SIZE); \
+	dl.data.resize(old_size + n); \
+	memcpy(dl.data.data() + old_size, (SRC_DATA), n); \
 	if (!gs->display_list_execute) \
 		return; \
 }

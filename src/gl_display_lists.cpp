@@ -148,7 +148,10 @@ void gl_callList(GLuint list)
 		case gl_display_list_call::tDisable:
 			glDisable(call.argsi[0]);
 			break;
-		case gl_display_list_call::tTexGen:
+		case gl_display_list_call::tTexGeni:
+			glTexGeni(call.argsi[0], call.argsi[1], call.argsi[2]);
+			break;
+		case gl_display_list_call::tTexGenfv:
 			glTexGenfv(call.argsi[0], call.argsi[1], call.argsf);
 			break;
 		case gl_display_list_call::tClipPlane:
@@ -168,16 +171,28 @@ void gl_callList(GLuint list)
 			glShadeModel(call.argsi[0]);
 			break;
 		case gl_display_list_call::tMaterial:
+			glMaterialf(call.argsi[0], call.argsi[1], call.argsf[0]);
+			break;
+		case gl_display_list_call::tMaterialv:
 			glMaterialfv(call.argsi[0], call.argsi[1], call.argsf);
 			break;
 		case gl_display_list_call::tLightf:
+			glLightf(call.argsi[0], call.argsi[1], call.argsf[0]);
+			break;
+		case gl_display_list_call::tLightfv:
 			glLightfv(call.argsi[0], call.argsi[1], call.argsf);
 			break;
-		case gl_display_list_call::tLighti:
+		case gl_display_list_call::tLightiv:
 			glLightiv(call.argsi[0], call.argsi[1], call.argsi + 2);
 			break;
-		case gl_display_list_call::tLightModel:
+		case gl_display_list_call::tLightModeli:
+			glLightModeli(call.argsi[0], call.argsi[1]);
+			break;
+		case gl_display_list_call::tLightModelfv:
 			glLightModelfv(call.argsi[0], call.argsf);
+			break;
+		case gl_display_list_call::tLightModeliv:
+			glLightModeliv(call.argsi[0], call.argsi + 1);
 			break;
 		case gl_display_list_call::tPointSize:
 			glPointSize(call.argsf[0]);

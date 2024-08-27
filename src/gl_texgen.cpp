@@ -49,7 +49,7 @@ void APIENTRY glTexGeni(GLenum coord, GLenum pname, GLint param)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-	WRITE_DISPLAY_LIST(TexGen, {(float)param }, {(int)coord, (int)pname});
+	WRITE_DISPLAY_LIST(TexGeni, {}, { (int)coord, (int)pname, param });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEXGEN_COORD;
 	if (pname != GL_TEXTURE_GEN_MODE)
@@ -71,26 +71,24 @@ void APIENTRY glTexGeni(GLenum coord, GLenum pname, GLint param)
 	gl_state::texGen &tg = gs->texgen[coord - GL_S];
 	tg.mode = param;
 }
+void APIENTRY glTexGenf(GLenum coord, GLenum pname, GLfloat param) { glTexGeni(coord, pname, (GLint)param); }
+void APIENTRY glTexGend(GLenum coord, GLenum pname, GLdouble param) { glTexGeni(coord, pname, (GLint)param); }
+
+static int gl_texGenv_size(GLenum pname)
+{
+	if (pname == GL_TEXTURE_GEN_MODE)
+		return 1;
+	else if (pname == GL_OBJECT_PLANE || pname == GL_EYE_PLANE)
+		return 4;
+	return 0;
+}
 
 template<typename T>
-void APIENTRY gl_texGenv(GLenum coord, GLenum pname, const T * params)
+void APIENTRY gl_texGenv(GLenum coord, GLenum pname, const T *params)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-	
-	if (gs->display_list_begun)
-	{
-		gl_display_list_call call{ gl_display_list_call::tTexGen, {}, {(int)coord, (int)pname} };
-		if (pname == GL_TEXTURE_GEN_MODE)
-			call.argsf[0] = (float)params[0];
-		else if (pname == GL_OBJECT_PLANE || pname == GL_EYE_PLANE)
-			memcpy(call.argsf, params, 4 * sizeof(float));
-
-		gs->display_list_indices[0].calls.push_back(call);
-		if (!gs->display_list_execute)
-			return;
-	}
-
+	WRITE_DISPLAY_LIST_FV(TexGenv, params, gl_texGenv_size(pname), {}, { (int)coord, (int)pname });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEXGEN_COORD;
 	if (pname < GL_TEXTURE_GEN_MODE || pname > GL_EYE_PLANE)
@@ -124,5 +122,3 @@ void APIENTRY gl_texGenv(GLenum coord, GLenum pname, const T * params)
 void APIENTRY glTexGeniv(GLenum coord, GLenum pname, const GLint * params) { gl_texGenv(coord, pname, params); }
 void APIENTRY glTexGenfv(GLenum coord, GLenum pname, const GLfloat * params) { gl_texGenv(coord, pname, params); }
 void APIENTRY glTexGendv(GLenum coord, GLenum pname, const GLdouble * params) { gl_texGenv(coord, pname, params); }
-void APIENTRY glTexGenf(GLenum coord, GLenum pname, GLfloat param) { glTexGeni(coord, pname, (GLint)param); }
-void APIENTRY glTexGend(GLenum coord, GLenum pname, GLdouble param) { glTexGeni(coord, pname, (GLint)param); }
