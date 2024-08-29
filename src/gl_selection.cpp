@@ -6,6 +6,7 @@ void APIENTRY glInitNames(void)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(InitNames, {});
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (gs->render_mode != GL_SELECT)
@@ -20,6 +21,7 @@ void APIENTRY glPopName(void)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(PopName, {});
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (gs->render_mode != GL_SELECT)
@@ -40,6 +42,7 @@ void APIENTRY glPushName(GLuint name)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(PushName, {}, { (int)name });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (gs->render_mode != GL_SELECT)
@@ -61,6 +64,7 @@ void APIENTRY glLoadName(GLuint name)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(LoadName, {}, { (int)name });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (gs->render_mode != GL_SELECT)

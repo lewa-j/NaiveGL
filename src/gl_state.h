@@ -130,14 +130,20 @@ struct gl_display_list_call
 		tPolygonStipple,//128b	big
 		tPolygonMode,//2i
 		tPixelTransfer,//1i,1f
-		tPixelMap,//2i+n*ui/us/f big
+		tPixelMap,//2i+n*ui/us/f big i[2] type i[3] size
 		tPixelZoom,//2f
 		tDrawPixels,//4i+n	big
 		tBitmap,//2i+4f+n	big
 		tTexImage,//8i+n	big
-		tTexParameter,//2i+1i/4i/4f
-		tTexEnv,//2i+1i/4i/4f
-		tFog,//1i+1f/4f
+		tTexParameter,//2i+1i
+		tTexParameteriv,//2i+1i/4i
+		tTexParameterfv,//2i+1f/4f
+		tTexEnv,//2i+1i
+		tTexEnviv,//2i+1i/4i
+		tTexEnvfv,//2i+1f/4f
+		tFog,//1i+1f
+		tFogiv,//1i+1i/4i
+		tFogfv,//1i+1f/4f
 		tScissor,//4i
 		tAlphaFunc,//1i,1f
 		tStencilFunc,//3i
@@ -159,8 +165,8 @@ struct gl_display_list_call
 		tAccum,//1i,1f
 		tReadBuffer,//1i
 		tCopyPixels,//5i
-		tMap1,//3i,2f+n big
-		tMap2,//5i,4f+n
+		tMap1,//3i,2f+n big i[3] size
+		tMap2,//5i,4f+n big i[5] size
 		tEvalCoord1,//1f
 		tEvalCoord2,//2f
 		tMapGrid1,//1i,2f
@@ -174,8 +180,6 @@ struct gl_display_list_call
 		tPushName,//1i
 		tLoadName,//1i
 		tPassThrough,//1f
-		tNewList,//2i
-		tEndList,
 		tCallList,//1i
 		tCallLists,//2i+n big
 		tListBase,//1i
@@ -515,9 +519,9 @@ if (gs->display_list_begun) \
 	auto &dl = gs->display_list_indices[0]; \
 	dl.calls.push_back({ gl_display_list_call::t##FUNC_NAME, ##__VA_ARGS__ }); \
 	size_t old_size = dl.data.size(); \
-	size_t n = (SRC_SIZE); \
-	dl.data.resize(old_size + n); \
-	memcpy(dl.data.data() + old_size, (SRC_DATA), n); \
+	size_t temp_size = (SRC_SIZE); \
+	dl.data.resize(old_size + temp_size); \
+	memcpy(dl.data.data() + old_size, (SRC_DATA), temp_size); \
 	if (!gs->display_list_execute) \
 		return; \
 }

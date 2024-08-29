@@ -5,11 +5,43 @@
 
 constexpr int maps_k[9]{ 4,1,3,1,2,3,4,3,4 };
 
+static int gl_map_k(GLenum target)
+{
+	if (target >= GL_MAP1_COLOR_4 && target <= GL_MAP1_VERTEX_4)
+		return maps_k[target - GL_MAP1_COLOR_4];
+
+	if (target >= GL_MAP2_COLOR_4 && target <= GL_MAP2_VERTEX_4)
+		return  maps_k[target - GL_MAP2_COLOR_4];
+
+	return 0;
+}
+
 template<typename T>
 static void gl_map1v(GLenum target, T u1, T u2, GLint stride, GLint order, const T *points)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	if (gs->display_list_begun)
+	{
+		auto &dl = gs->display_list_indices[0];
+		gl_display_list_call call{ gl_display_list_call::tMap1, { (float)u1, (float)u2 }, { (int)target, stride, order } };
+		int k = gl_map_k(target);
+		if (target >= GL_MAP1_COLOR_4 && target <= GL_MAP1_VERTEX_4 && order >= 1 && order <= gl_max_eval_order && u1 != u2 && stride >= k)
+		{
+			size_t old_size = dl.data.size();
+			size_t n = order * k * sizeof(float);
+			dl.data.resize(old_size + n);
+			float *dst = (float *)(dl.data.data() + old_size);
+			for (int i = 0; i < order; i++)
+				for (int c = 0; c < k; c++)
+					dst[i * k + c] = (float)points[i * stride + c];
+			call.argsi[1] = k;
+			call.argsi[3] = (int)n;
+		}
+		dl.calls.push_back(call);
+		if (!gs->display_list_execute)
+			return;
+	}
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (target < GL_MAP1_COLOR_4 || target > GL_MAP1_VERTEX_4)
@@ -57,6 +89,31 @@ static void APIENTRY gl_map2v(GLenum target, T u1, T u2, GLint ustride, GLint uo
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	if (gs->display_list_begun)
+	{
+		auto &dl = gs->display_list_indices[0];
+		gl_display_list_call call{ gl_display_list_call::tMap2, { (float)u1, (float)u2, (float)v1, (float)v2 }, { (int)target, ustride, uorder, vstride, vorder } };
+		int k = gl_map_k(target);
+		if (target >= GL_MAP2_COLOR_4 && target <= GL_MAP2_VERTEX_4
+			&& uorder >= 1 && uorder <= gl_max_eval_order && u1 != u2 && ustride >= k
+			&& vorder >= 1 && vorder <= gl_max_eval_order && v1 != v2 && vstride >= k)
+		{
+			size_t old_size = dl.data.size();
+			size_t n = uorder * vorder * k * sizeof(float);
+			dl.data.resize(old_size + n);
+			float *dst = (float *)(dl.data.data() + old_size);
+			for (int i = 0; i < uorder; i++)
+				for (int j = 0; j < vorder; j++)
+					for (int c = 0; c < k; c++)
+						dst[(i * vorder + j) * k + c] = (float)points[i * ustride + j * vstride + c];
+			call.argsi[1] = k * vorder;
+			call.argsi[3] = k;
+			call.argsi[5] = (int)n;
+		}
+		dl.calls.push_back(call);
+		if (!gs->display_list_execute)
+			return;
+	}
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (target < GL_MAP2_COLOR_4 || target > GL_MAP2_VERTEX_4)
@@ -172,7 +229,7 @@ void APIENTRY glEvalCoord1f(GLfloat u)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-
+	WRITE_DISPLAY_LIST(EvalCoord1, { u });
 	if (gs->begin_primitive_mode == -1)
 	{
 		//undefined behaviour
@@ -250,7 +307,7 @@ void APIENTRY glEvalCoord2f(GLfloat u, GLfloat v)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-
+	WRITE_DISPLAY_LIST(EvalCoord2, { u, v });
 	if (gs->begin_primitive_mode == -1)
 	{
 		//undefined behaviour
@@ -326,6 +383,7 @@ void APIENTRY glMapGrid1f(GLint un, GLfloat u1, GLfloat u2)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(MapGrid1, { u1, u2 }, { un });
 	VALIDATE_NOT_BEGIN_MODE;
 	if (un <= 0)
 	{
@@ -344,6 +402,7 @@ void APIENTRY glMapGrid2f(GLint un, GLfloat u1, GLfloat u2, GLint vn, GLfloat v1
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(MapGrid2, { u1, u2, v1, v2 }, { un, vn });
 	VALIDATE_NOT_BEGIN_MODE;
 	if (un <= 0)
 	{
@@ -380,6 +439,7 @@ void APIENTRY glEvalMesh1(GLenum mode, GLint p1, GLint p2)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(EvalMesh1, {}, { (int)mode, p1, p2 });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (mode != GL_POINT && mode != GL_LINE)
@@ -423,6 +483,7 @@ void APIENTRY glEvalMesh2(GLenum mode, GLint p1, GLint p2, GLint q1, GLint q2)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(EvalMesh2, {}, { (int)mode, p1, p2, q1, q2 });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (mode != GL_POINT && mode != GL_LINE && mode != GL_FILL)
@@ -485,6 +546,7 @@ void APIENTRY glEvalPoint1(GLint p)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(EvalPoint1, {}, { p });
 
 	float du = (gs->eval_1d_grid_domain[1] - gs->eval_1d_grid_domain[0]) / gs->eval_1d_grid_segments;
 	gl_evalPoint1(gs, du, p);
@@ -494,6 +556,7 @@ void APIENTRY glEvalPoint2(GLint p, GLint q)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(EvalPoint2, {}, { p, q });
 
 	float du = (gs->eval_2d_grid_domain_u[1] - gs->eval_2d_grid_domain_u[0]) / gs->eval_2d_grid_segments[0];
 	float dv = (gs->eval_2d_grid_domain_v[1] - gs->eval_2d_grid_domain_v[0]) / gs->eval_2d_grid_segments[1];

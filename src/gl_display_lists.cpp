@@ -47,7 +47,7 @@ void APIENTRY glEndList(void)
 	auto it = gs->display_list_indices.find(0);
 	if (it != gs->display_list_indices.end())
 	{
-		printf("glEndList list %d recorded %d calls\n", gs->display_list_begun, (int)it->second.calls.size());
+		printf("glEndList list %d recorded %d calls, %d bulk bytes\n", gs->display_list_begun, (int)it->second.calls.size(), (int)it->second.data.size());
 		it->second.recorded = true;
 		std::swap(gs->display_list_indices[gs->display_list_begun], it->second);
 		gs->display_list_indices.erase(it);
@@ -56,13 +56,27 @@ void APIENTRY glEndList(void)
 	gs->display_list_begun = 0;
 }
 
-void gl_callList(GLuint list)
+static int gl_callLists_size(GLsizei n, GLenum type)
+{
+	if (n <= 0)
+		return 0;
+
+	if (type == GL_BYTE || type == GL_UNSIGNED_BYTE)
+		return n;
+	if (type == GL_SHORT || type == GL_UNSIGNED_SHORT || type == GL_2_BYTES)
+		return n * 2;
+	if (type == GL_3_BYTES)
+		return n * 3;
+	if (type == GL_INT || type == GL_UNSIGNED_INT || type == GL_FLOAT || type == GL_4_BYTES)
+		return n * 4;
+
+	return 0;
+}
+
+void gl_callList(gl_state *gs, GLuint list)
 {
 	if (list == 0)
 		return;
-
-	gl_state* gs = gl_current_state();
-	if (!gs) return;
 
 	auto it = gs->display_list_indices.find(list);
 	if (it == gs->display_list_indices.end())
@@ -213,68 +227,247 @@ void gl_callList(GLuint list)
 		case gl_display_list_call::tPolygonMode:
 			glPolygonMode(call.argsi[0], call.argsi[1]);
 			break;
+		case gl_display_list_call::tPixelTransfer:
+			glPixelTransferf(call.argsi[0], call.argsf[0]);
+			break;
+		case gl_display_list_call::tPixelMap:
+			if (call.argsi[2] == 1)
+				glPixelMapuiv(call.argsi[0], call.argsi[1], (const GLuint *)data);
+			else if (call.argsi[2] == 2)
+				glPixelMapusv(call.argsi[0], call.argsi[1], (const GLushort *)data);
+			else if (call.argsi[2] == 3)
+				glPixelMapfv(call.argsi[0], call.argsi[1], (const GLfloat *)data);
+			data += call.argsi[3];
+			break;
+		case gl_display_list_call::tPixelZoom:
+			glPixelZoom(call.argsf[0], call.argsf[1]);
+			break;
+		//DrawPixels
+		//Bitmap
+		//TexImage
+		case gl_display_list_call::tTexParameter:
+			glTexParameteri(call.argsi[0], call.argsi[1], call.argsi[2]);
+			break;
+		case gl_display_list_call::tTexParameteriv:
+			glTexParameteriv(call.argsi[0], call.argsi[1], call.argsi + 2);
+			break;
+		case gl_display_list_call::tTexParameterfv:
+			glTexParameterfv(call.argsi[0], call.argsi[1], call.argsf);
+			break;
+		case gl_display_list_call::tTexEnv:
+			glTexEnvi(call.argsi[0], call.argsi[1], call.argsi[2]);
+			break;
+		case gl_display_list_call::tTexEnviv:
+			glTexEnviv(call.argsi[0], call.argsi[1], call.argsi + 2);
+			break;
+		case gl_display_list_call::tTexEnvfv:
+			glTexEnvfv(call.argsi[0], call.argsi[1], call.argsf);
+			break;
+		case gl_display_list_call::tFog:
+			glFogf(call.argsi[0], call.argsf[0]);
+			break;
+		case gl_display_list_call::tFogiv:
+			glFogiv(call.argsi[0], call.argsi + 1);
+			break;
+		case gl_display_list_call::tFogfv:
+			glFogfv(call.argsi[0], call.argsf);
+			break;
+		case gl_display_list_call::tScissor:
+			glScissor(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3]);
+			break;
+		case gl_display_list_call::tAlphaFunc:
+			glAlphaFunc(call.argsi[0], call.argsf[0]);
+			break;
+		case gl_display_list_call::tStencilFunc:
+			glStencilFunc(call.argsi[0], call.argsi[1], call.argsi[2]);
+			break;
+		case gl_display_list_call::tStencilOp:
+			glStencilOp(call.argsi[0], call.argsi[1], call.argsi[2]);
+			break;
+		case gl_display_list_call::tDepthFunc:
+			glDepthFunc(call.argsi[0]);
+			break;
+		case gl_display_list_call::tBlendFunc:
+			glBlendFunc(call.argsi[0], call.argsi[1]);
+			break;
+		case gl_display_list_call::tLogicOp:
+			glLogicOp(call.argsi[0]);
+			break;
+		case gl_display_list_call::tDrawBuffer:
+			glDrawBuffer(call.argsi[0]);
+			break;
+		case gl_display_list_call::tColorMask:
+			glColorMask(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3]);
+			break;
+		case gl_display_list_call::tIndexMask:
+			glIndexMask(call.argsi[0]);
+			break;
+		case gl_display_list_call::tDepthMask:
+			glDepthMask(call.argsi[0]);
+			break;
+		case gl_display_list_call::tStencilMask:
+			glStencilMask(call.argsi[0]);
+			break;
+		case gl_display_list_call::tClear:
+			glClear(call.argsi[0]);
+			break;
+		case gl_display_list_call::tClearColor:
+			glClearColor(call.argsf[0], call.argsf[1], call.argsf[2], call.argsf[3]);
+			break;
+		case gl_display_list_call::tClearIndex:
+			glClearIndex(call.argsf[0]);
+			break;
+		case gl_display_list_call::tClearDepth:
+			glClearDepth(call.argsf[0]);
+			break;
+		case gl_display_list_call::tClearStencil:
+			glClearStencil(call.argsi[0]);
+			break;
+		case gl_display_list_call::tClearAccum:
+			glClearAccum(call.argsf[0], call.argsf[1], call.argsf[2], call.argsf[3]);
+			break;
+		case gl_display_list_call::tAccum:
+			glAccum(call.argsi[0], call.argsf[0]);
+			break;
+		case gl_display_list_call::tReadBuffer:
+			glReadBuffer(call.argsi[0]);
+			break;
+		//CopyPixels
+		case gl_display_list_call::tMap1:
+			glMap1f(call.argsi[0], call.argsf[0], call.argsf[1], call.argsi[1], call.argsi[2], (const float *)data);
+			data += call.argsi[3];
+			break;
+		case gl_display_list_call::tMap2:
+			glMap2f(call.argsi[0], call.argsf[0], call.argsf[1], call.argsi[1], call.argsi[2], call.argsf[2], call.argsf[3], call.argsi[3], call.argsi[4], (const float *)data);
+			data += call.argsi[5];
+			break;
+		case gl_display_list_call::tEvalCoord1:
+			glEvalCoord1fv(call.argsf);
+			break;
+		case gl_display_list_call::tEvalCoord2:
+			glEvalCoord2fv(call.argsf);
+			break;
+		case gl_display_list_call::tMapGrid1:
+			glMapGrid1f(call.argsi[0], call.argsf[0], call.argsf[1]);
+			break;
+		case gl_display_list_call::tMapGrid2:
+			glMapGrid2f(call.argsi[0], call.argsf[0], call.argsf[1], call.argsi[1], call.argsf[2], call.argsf[3]);
+			break;
+		case gl_display_list_call::tEvalMesh1:
+			glEvalMesh1(call.argsi[0], call.argsi[1], call.argsi[2]);
+			break;
+		case gl_display_list_call::tEvalMesh2:
+			glEvalMesh2(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4]);
+			break;
+		case gl_display_list_call::tEvalPoint1:
+			glEvalPoint1(call.argsi[0]);
+			break;
+		case gl_display_list_call::tEvalPoint2:
+			glEvalPoint2(call.argsi[0], call.argsi[1]);
+			break;
+		case gl_display_list_call::tInitNames:
+			glInitNames();
+			break;
+		case gl_display_list_call::tPopName:
+			glPopName();
+			break;
+		case gl_display_list_call::tPushName:
+			glPushName(call.argsi[0]);
+			break;
+		case gl_display_list_call::tLoadName:
+			glLoadName(call.argsi[0]);
+			break;
+		case gl_display_list_call::tPassThrough:
+			glPassThrough(call.argsf[0]);
+			break;
+		case gl_display_list_call::tCallList:
+			glCallList(call.argsi[0]);
+			break;
+		case gl_display_list_call::tCallLists:
+			glCallLists(call.argsi[0], call.argsi[1], data);
+			data += gl_callLists_size(call.argsi[0], call.argsi[1]);
+			break;
+		case gl_display_list_call::tListBase:
+			glListBase(call.argsi[0]);
+			break;
+		case gl_display_list_call::tHint:
+			glHint(call.argsi[0], call.argsi[1]);
+			break;
 		}
 	}
 }
 
 void APIENTRY glCallList(GLuint list)
 {
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST(CallList, {}, { (int)list });
 	if (list == 0)
 	{
 		gl_set_error(GL_INVALID_VALUE);
 		return;
 	}
 
-	gl_callList(list);
+	int save = gs->display_list_begun;
+	gs->display_list_begun = 0;
+
+	gl_callList(gs, list);
+
+	gs->display_list_begun = save;
 }
 
 void APIENTRY glCallLists(GLsizei n, GLenum type, const void* lists)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
-
+	WRITE_DISPLAY_LIST_BULK(CallLists, lists, gl_callLists_size(n, type), {}, { n, (int)type });
 	if (n < 0)
 	{
 		gl_set_error(GL_INVALID_VALUE);
 		return;
 	}
 
+	int save = gs->display_list_begun;
+	gs->display_list_begun = 0;
+	
+	const int base = gs->display_list_base;
+
 	switch (type)
 	{
 	case GL_BYTE:
 		for (int i = 0; i < n; i++)
-			gl_callList(gs->display_list_base + ((int8_t*)lists)[i]);
+			gl_callList(gs, base + ((int8_t*)lists)[i]);
 		break;
 	case GL_UNSIGNED_BYTE:
 		for (int i = 0; i < n; i++)
-			gl_callList(gs->display_list_base + ((uint8_t*)lists)[i]);
+			gl_callList(gs, base + ((uint8_t*)lists)[i]);
 		break;
 	case GL_SHORT:
 		for (int i = 0; i < n; i++)
-			gl_callList(gs->display_list_base + ((int16_t*)lists)[i]);
+			gl_callList(gs, base + ((int16_t*)lists)[i]);
 		break;
 	case GL_UNSIGNED_SHORT:
 		for (int i = 0; i < n; i++)
-			gl_callList(gs->display_list_base + ((uint16_t*)lists)[i]);
+			gl_callList(gs, base + ((uint16_t*)lists)[i]);
 		break;
 	case GL_INT:
 		for (int i = 0; i < n; i++)
-			gl_callList(gs->display_list_base + ((int32_t*)lists)[i]);
+			gl_callList(gs, base + ((int32_t*)lists)[i]);
 		break;
 	case GL_UNSIGNED_INT:
 		for (int i = 0; i < n; i++)
-			gl_callList(gs->display_list_base + ((uint32_t*)lists)[i]);
+			gl_callList(gs, base + ((uint32_t*)lists)[i]);
 		break;
 	case GL_FLOAT:
 		for (int i = 0; i < n; i++)
-			gl_callList(gs->display_list_base + (GLuint)((float*)lists)[i]);
+			gl_callList(gs, base + (GLuint)((float*)lists)[i]);
 		break;
 	case GL_2_BYTES:
 	{
 		const uint8_t* bytes = (uint8_t*)lists;
 		for (int i = 0; i < n; i++)
 		{
-			gl_callList(gs->display_list_base + bytes[0] * 0x100 + bytes[1]);
+			gl_callList(gs, base + bytes[0] * 0x100 + bytes[1]);
 			bytes += 2;
 		}
 		break;
@@ -284,7 +477,7 @@ void APIENTRY glCallLists(GLsizei n, GLenum type, const void* lists)
 		const uint8_t* bytes = (uint8_t*)lists;
 		for (int i = 0; i < n; i++)
 		{
-			gl_callList(gs->display_list_base + bytes[0] * 0x10000 + bytes[1] * 0x100 + bytes[2]);
+			gl_callList(gs, base + bytes[0] * 0x10000 + bytes[1] * 0x100 + bytes[2]);
 			bytes += 3;
 		}
 		break;
@@ -294,21 +487,23 @@ void APIENTRY glCallLists(GLsizei n, GLenum type, const void* lists)
 		const uint8_t* bytes = (uint8_t*)lists;
 		for (int i = 0; i < n; i++)
 		{
-			gl_callList(gs->display_list_base + bytes[0] * 0x1000000 + bytes[1] * 0x10000 + bytes[2] * 0x100 + bytes[3]);
+			gl_callList(gs, base + bytes[0] * 0x1000000 + bytes[1] * 0x10000 + bytes[2] * 0x100 + bytes[3]);
 			bytes += 4;
 		}
 		break;
 	}
 	default:
 		gl_set_error_a(GL_INVALID_ENUM, type);
-		return;
 	}
+
+	gs->display_list_begun = save;
 }
 
 void APIENTRY glListBase(GLuint base)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(ListBase, {}, { (int)base });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	gs->display_list_base = base;

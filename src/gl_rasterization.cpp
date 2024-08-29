@@ -112,6 +112,7 @@ void APIENTRY glFogf(GLenum pname, GLfloat param)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(Fog, { param }, { (int)pname });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	gl_fog_scalar(__FUNCTION__, gs, pname, param);
@@ -119,21 +120,40 @@ void APIENTRY glFogf(GLenum pname, GLfloat param)
 
 void APIENTRY glFogi(GLenum pname, GLint param) { glFogf(pname, (GLfloat)param); }
 
-template<typename T>
-void gl_fogv(GLenum pname, const T* params)
+static int gl_fogv_size(GLenum pname)
 {
-	gl_state* gs = gl_current_state();
-	if (!gs) return;
-	VALIDATE_NOT_BEGIN_MODE;
+	if (pname >= GL_FOG_INDEX && pname <= GL_FOG_MODE)
+		return 1;
+	if (pname == GL_FOG_COLOR)
+		return 4;
+	return 0;
+}
 
+template<typename T>
+void gl_fogv(gl_state *gs, GLenum pname, const T* params)
+{
+	VALIDATE_NOT_BEGIN_MODE;
 	if (pname == GL_FOG_COLOR)
 		gs->fog_color = glm::clamp(glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])), 0.0f, 1.0f);
 	else
 		gl_fog_scalar(__FUNCTION__, gs, pname, (GLfloat)params[0]);
 }
 
-void APIENTRY glFogiv(GLenum pname, const GLint* params) { gl_fogv(pname, params); }
-void APIENTRY glFogfv(GLenum pname, const GLfloat* params) { gl_fogv(pname, params); }
+void APIENTRY glFogiv(GLenum pname, const GLint* params)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST_IV(Fogiv, params, gl_fogv_size(pname), 1, {}, { (int)pname });
+	gl_fogv(gs, pname, params);
+}
+
+void APIENTRY glFogfv(GLenum pname, const GLfloat* params)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST_FV(Fogfv, params, gl_fogv_size(pname), {}, { (int)pname });
+	gl_fogv(gs, pname, params);
+}
 
 
 static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &data)

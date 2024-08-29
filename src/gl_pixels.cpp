@@ -101,6 +101,7 @@ void APIENTRY glPixelTransferf(GLenum pname, GLfloat param)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(PixelTransfer, { param }, { (int)pname });
 	VALIDATE_NOT_BEGIN_MODE
 
 	if (pname < GL_MAP_COLOR || (pname > GL_RED_BIAS && pname < GL_GREEN_SCALE) || pname > GL_DEPTH_BIAS)
@@ -158,10 +159,19 @@ if (map >= GL_PIXEL_MAP_I_TO_I && map <= GL_PIXEL_MAP_I_TO_A && !is_pow(mapsize)
 	return;\
 }
 
+static int gl_pixelMapv_size(GLsizei mapsize)
+{
+	if (mapsize < 0 || mapsize > gl_max_pixel_map_table)
+		return 0;
+	return mapsize;
+}
+
 void APIENTRY glPixelMapuiv(GLenum map, GLsizei mapsize, const GLuint* values)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	int s = gl_pixelMapv_size(mapsize) * sizeof(GLuint);
+	WRITE_DISPLAY_LIST_BULK(PixelMap, values, s, {}, { (int)map, mapsize, 1, s });
 	VALIDATE_PIXEL_MAP;
 
 	if (map >= GL_PIXEL_MAP_I_TO_I && map <= GL_PIXEL_MAP_S_TO_S)
@@ -182,6 +192,8 @@ void APIENTRY glPixelMapusv(GLenum map, GLsizei mapsize, const GLushort* values)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	int s = gl_pixelMapv_size(mapsize) * sizeof(GLushort);
+	WRITE_DISPLAY_LIST_BULK(PixelMap, values, s, {}, { (int)map, mapsize, 2, s });
 	VALIDATE_PIXEL_MAP;
 
 	if (map >= GL_PIXEL_MAP_I_TO_I && map <= GL_PIXEL_MAP_S_TO_S)
@@ -203,6 +215,8 @@ void APIENTRY glPixelMapfv(GLenum map, GLsizei mapsize, const GLfloat* values)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	int s = gl_pixelMapv_size(mapsize) * sizeof(GLfloat);
+	WRITE_DISPLAY_LIST_BULK(PixelMap, values, s, {}, { (int)map, mapsize, 3, s });
 	VALIDATE_PIXEL_MAP;
 
 	if (map >= GL_PIXEL_MAP_I_TO_I && map <= GL_PIXEL_MAP_S_TO_S)
@@ -224,6 +238,7 @@ void APIENTRY glPixelZoom(GLfloat xfactor, GLfloat yfactor)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(PixelZoom, { xfactor, yfactor });
 	VALIDATE_NOT_BEGIN_MODE
 	gs->pixel_zoom = glm::vec2(xfactor, yfactor);
 }
@@ -294,10 +309,40 @@ static void emit_stencil(gl_state& st, int x, int y, uint8_t index)
 	fb.stencil[pi] = (index & st.stencil_writemask) | (fb.stencil[pi] & ~st.stencil_writemask);
 }
 
+#if 0
+static int gl_drawPixels_size(const gl_state::pixelStore &ps, GLsizei width, GLsizei height, GLenum format, GLenum type)
+{
+	int pixel_size = 1;
+	if (format == GL_LUMINANCE_ALPHA)
+		pixel_size = 2;
+	else if (format == GL_RGB)
+		pixel_size = 3;
+	else if (format == GL_RGBA)
+		pixel_size = 4;
+	else if (format < GL_COLOR_INDEX || format > GL_LUMINANCE_ALPHA)
+		return 0;
+
+	int element_size = 1;
+	if (type == GL_UNSIGNED_SHORT || type == GL_SHORT)
+		element_size = 2;
+	else if (type == GL_UNSIGNED_INT || type == GL_INT || type == GL_FLOAT)
+		element_size = 4;
+	else if (type != GL_BITMAP && (type < GL_BYTE || type > GL_FLOAT))
+		return 0;
+
+	return pixel_size * element_size * width * height;
+}
+#endif
+
 void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum type, const void* data)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	//TODO
+	//WRITE_DISPLAY_LIST_BULK(DrawPixels, data, gl_drawPixels_size(gs->pixel_unpack, width, height, format, type), {}, { width, height, (int)format,(int)type });
+	if (gs->display_list_begun && !gs->display_list_execute)
+		return;
+
 	VALIDATE_NOT_BEGIN_MODE
 
 	if (format < GL_COLOR_INDEX || format > GL_LUMINANCE_ALPHA)
@@ -566,6 +611,9 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	//TODO
+	if (gs->display_list_begun && !gs->display_list_execute)
+		return;
 	VALIDATE_NOT_BEGIN_MODE
 
 	if (!gs->raster_pos.valid)
@@ -844,6 +892,9 @@ void APIENTRY glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	//TODO
+	if (gs->display_list_begun && !gs->display_list_execute)
+		return;
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (type < GL_COLOR || type > GL_STENCIL)

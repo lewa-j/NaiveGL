@@ -6,6 +6,7 @@ void APIENTRY glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(Scissor, {}, { x, y, width, height });
 	VALIDATE_NOT_BEGIN_MODE;
 	if (width < 0 || height < 0)
 	{
@@ -26,6 +27,7 @@ void APIENTRY glAlphaFunc(GLenum func, GLfloat ref)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(AlphaFunc, { ref }, { (int)func });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEST_FUNC(func);
 
@@ -37,6 +39,7 @@ void APIENTRY glStencilFunc(GLenum func, GLint ref, GLuint mask)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(StencilFunc, {}, { (int)func, ref, (int)mask });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEST_FUNC(func);
 
@@ -57,6 +60,7 @@ void APIENTRY glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(StencilOp, {}, { (int)sfail, (int)dpfail, (int)dppass });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_STENCIL_OP(sfail);
 	VALIDATE_STENCIL_OP(dpfail);
@@ -71,6 +75,7 @@ void APIENTRY glDepthFunc(GLenum func)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(DepthFunc, {}, { (int)func });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEST_FUNC(func);
 
@@ -81,6 +86,7 @@ void APIENTRY glBlendFunc(GLenum sfactor, GLenum dfactor)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(BlendFunc, {}, { (int)sfactor, (int)dfactor });
 	VALIDATE_NOT_BEGIN_MODE;
 	if (sfactor != 0 && sfactor != 1 && (sfactor < GL_SRC_ALPHA || sfactor > GL_SRC_ALPHA_SATURATE))
 	{
@@ -101,6 +107,7 @@ void APIENTRY glLogicOp(GLenum opcode)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(LogicOp, {}, { (int)opcode });
 	VALIDATE_NOT_BEGIN_MODE;
 	if (opcode < GL_CLEAR || opcode > GL_SET)
 	{
@@ -122,6 +129,7 @@ void APIENTRY glDrawBuffer(GLenum buf)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(DrawBuffer, {}, { (int)buf });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_DR_BUFFER(buf);
 
@@ -145,6 +153,7 @@ void APIENTRY glReadBuffer(GLenum src)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(ReadBuffer, {}, { (int)src });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_DR_BUFFER(src);
 
@@ -182,6 +191,7 @@ void APIENTRY glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLbool
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(ColorMask, {}, { red, green, blue, alpha });
 	VALIDATE_NOT_BEGIN_MODE;
 	gs->color_mask = glm::bvec4{ red, green, blue, alpha };
 }
@@ -190,6 +200,7 @@ void APIENTRY glIndexMask(GLuint mask)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(IndexMask, {}, { (int)mask });
 	VALIDATE_NOT_BEGIN_MODE;
 	//color index mode
 }
@@ -198,6 +209,7 @@ void APIENTRY glDepthMask(GLboolean flag)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(DepthMask, {}, { flag });
 	VALIDATE_NOT_BEGIN_MODE;
 	gs->depth_mask = flag;
 }
@@ -206,6 +218,7 @@ void APIENTRY glStencilMask(GLuint mask)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(StencilMask, {}, { (int)mask });
 	VALIDATE_NOT_BEGIN_MODE;
 	gs->stencil_writemask = mask;
 }
@@ -220,6 +233,7 @@ void APIENTRY glClear(GLbitfield mask)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(Clear, {}, { (int)mask });
 	VALIDATE_NOT_BEGIN_MODE;
 	if (mask != (mask & (GL_DEPTH_BUFFER_BIT | GL_ACCUM_BUFFER_BIT | GL_STENCIL_BUFFER_BIT | GL_COLOR_BUFFER_BIT)))
 	{
@@ -371,6 +385,7 @@ void APIENTRY glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alp
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(ClearColor, { red,green,blue,alpha });
 	VALIDATE_NOT_BEGIN_MODE;
 	gs->clear_color = glm::clamp(glm::vec4(red, green, blue, alpha), 0.f, 1.f);
 }
@@ -379,6 +394,7 @@ void APIENTRY glClearIndex(GLfloat c)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(ClearIndex, { c });
 	VALIDATE_NOT_BEGIN_MODE;
 	//color index mode
 }
@@ -387,6 +403,7 @@ void APIENTRY glClearDepth(GLdouble depth)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(ClearDepth, { (float)depth });
 	VALIDATE_NOT_BEGIN_MODE;
 	gs->clear_depth = glm::clamp((float)depth, 0.f, 1.f);
 }
@@ -395,6 +412,7 @@ void APIENTRY glClearStencil(GLint s)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(ClearStencil, {}, {s});
 	VALIDATE_NOT_BEGIN_MODE;
 	gs->clear_stencil = s;
 }
@@ -403,6 +421,7 @@ void APIENTRY glClearAccum(GLfloat red, GLfloat green, GLfloat blue, GLfloat alp
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(ClearAccum, { red,green,blue,alpha });
 	VALIDATE_NOT_BEGIN_MODE;
 	gs->clear_accum = glm::clamp(glm::vec4(red, green, blue, alpha), -1.f, 1.f);
 }
@@ -411,6 +430,7 @@ void APIENTRY glAccum(GLenum op, GLfloat value)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(Accum, { value }, { (int)op });
 	VALIDATE_NOT_BEGIN_MODE;
 	if (op < GL_ACCUM || op > GL_ADD)
 	{

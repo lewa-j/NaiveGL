@@ -66,6 +66,9 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	//TODO
+	if (gs->display_list_begun && !gs->display_list_execute)
+		return;
 	VALIDATE_NOT_BEGIN_MODE
 
 	if (target != GL_TEXTURE_2D)
@@ -167,6 +170,9 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
+	//TODO
+	if (gs->display_list_begun && !gs->display_list_execute)
+		return;
 	VALIDATE_NOT_BEGIN_MODE
 
 	if (target != GL_TEXTURE_1D)
@@ -187,8 +193,6 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei
 }
 
 #define VALIDATE_TEX_PARAMETER_V(p) \
-gl_state* gs = gl_current_state(); \
-if (!gs) return; \
 VALIDATE_NOT_BEGIN_MODE; \
 if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D) \
 { \
@@ -214,6 +218,9 @@ if ((pname == GL_TEXTURE_MAG_FILTER && p != GL_NEAREST && p != GL_LINEAR) \
 
 void APIENTRY glTexParameteri(GLenum target, GLenum pname, GLint param)
 {
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST(TexParameter, {}, { (int)target, (int)pname, param });
 	VALIDATE_TEX_PARAMETER_V(param);
 	if (pname == GL_TEXTURE_BORDER_COLOR)
 	{
@@ -239,8 +246,17 @@ void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param)
 	glTexParameteri(target, pname, (int)param);
 }
 
+static int gl_texParameterv_size(GLenum pname)
+{
+	if (pname >= GL_TEXTURE_MAG_FILTER && pname <= GL_TEXTURE_WRAP_T)
+		return 1;
+	if (pname == GL_TEXTURE_BORDER_COLOR)
+		return 4;
+	return 0;
+}
+
 template<typename T>
-void gl_texparameterv(GLenum target, GLenum pname, const T* params)
+void gl_texParameterv(gl_state *gs, GLenum target, GLenum pname, const T* params)
 {
 	VALIDATE_TEX_PARAMETER_V(int(params[0]));
 
@@ -262,16 +278,20 @@ void gl_texparameterv(GLenum target, GLenum pname, const T* params)
 
 void APIENTRY glTexParameteriv(GLenum target, GLenum pname, const GLint* params)
 {
-	gl_texparameterv(target, pname, params);
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST_IV(TexParameteriv, params, gl_texParameterv_size(pname), 2, {}, { (int)target, (int)pname });
+	gl_texParameterv(gs, target, pname, params);
 }
 void APIENTRY glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params)
 {
-	gl_texparameterv(target, pname, params);
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST_FV(TexParameterfv, params, gl_texParameterv_size(pname), {}, { (int)target, (int)pname });
+	gl_texParameterv(gs, target, pname, params);
 }
 
 #define VALIDATE_TEX_ENV_V(p) \
-gl_state* gs = gl_current_state(); \
-if (!gs) return; \
 VALIDATE_NOT_BEGIN_MODE; \
 if (target != GL_TEXTURE_ENV) \
 { \
@@ -291,6 +311,9 @@ if (pname == GL_TEXTURE_ENV_MODE && (p != GL_MODULATE && p != GL_DECAL && p != G
 
 void APIENTRY glTexEnvi(GLenum target, GLenum pname, GLint param)
 {
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST(TexEnv, {}, { (int)target, (int)pname, param });
 	VALIDATE_TEX_ENV_V(param);
 
 	if (pname == GL_TEXTURE_ENV_COLOR)
@@ -309,8 +332,20 @@ void APIENTRY glTexEnvf(GLenum target, GLenum pname, GLfloat param)
 	glTexEnvi(target, pname, (GLint)param);
 }
 
+static int gl_texEnvv_size(GLenum pname)
+{
+	if (pname == GL_TEXTURE_ENV_MODE)
+		return 1;
+	if (pname == GL_TEXTURE_ENV_COLOR)
+		return 4;
+	return 0;
+}
+
 void APIENTRY glTexEnviv(GLenum target, GLenum pname, const GLint* params)
 {
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST_IV(TexEnviv, params, gl_texEnvv_size(pname), 2, {}, { (int)target, (int)pname });
 	VALIDATE_TEX_ENV_V(params[0]);
 
 	if (pname == GL_TEXTURE_ENV_MODE)
@@ -321,6 +356,9 @@ void APIENTRY glTexEnviv(GLenum target, GLenum pname, const GLint* params)
 
 void APIENTRY glTexEnvfv(GLenum target, GLenum pname, const GLfloat* params)
 {
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST_FV(TexEnvfv, params, gl_texEnvv_size(pname), {}, { (int)target, (int)pname });
 	VALIDATE_TEX_ENV_V((GLenum)params[0]);
 
 	if (pname == GL_TEXTURE_ENV_MODE)

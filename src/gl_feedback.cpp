@@ -35,6 +35,7 @@ EXPORT void APIENTRY glPassThrough(GLfloat token)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(PassThrough, { token });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (gs->render_mode != GL_FEEDBACK)

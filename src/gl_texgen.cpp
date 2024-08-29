@@ -88,7 +88,7 @@ void APIENTRY gl_texGenv(GLenum coord, GLenum pname, const T *params)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-	WRITE_DISPLAY_LIST_FV(TexGenv, params, gl_texGenv_size(pname), {}, { (int)coord, (int)pname });
+	WRITE_DISPLAY_LIST_FV(TexGenfv, params, gl_texGenv_size(pname), {}, { (int)coord, (int)pname });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEXGEN_COORD;
 	if (pname < GL_TEXTURE_GEN_MODE || pname > GL_EYE_PLANE)
