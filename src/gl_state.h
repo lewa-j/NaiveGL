@@ -132,9 +132,10 @@ struct gl_display_list_call
 		tPixelTransfer,//1i,1f
 		tPixelMap,//2i+n*ui/us/f big i[2] type i[3] size
 		tPixelZoom,//2f
-		tDrawPixels,//4i+n	big
-		tBitmap,//2i+4f+n	big
-		tTexImage,//8i+n	big
+		tDrawPixels,//4i+n	big i[4] size
+		tBitmap,//2i+4f+n	big i[2] size
+		tTexImage2D,//1f+7i+n	big i[7] size
+		tTexImage1D,//7i+n	big i[7] size
 		tTexParameter,//2i+1i
 		tTexParameteriv,//2i+1i/4i
 		tTexParameterfv,//2i+1f/4f
@@ -464,6 +465,9 @@ void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_pro
 void gl_rasterize_clipped_line(gl_state& st, gl_processed_vertex v0, gl_processed_vertex v1);
 void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vertex& v1, gl_processed_vertex& v2);
 void gl_rasterize_clipped_triangle(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1, const gl_processed_vertex& v2);
+
+int gl_pixels_size(GLsizei width, GLsizei height, GLenum format, GLenum type);
+void gl_unpack_pixels(gl_state *gs, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *data, uint8_t *dst);
 
 void gl_dither(glm::vec4& color, int x, int y);
 

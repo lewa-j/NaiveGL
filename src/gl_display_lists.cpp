@@ -242,9 +242,46 @@ void gl_callList(gl_state *gs, GLuint list)
 		case gl_display_list_call::tPixelZoom:
 			glPixelZoom(call.argsf[0], call.argsf[1]);
 			break;
-		//DrawPixels
-		//Bitmap
-		//TexImage
+		case gl_display_list_call::tDrawPixels:
+		{
+			gl_state::pixelStore save = gs->pixel_unpack;
+			gs->pixel_pack = {};
+			gs->pixel_pack.alignment = 1;
+			glDrawPixels(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], data);
+			data += call.argsi[4];
+			gs->pixel_unpack = save;
+			break;
+		}
+		case gl_display_list_call::tBitmap:
+		{
+			gl_state::pixelStore save = gs->pixel_unpack;
+			gs->pixel_pack = {};
+			gs->pixel_pack.alignment = 1;
+			glBitmap(call.argsi[0], call.argsi[1], call.argsf[0], call.argsf[1], call.argsf[2], call.argsf[3], data);
+			data += call.argsi[2];
+			gs->pixel_unpack = save;
+			break;
+		}
+		case gl_display_list_call::tTexImage2D:
+		{
+			gl_state::pixelStore save = gs->pixel_unpack;
+			gs->pixel_pack = {};
+			gs->pixel_pack.alignment = 1;
+			glTexImage2D((GLenum)call.argsf[0], call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4], call.argsi[5], call.argsi[6], data);
+			data += call.argsi[7];
+			gs->pixel_unpack = save;
+			break;
+		}
+		case gl_display_list_call::tTexImage1D:
+		{
+			gl_state::pixelStore save = gs->pixel_unpack;
+			gs->pixel_pack = {};
+			gs->pixel_pack.alignment = 1;
+			glTexImage1D(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4], call.argsi[5], call.argsi[6], data);
+			data += call.argsi[7];
+			gs->pixel_unpack = save;
+			break;
+		}
 		case gl_display_list_call::tTexParameter:
 			glTexParameteri(call.argsi[0], call.argsi[1], call.argsi[2]);
 			break;
@@ -332,7 +369,9 @@ void gl_callList(gl_state *gs, GLuint list)
 		case gl_display_list_call::tReadBuffer:
 			glReadBuffer(call.argsi[0]);
 			break;
-		//CopyPixels
+		case gl_display_list_call::tCopyPixels:
+			glCopyPixels(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4]);
+			break;
 		case gl_display_list_call::tMap1:
 			glMap1f(call.argsi[0], call.argsf[0], call.argsf[1], call.argsi[1], call.argsi[2], (const float *)data);
 			data += call.argsi[3];

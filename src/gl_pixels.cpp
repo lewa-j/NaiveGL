@@ -309,8 +309,7 @@ static void emit_stencil(gl_state& st, int x, int y, uint8_t index)
 	fb.stencil[pi] = (index & st.stencil_writemask) | (fb.stencil[pi] & ~st.stencil_writemask);
 }
 
-#if 0
-static int gl_drawPixels_size(const gl_state::pixelStore &ps, GLsizei width, GLsizei height, GLenum format, GLenum type)
+int gl_pixels_size(GLsizei width, GLsizei height, GLenum format, GLenum type)
 {
 	int pixel_size = 1;
 	if (format == GL_LUMINANCE_ALPHA)
@@ -330,19 +329,179 @@ static int gl_drawPixels_size(const gl_state::pixelStore &ps, GLsizei width, GLs
 	else if (type != GL_BITMAP && (type < GL_BYTE || type > GL_FLOAT))
 		return 0;
 
-	return pixel_size * element_size * width * height;
+	if (type == GL_BITMAP && format != GL_COLOR_INDEX && format != GL_STENCIL_INDEX)
+		return 0;
+
+	if (type == GL_BITMAP)
+		return (int)(glm::ceil(width / 8.f)) * height;
+
+	return element_size * pixel_size * width * height;
 }
-#endif
+
+void gl_unpack_pixels(gl_state *gs, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *data, uint8_t *dst)
+{
+	if ((format < GL_COLOR_INDEX || format > GL_LUMINANCE_ALPHA) || (type != GL_BITMAP && (type < GL_BYTE || type > GL_FLOAT)))
+		return;
+	if (type == GL_BITMAP && format != GL_COLOR_INDEX && format != GL_STENCIL_INDEX)
+		return;
+
+	const gl_state::pixelStore &ps = gs->pixel_unpack;
+	int row_length = (ps.row_length > 0) ? ps.row_length : width;
+
+	const uint8_t *src = (const uint8_t *)data;
+
+	if (type == GL_BITMAP)
+	{
+		int stride = (int)(ps.alignment * glm::ceil(row_length / float(8 * ps.alignment)));
+		int dst_stride = (int)glm::ceil(width / 8.f);
+		int skip_bits = ps.skip_pixels & 7;
+
+		src += ps.skip_pixels / 8 + ps.skip_rows * stride;
+
+		if (stride == dst_stride && !ps.lsb_first && !skip_bits)
+		{
+			memcpy(dst, src, dst_stride * height);
+			return;
+		}
+
+		for (int j = 0; j < height; j++)
+		{
+			const uint8_t *row = src;
+			int pixel = skip_bits;
+
+			uint8_t *dst_row = dst;
+			int dst_pixel = 0;
+			uint8_t dst_byte = 0;
+
+			if (!ps.lsb_first && !skip_bits)
+			{
+				memcpy(dst, src, dst_stride);
+				src += stride;
+				dst += dst_stride;
+				continue;
+			}
+
+			for (int ix = 0; ix < width; ix++)
+			{
+				bool b = 0;
+				if (ps.lsb_first)
+					b = !!((*row) & (1 << pixel));
+				else
+					b = !!((*row) & (0x80 >> pixel));
+
+				if (b)
+					dst_byte |= 1;
+
+				pixel++;
+				dst_pixel++;
+				if (dst_pixel >= 8)
+				{
+					dst_pixel = dst_pixel & 7;
+					*dst_row = dst_byte;
+					dst_byte = 0;
+					dst_row++;
+				}
+				else
+				{
+					dst_byte <<= 1;
+				}
+
+				if (pixel >= 8)
+				{
+					pixel = pixel & 7;
+					row++;
+				}
+			}
+			src += stride;
+			dst += dst_stride;
+		}
+	}
+	else
+	{
+		int pixel_size = 1;
+		if (format == GL_LUMINANCE_ALPHA)
+			pixel_size = 2;
+		else if (format == GL_RGB)
+			pixel_size = 3;
+		else if (format == GL_RGBA)
+			pixel_size = 4;
+
+		int element_size = 1;
+		if (type == GL_UNSIGNED_SHORT || type == GL_SHORT)
+			element_size = 2;
+		else if (type == GL_UNSIGNED_INT || type == GL_INT || type == GL_FLOAT)
+			element_size = 4;
+
+		int elements_stride = int((element_size >= ps.alignment) ?
+			(pixel_size * row_length) :
+			(ps.alignment / element_size * glm::ceil((element_size * pixel_size * row_length) / (float)ps.alignment)));
+
+		src += (ps.skip_pixels * pixel_size + ps.skip_rows * elements_stride) * element_size;
+
+		int dst_stride = element_size * pixel_size * width;
+
+		if (elements_stride == pixel_size * width && !ps.swap_bytes)
+		{
+			memcpy(dst, src, dst_stride * height);
+			return;
+		}
+
+		for (int j = 0; j < height; j++)
+		{
+			const uint8_t *row = src;
+			uint8_t *dst_row = dst;
+
+			if (!ps.swap_bytes)
+			{
+				memcpy(dst, src, dst_stride);
+				src += elements_stride * element_size;
+				dst += dst_stride;
+				continue;
+			}
+
+			for (int i = 0; i < width; i++)
+			{
+				uint8_t group[16];
+				memcpy(group, row, element_size * pixel_size);
+				if (ps.swap_bytes && element_size > 1)
+				{
+					for (int c = 0; c < pixel_size; c++)
+					{
+						std::swap(group[c * element_size], group[(c + 1) * element_size - 1]);
+						if (element_size == 4)
+							std::swap(group[c * element_size + 1], group[c * element_size + 2]);
+					}
+				}
+
+				memcpy(dst_row, group, element_size *pixel_size);
+
+				row += pixel_size * element_size;
+				dst_row += pixel_size * element_size;
+			}
+			src += elements_stride * element_size;
+			dst += dst_stride;
+		}
+	}
+}
 
 void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum type, const void* data)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
-	//TODO
-	//WRITE_DISPLAY_LIST_BULK(DrawPixels, data, gl_drawPixels_size(gs->pixel_unpack, width, height, format, type), {}, { width, height, (int)format,(int)type });
-	if (gs->display_list_begun && !gs->display_list_execute)
-		return;
-
+	if (gs->display_list_begun)
+	{
+		auto &dl = gs->display_list_indices[0];
+		size_t old_size = dl.data.size();
+		int pix_size = gl_pixels_size(width, height, format, type);
+		if (pix_size)
+		{
+			dl.data.resize(old_size + pix_size);
+			gl_unpack_pixels(gs, width, height, format, type, data, dl.data.data() + old_size);
+		}
+		dl.calls.push_back({ gl_display_list_call::tDrawPixels, {}, { width, height, (int)format, (int)type, pix_size} });
+		if (!gs->display_list_execute)
+			return;
+	}
 	VALIDATE_NOT_BEGIN_MODE
 
 	if (format < GL_COLOR_INDEX || format > GL_LUMINANCE_ALPHA)
@@ -611,9 +770,20 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
-	//TODO
-	if (gs->display_list_begun && !gs->display_list_execute)
-		return;
+	if (gs->display_list_begun)
+	{
+		auto &dl = gs->display_list_indices[0];
+		size_t old_size = dl.data.size();
+		int pix_size = gl_pixels_size(width, height, GL_COLOR_INDEX, GL_BITMAP);
+		if (pix_size)
+		{
+			dl.data.resize(old_size + pix_size);
+			gl_unpack_pixels(gs, width, height, GL_COLOR_INDEX, GL_BITMAP, data, dl.data.data() + old_size);
+		}
+		dl.calls.push_back({ gl_display_list_call::tBitmap, {xorig, yorig, xmove, ymove}, { width, height, pix_size} });
+		if (!gs->display_list_execute)
+			return;
+	}
 	VALIDATE_NOT_BEGIN_MODE
 
 	if (!gs->raster_pos.valid)
@@ -892,9 +1062,7 @@ void APIENTRY glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
-	//TODO
-	if (gs->display_list_begun && !gs->display_list_execute)
-		return;
+	WRITE_DISPLAY_LIST(CopyPixels, {}, { x, y, width, height, (int)type });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (type < GL_COLOR || type > GL_STENCIL)

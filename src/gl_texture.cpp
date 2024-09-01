@@ -66,9 +66,20 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
-	//TODO
-	if (gs->display_list_begun && !gs->display_list_execute)
-		return;
+	if (gs->display_list_begun)
+	{
+		auto &dl = gs->display_list_indices[0];
+		size_t old_size = dl.data.size();
+		int pix_size = gl_pixels_size(width, height, format, type);
+		if (pix_size)
+		{
+			dl.data.resize(old_size + pix_size);
+			gl_unpack_pixels(gs, width, height, format, type, data, dl.data.data() + old_size);
+		}
+		dl.calls.push_back({ gl_display_list_call::tTexImage2D, {(float)target}, {level, components, width, height, border, (int)format, (int)type, pix_size} });
+		if (!gs->display_list_execute)
+			return;
+	}
 	VALIDATE_NOT_BEGIN_MODE
 
 	if (target != GL_TEXTURE_2D)
@@ -148,7 +159,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 		{
 			if (format == GL_RGBA && components == 3)
 			{
-				const uint8_t* src = (const uint8_t*)data;
+				const uint8_t *src = (const uint8_t *)data;
 				for (size_t i = 0; i < size; i += 3)
 				{
 					ta.data[i] = src[0];
@@ -170,9 +181,20 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
-	//TODO
-	if (gs->display_list_begun && !gs->display_list_execute)
-		return;
+	if (gs->display_list_begun)
+	{
+		auto &dl = gs->display_list_indices[0];
+		size_t old_size = dl.data.size();
+		int pix_size = gl_pixels_size(width, 1, format, type);
+		if (pix_size)
+		{
+			dl.data.resize(old_size + pix_size);
+			gl_unpack_pixels(gs, width, 1, format, type, data, dl.data.data() + old_size);
+		}
+		dl.calls.push_back({ gl_display_list_call::tTexImage1D, {}, {(int)target, level, components, width, border, (int)format, (int)type, pix_size} });
+		if (!gs->display_list_execute)
+			return;
+	}
 	VALIDATE_NOT_BEGIN_MODE
 
 	if (target != GL_TEXTURE_1D)
