@@ -263,4 +263,16 @@ EXPORT BOOL WINAPI wglSwapBuffers(HDC device_context)
 	return 1;
 }
 
+void APIENTRY glFlush(void)
+{
+	//HACK
+	if (current_hdc)
+		wglSwapBuffers(current_hdc);
+}
+
+void APIENTRY glFinish(void)
+{
+
+}
+
 }

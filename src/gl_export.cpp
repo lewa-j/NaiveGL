@@ -3,11 +3,9 @@
 
 EXPORT void APIENTRY glGetFloatv(GLenum pname, GLfloat *data) {}
 EXPORT void APIENTRY glGetIntegerv(GLenum pname, GLint *data) {}
-EXPORT void APIENTRY glFinish(void) {}
 EXPORT void APIENTRY glHint(GLenum target, GLenum mode) {}
 
 //freeglut
-EXPORT void APIENTRY glFlush(void) {}
 EXPORT void APIENTRY glPopAttrib(void) {}
 EXPORT void APIENTRY glPushAttrib(GLbitfield mask) {}
 EXPORT void APIENTRY glGetBooleanv(GLenum pname, GLboolean *data) {}
