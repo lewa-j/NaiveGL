@@ -3,7 +3,6 @@
 
 EXPORT void APIENTRY glGetFloatv(GLenum pname, GLfloat *data) {}
 EXPORT void APIENTRY glGetIntegerv(GLenum pname, GLint *data) {}
-EXPORT void APIENTRY glHint(GLenum target, GLenum mode) {}
 
 //freeglut
 EXPORT void APIENTRY glPopAttrib(void) {}

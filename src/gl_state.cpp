@@ -227,6 +227,8 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	display_list_execute = false;
 	display_list_base = 0;
 	display_list_indices.clear();
+
+	hints = {};
 }
 
 void gl_state::destroy()
@@ -527,6 +529,35 @@ void APIENTRY glDisable(GLenum cap)
 		gl_set_error_a(GL_INVALID_ENUM, cap);
 		return;
 	}
+}
+
+void APIENTRY glHint(GLenum target, GLenum mode)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST(Hint, {}, { (int)target, (int)mode });
+	VALIDATE_NOT_BEGIN_MODE;
+	if (target < GL_PERSPECTIVE_CORRECTION_HINT || target > GL_FOG_HINT)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, target);
+		return;
+	}
+	if (mode < GL_DONT_CARE || mode > GL_NICEST)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, mode);
+		return;
+	}
+
+	if (target == GL_PERSPECTIVE_CORRECTION_HINT)
+		gs->hints.perspective_correction = mode;
+	else if (target == GL_POINT_SMOOTH_HINT)
+		gs->hints.point_smooth = mode;
+	else if (target == GL_LINE_SMOOTH_HINT)
+		gs->hints.line_smooth = mode;
+	else if (target == GL_POLYGON_SMOOTH_HINT)
+		gs->hints.polygon_smooth = mode;
+	else if (target == GL_FOG_HINT)
+		gs->hints.fog = mode;
 }
 
 const char *APIENTRY glGetString(GLenum name)

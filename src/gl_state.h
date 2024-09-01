@@ -410,6 +410,15 @@ struct gl_state
 	};
 	std::map<int, displayList> display_list_indices;
 
+	struct hints_t
+	{
+		GLenum perspective_correction = GL_DONT_CARE;
+		GLenum point_smooth = GL_DONT_CARE;
+		GLenum line_smooth = GL_DONT_CARE;
+		GLenum polygon_smooth = GL_DONT_CARE;
+		GLenum fog = GL_DONT_CARE;
+	} hints;
+
 	void init(int window_w, int window_h, bool doublebuffer);
 	void destroy();
 
