@@ -499,7 +499,7 @@ void APIENTRY glEvalMesh2(GLenum mode, GLint p1, GLint p2, GLint q1, GLint q2)
 		for (int i = q1; i < q2; i++)
 		{
 			glBegin(GL_QUAD_STRIP);
-			for (int j = p1; i <= p2; i++)
+			for (int j = p1; j <= p2; j++)
 			{
 				gl_evalPoint2(gs, du, dv, j, i);
 				gl_evalPoint2(gs, du, dv, j, (i + 1));
@@ -512,7 +512,7 @@ void APIENTRY glEvalMesh2(GLenum mode, GLint p1, GLint p2, GLint q1, GLint q2)
 		for (int i = q1; i <= q2; i++)
 		{
 			glBegin(GL_LINE_STRIP);
-			for (int j = p1; i <= p2; i++)
+			for (int j = p1; j <= p2; j++)
 			{
 				gl_evalPoint2(gs, du, dv, j, i);
 			}
@@ -521,7 +521,7 @@ void APIENTRY glEvalMesh2(GLenum mode, GLint p1, GLint p2, GLint q1, GLint q2)
 		for (int i = p1; i <= p2; i++)
 		{
 			glBegin(GL_LINE_STRIP);
-			for (int j = q1; i <= q2; i++)
+			for (int j = q1; j <= q2; j++)
 			{
 				gl_evalPoint2(gs, du, dv, i, j);
 			}
@@ -533,7 +533,7 @@ void APIENTRY glEvalMesh2(GLenum mode, GLint p1, GLint p2, GLint q1, GLint q2)
 		glBegin(GL_POINTS);
 		for (int i = q1; i <= q2; i++)
 		{
-			for (int j = p1; i <= p2; i++)
+			for (int j = p1; j <= p2; j++)
 			{
 				gl_evalPoint2(gs, du, dv, j, i);
 			}
