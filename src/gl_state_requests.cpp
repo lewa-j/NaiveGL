@@ -51,19 +51,6 @@ void APIENTRY glGetDoublev(GLenum pname, GLdouble *data)
 		gl_set_error_a(GL_INVALID_ENUM, pname);
 }
 
-void APIENTRY glGetClipPlane(GLenum plane, GLdouble *equation) {}
-void APIENTRY glGetLightiv(GLenum light, GLenum pname, GLint *params) {}
-void APIENTRY glGetLightfv(GLenum light, GLenum pname, GLfloat *params) {}
-void APIENTRY glGetMaterialiv(GLenum face, GLenum pname, GLint *params) {}
-void APIENTRY glGetMaterialfv(GLenum face, GLenum pname, GLfloat *params) {}
-void APIENTRY glGetTexEnviv(GLenum target, GLenum pname, GLint *params) {}
-void APIENTRY glGetTexEnvfv(GLenum target, GLenum pname, GLfloat *params) {}
-void APIENTRY glGetTexGeniv(GLenum coord, GLenum pname, GLint *params) {}
-void APIENTRY glGetTexGenfv(GLenum coord, GLenum pname, GLfloat *params) {}
-void APIENTRY glGetTexParameteriv(GLenum target, GLenum pname, GLint *params) {}
-void APIENTRY glGetTexParameterfv(GLenum target, GLenum pname, GLfloat *params) {}
-void APIENTRY glGetTexLevelParameteriv(GLenum target, GLint level, GLenum pname, GLint *params) {}
-void APIENTRY glGetTexLevelParameterfv(GLenum target, GLint level, GLenum pname, GLfloat *params) {}
 void APIENTRY glGetPixelMapuiv(GLenum map, GLuint *values) {}
 void APIENTRY glGetPixelMapusv(GLenum map, GLushort *values) {}
 void APIENTRY glGetPixelMapfv(GLenum map, GLfloat *values) {}

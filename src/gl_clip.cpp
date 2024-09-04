@@ -39,6 +39,21 @@ void APIENTRY glClipPlane(GLenum plane, const GLdouble *equation)
 	gs->clipplanes[plane - GL_CLIP_PLANE0] = glm::vec4(equation[0], equation[1], equation[2], equation[3]) * gs->get_inv_modelview();
 }
 
+void APIENTRY glGetClipPlane(GLenum plane, GLdouble *equation)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (plane < GL_CLIP_PLANE0 || plane >= (GL_CLIP_PLANE0 + gl_max_user_clip_planes))
+	{
+		gl_set_error_a(GL_INVALID_ENUM, plane);
+		return;
+	}
+	const glm::vec4 &p = gs->clipplanes[plane - GL_CLIP_PLANE0];
+	for (int i = 0; i < 4; i++)
+		equation[0] = p[0];
+}
+
 static void interpolate(gl_processed_vertex& to, const gl_processed_vertex& v0, const gl_processed_vertex& v1, float t)
 {
 	to.position = glm::mix(v0.position, v1.position, t);

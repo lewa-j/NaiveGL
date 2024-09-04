@@ -214,7 +214,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei
 	//TODO
 }
 
-#define VALIDATE_TEX_PARAMETER_V(p) \
+#define VALIDATE_TEX_PARAMETER \
 VALIDATE_NOT_BEGIN_MODE; \
 if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D) \
 { \
@@ -225,7 +225,9 @@ if ((pname < GL_TEXTURE_MAG_FILTER || pname > GL_TEXTURE_WRAP_T) && pname != GL_
 { \
 	gl_set_error_a(GL_INVALID_ENUM, pname); \
 	return; \
-} \
+}
+
+#define VALIDATE_TEX_PARAMETER_PARAM(p) \
 if ((pname == GL_TEXTURE_WRAP_S || pname == GL_TEXTURE_WRAP_T) && (p != GL_CLAMP && p != GL_REPEAT)) \
 { \
 	gl_set_error_a(GL_INVALID_ENUM, p); \
@@ -243,7 +245,8 @@ void APIENTRY glTexParameteri(GLenum target, GLenum pname, GLint param)
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(TexParameter, {}, { (int)target, (int)pname, param });
-	VALIDATE_TEX_PARAMETER_V(param);
+	VALIDATE_TEX_PARAMETER;
+	VALIDATE_TEX_PARAMETER_PARAM(param);
 	if (pname == GL_TEXTURE_BORDER_COLOR)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, pname);
@@ -280,7 +283,8 @@ static int gl_texParameterv_size(GLenum pname)
 template<typename T>
 void gl_texParameterv(gl_state *gs, GLenum target, GLenum pname, const T* params)
 {
-	VALIDATE_TEX_PARAMETER_V(int(params[0]));
+	VALIDATE_TEX_PARAMETER;
+	VALIDATE_TEX_PARAMETER_PARAM(int(params[0]));
 
 	gl_texture& tex = target == GL_TEXTURE_2D ? gs->texture_2d : gs->texture_1d;
 
@@ -313,7 +317,80 @@ void APIENTRY glTexParameterfv(GLenum target, GLenum pname, const GLfloat* param
 	gl_texParameterv(gs, target, pname, params);
 }
 
-#define VALIDATE_TEX_ENV_V(p) \
+template<typename T>
+void gl_getTexParameterv(GLenum target, GLenum pname, T *params)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_TEX_PARAMETER;
+
+	gl_texture &tex = target == GL_TEXTURE_2D ? gs->texture_2d : gs->texture_1d;
+
+	if (pname == GL_TEXTURE_MAG_FILTER)
+		*params = (T)tex.mag_filter;
+	else if (pname == GL_TEXTURE_MIN_FILTER)
+		*params = (T)tex.min_filter;
+	else if (pname == GL_TEXTURE_WRAP_S)
+		*params = (T)tex.wrap_s;
+	else if (pname == GL_TEXTURE_WRAP_T)
+		*params = (T)tex.wrap_t;
+	else if (pname == GL_TEXTURE_BORDER_COLOR)
+		copy_color(params, &tex.border_color.x);
+}
+
+void APIENTRY glGetTexParameteriv(GLenum target, GLenum pname, GLint *params)
+{
+	gl_getTexParameterv(target, pname, params);
+}
+
+void APIENTRY glGetTexParameterfv(GLenum target, GLenum pname, GLfloat *params)
+{
+	gl_getTexParameterv(target, pname, params);
+}
+
+template<typename T>
+void gl_getTexLevelParameterv(GLenum target, GLint level, GLenum pname, T *params)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, target);
+		return;
+	}
+	if (level < 0 || level > gl_max_tex_level)
+	{
+		gl_set_error_a(GL_INVALID_VALUE, level);
+		return;
+	}
+
+	gl_texture_array &ta = (target == GL_TEXTURE_2D ? gs->texture_2d : gs->texture_1d).arrays[level];
+
+	if (pname == GL_TEXTURE_WIDTH)
+		*params = (T)ta.width;
+	else if (pname == GL_TEXTURE_HEIGHT)
+		*params = (T)ta.height;
+	else if (pname == GL_TEXTURE_COMPONENTS)
+		*params = (T)ta.components;
+	else if (pname != GL_TEXTURE_BORDER)
+		*params = (T)ta.border;
+	else
+		gl_set_error_a(GL_INVALID_ENUM, target);
+}
+
+void APIENTRY glGetTexLevelParameteriv(GLenum target, GLint level, GLenum pname, GLint *params)
+{
+	gl_getTexLevelParameterv(target, level, pname, params);
+}
+
+void APIENTRY glGetTexLevelParameterfv(GLenum target, GLint level, GLenum pname, GLfloat *params)
+{
+	gl_getTexLevelParameterv(target, level, pname, params);
+}
+
+
+#define VALIDATE_TEX_ENV \
 VALIDATE_NOT_BEGIN_MODE; \
 if (target != GL_TEXTURE_ENV) \
 { \
@@ -324,7 +401,9 @@ if (pname != GL_TEXTURE_ENV_MODE && pname != GL_TEXTURE_ENV_COLOR) \
 { \
 	gl_set_error_a(GL_INVALID_ENUM, pname); \
 	return; \
-} \
+}
+
+#define VALIDATE_TEX_ENV_PARAM(p) \
 if (pname == GL_TEXTURE_ENV_MODE && (p != GL_MODULATE && p != GL_DECAL && p != GL_BLEND)) \
 { \
 	gl_set_error_a(GL_INVALID_ENUM, p); \
@@ -336,7 +415,8 @@ void APIENTRY glTexEnvi(GLenum target, GLenum pname, GLint param)
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(TexEnv, {}, { (int)target, (int)pname, param });
-	VALIDATE_TEX_ENV_V(param);
+	VALIDATE_TEX_ENV;
+	VALIDATE_TEX_ENV_PARAM(param);
 
 	if (pname == GL_TEXTURE_ENV_COLOR)
 	{
@@ -368,7 +448,8 @@ void APIENTRY glTexEnviv(GLenum target, GLenum pname, const GLint* params)
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	WRITE_DISPLAY_LIST_IV(TexEnviv, params, gl_texEnvv_size(pname), 2, {}, { (int)target, (int)pname });
-	VALIDATE_TEX_ENV_V(params[0]);
+	VALIDATE_TEX_ENV;
+	VALIDATE_TEX_ENV_PARAM(params[0]);
 
 	if (pname == GL_TEXTURE_ENV_MODE)
 		gs->texture_env_function = params[0];
@@ -381,12 +462,36 @@ void APIENTRY glTexEnvfv(GLenum target, GLenum pname, const GLfloat* params)
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	WRITE_DISPLAY_LIST_FV(TexEnvfv, params, gl_texEnvv_size(pname), {}, { (int)target, (int)pname });
-	VALIDATE_TEX_ENV_V((GLenum)params[0]);
+	VALIDATE_TEX_ENV;
+	VALIDATE_TEX_ENV_PARAM((GLenum)params[0]);
 
 	if (pname == GL_TEXTURE_ENV_MODE)
 		gs->texture_env_function = (int)params[0];
 	else if (pname == GL_TEXTURE_ENV_COLOR)
 		gs->texture_env_color = glm::vec4(params[0], params[1], params[2], params[3]);
+}
+
+template<typename T>
+void gl_getTexEnvv(GLenum target, GLenum pname, T *params)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_TEX_ENV;
+
+	if (pname == GL_TEXTURE_ENV_MODE)
+		*params = (T)gs->texture_env_function;
+	else if (pname == GL_TEXTURE_ENV_COLOR)
+		copy_color(params, &gs->texture_env_color.x);
+}
+
+void APIENTRY glGetTexEnviv(GLenum target, GLenum pname, GLint *params)
+{
+	gl_getTexEnvv(target, pname, params);
+}
+
+void APIENTRY glGetTexEnvfv(GLenum target, GLenum pname, GLfloat *params)
+{
+	gl_getTexEnvv(target, pname, params);
 }
 
 glm::vec4 gl_tex_tap(const gl_texture_array& a, glm::ivec2 uv)

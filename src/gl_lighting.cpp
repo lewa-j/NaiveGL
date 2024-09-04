@@ -283,6 +283,46 @@ void APIENTRY glMaterialiv(GLenum face, GLenum pname, const GLint *params)
 		gs->set_material_color(face, pname, glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])));
 }
 
+template<typename T>
+void gl_getMaterialv(GLenum face, GLenum pname, T *params)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (face != GL_FRONT && face != GL_BACK)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, face);
+		return;
+	}
+	VALIDATE_MAT_PNAME_V;
+
+	if (pname == GL_COLOR_INDEXES)
+		return;
+
+	const gl_state::material &mat = gs->materials[face == GL_FRONT ? 0 : 1];
+
+	if (pname == GL_SHININESS)
+		copy_vals(params, &mat.shininess, 1);
+	else if (pname == GL_AMBIENT)
+		copy_color(params, &mat.ambient.x);
+	else if (pname == GL_DIFFUSE)
+		copy_color(params, &mat.diffuse.x);
+	else if (pname == GL_SPECULAR)
+		copy_color(params, &mat.specular.x);
+	else if (pname == GL_EMISSION)
+		copy_color(params, &mat.emission.x);
+}
+
+void APIENTRY glGetMaterialiv(GLenum face, GLenum pname, GLint *params)
+{
+	gl_getMaterialv(face, pname, params);
+}
+
+void APIENTRY glGetMaterialfv(GLenum face, GLenum pname, GLfloat *params)
+{
+	gl_getMaterialv(face, pname, params);
+}
+
 static void gl_light_scalar(const char *func, gl_state::light &l, GLenum pname, GLfloat param)
 {
 	if (pname == GL_SPOT_EXPONENT)
@@ -368,6 +408,16 @@ void gl_lightv(gl_state *gs, GLenum light, GLenum pname, const T *params)
 	else
 		gl_light_scalar(__FUNCTION__, l, pname, (GLfloat)params[0]);
 }
+
+void APIENTRY glLightiv(GLenum light, GLenum pname, const GLint *params)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST_IV(Lightiv, params, gl_lightv_size(pname), 2, {}, { (int)light, (int)pname });
+
+	gl_lightv(gs, light, pname, params);
+}
+
 void APIENTRY glLightfv(GLenum light, GLenum pname, const GLfloat *params)
 {
 	gl_state *gs = gl_current_state();
@@ -376,13 +426,44 @@ void APIENTRY glLightfv(GLenum light, GLenum pname, const GLfloat *params)
 
 	gl_lightv(gs, light, pname, params);
 }
-void APIENTRY glLightiv(GLenum light, GLenum pname, const GLint *params)
+
+template<typename T>
+static void gl_getLightv(GLenum light, GLenum pname, T *params)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-	WRITE_DISPLAY_LIST_IV(Lightiv, params, gl_lightv_size(pname), 2, {}, { (int)light, (int)pname });
+	VALIDATE_NOT_BEGIN_MODE;
+	VALIDATE_LIGHT_NUM;
+	VALIDATE_LIGHT_PNAME_V;
 
-	gl_lightv(gs, light, pname, params);
+	gl_state::light &l = gs->lights[light - GL_LIGHT0];
+
+	if (pname == GL_AMBIENT)
+		copy_color(params, &l.ambient.x);
+	else if (pname == GL_DIFFUSE)
+		copy_color(params, &l.diffuse.x);
+	else if (pname == GL_SPECULAR)
+		copy_color(params, &l.specular.x);
+	else if (pname == GL_POSITION)
+		copy_vals(params, &l.position.x, 4);
+	else if (pname == GL_SPOT_DIRECTION)
+		copy_vals(params, &l.spot_direction.x, 3);
+	else if (pname == GL_SPOT_EXPONENT)
+		copy_vals(params, &l.spot_exponent, 1);
+	else if (pname == GL_SPOT_CUTOFF)
+		copy_vals(params, &l.spot_cutoff, 1);
+	else if (pname >= GL_CONSTANT_ATTENUATION && pname <= GL_QUADRATIC_ATTENUATION)
+		copy_vals(params, &l.attenuation[pname - GL_CONSTANT_ATTENUATION], 1);
+}
+
+void APIENTRY glGetLightiv(GLenum light, GLenum pname, GLint *params)
+{
+	gl_getLightv(light, pname, params);
+}
+
+void APIENTRY glGetLightfv(GLenum light, GLenum pname, GLfloat *params)
+{
+	gl_getLightv(light, pname, params);
 }
 
 void APIENTRY glLightModeli(GLenum pname, GLint param)

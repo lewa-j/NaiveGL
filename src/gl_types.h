@@ -1,5 +1,7 @@
 #pragma once
 #include <stdint.h>
+#include <string.h>
+#include <math.h>
 
 typedef unsigned int GLenum;
 typedef unsigned char GLboolean;
@@ -24,6 +26,33 @@ inline float GLtof(GLfloat v) { return v; }
 inline float GLtof(GLdouble v) { return (float)v; }
 
 inline bool is_pow(int a) { return !(a & (a - 1)); }
+
+inline void copy_color(GLfloat *dst, const GLfloat *src)
+{
+	memcpy(dst, src, sizeof(GLfloat) * 4);
+}
+
+inline void copy_color(GLint *dst, const GLfloat *src)
+{
+	for (int i = 0; i < 4; i++)
+		dst[i] = (int)((0xFFFFFFFF * src[i] - 1) / 2);
+}
+
+inline void copy_vals(GLfloat *dst, const GLfloat *src, int count)
+{
+	memcpy(dst, src, sizeof(GLfloat) * count);
+}
+
+inline void copy_vals(GLint *dst, const GLint *src, int count)
+{
+	memcpy(dst, src, sizeof(GLint) * count);
+}
+
+inline void copy_vals(GLint *dst, const GLfloat *src, int count)
+{
+	for (int i = 0; i < count; i++)
+		dst[i] = (int)lround(src[i]);
+}
 
 #define GL_FALSE 0
 #define GL_TRUE 1
@@ -206,6 +235,11 @@ inline bool is_pow(int a) { return !(a & (a - 1)); }
 #define GL_TEXTURE_WRAP_S 0x2802
 #define GL_TEXTURE_WRAP_T 0x2803
 #define GL_TEXTURE_BORDER_COLOR 0x1004
+
+#define GL_TEXTURE_WIDTH 0x1000
+#define GL_TEXTURE_HEIGHT 0x1001
+#define GL_TEXTURE_COMPONENTS 0x1003
+#define GL_TEXTURE_BORDER 0x1005
 
 #define GL_CLAMP 0x2900
 #define GL_REPEAT 0x2901
