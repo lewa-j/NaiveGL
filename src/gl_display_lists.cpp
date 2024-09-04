@@ -552,12 +552,7 @@ GLuint APIENTRY glGenLists(GLsizei range)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return 0;
-
-	if (gs->begin_primitive_mode != -1)
-	{
-		gl_set_error(GL_INVALID_OPERATION);
-		return 0;
-	}
+	VALIDATE_NOT_BEGIN_MODE_RET(0);
 
 	if (range < 0)
 	{
@@ -598,12 +593,7 @@ GLboolean APIENTRY glIsList(GLuint list)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return GL_FALSE;
-
-	if (gs->begin_primitive_mode != -1)
-	{
-		gl_set_error(GL_INVALID_OPERATION);
-		return GL_FALSE;
-	}
+	VALIDATE_NOT_BEGIN_MODE_RET(GL_FALSE);
 
 	auto it = gs->display_list_indices.find(list);
 	if (it == gs->display_list_indices.end())

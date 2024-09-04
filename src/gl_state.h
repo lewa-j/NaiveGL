@@ -495,6 +495,13 @@ if (gs->begin_primitive_mode != -1)\
 	return;\
 }
 
+#define VALIDATE_NOT_BEGIN_MODE_RET(RET) \
+if (gs->begin_primitive_mode != -1)\
+{\
+	gl_set_error(GL_INVALID_OPERATION);\
+	return RET;\
+}
+
 #define VALIDATE_FACE \
 if (face != GL_FRONT && face != GL_BACK && face != GL_FRONT_AND_BACK)\
 {\

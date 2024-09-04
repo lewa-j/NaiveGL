@@ -240,11 +240,7 @@ GLint APIENTRY glRenderMode(GLenum mode)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return 0;
-	if (gs->begin_primitive_mode != -1)
-	{
-		gl_set_error(GL_INVALID_OPERATION);
-		return 0;
-	}
+	VALIDATE_NOT_BEGIN_MODE_RET(0);
 
 	if (mode < GL_RENDER || mode > GL_SELECT)
 	{
@@ -498,18 +494,14 @@ static int gl_isEnabled(gl_state *gs, GLenum cap)
 GLboolean APIENTRY glIsEnabled(GLenum cap)
 {
 	gl_state *gs = gl_current_state();
-	if (!gs) return 0;
-	if (gs->begin_primitive_mode != -1)
-	{
-		gl_set_error(GL_INVALID_OPERATION);
-		return 0;
-	}
+	if (!gs) return GL_FALSE;
+	VALIDATE_NOT_BEGIN_MODE_RET(GL_FALSE);
 
 	int r = gl_isEnabled(gs, cap);
 	if (r == -1)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, cap);
-		return 0;
+		return GL_FALSE;
 	}
 
 	return r;
@@ -546,6 +538,10 @@ void APIENTRY glHint(GLenum target, GLenum mode)
 
 const char *APIENTRY glGetString(GLenum name)
 {
+	gl_state *gs = gl_current_state();
+	if (!gs) return nullptr;
+	VALIDATE_NOT_BEGIN_MODE_RET(nullptr);
+
 	switch (name)
 	{
 	case GL_VENDOR:
@@ -558,7 +554,7 @@ const char *APIENTRY glGetString(GLenum name)
 		return "";
 	default:
 		gl_set_error_a(GL_INVALID_ENUM, name);
-		return "";
+		return nullptr;
 	}
 }
 
@@ -610,6 +606,7 @@ GLenum APIENTRY glGetError()
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return 0;
+	VALIDATE_NOT_BEGIN_MODE_RET(0);
 
 	if (gs->error_bits == 0)
 		return GL_NO_ERROR;

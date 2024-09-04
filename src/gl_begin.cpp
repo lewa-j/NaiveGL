@@ -17,12 +17,7 @@ void APIENTRY glBegin(GLenum mode)
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(Begin, {}, { (int)mode });
-
-	if (gs->begin_primitive_mode != -1)
-	{
-		gl_set_error(GL_INVALID_OPERATION);
-		return;
-	}
+	VALIDATE_NOT_BEGIN_MODE;
 	if (mode < GL_POINTS || mode > GL_POLYGON)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, mode);
