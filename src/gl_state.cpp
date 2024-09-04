@@ -300,6 +300,141 @@ GLint APIENTRY glRenderMode(GLenum mode)
 	return ret;
 }
 
+bool &gl_get_enabled_ref(gl_state *gs, GLenum cap, bool &fail)
+{
+	if (cap == GL_NORMALIZE)
+	{
+		return gs->normalize;
+	}
+	else if (cap >= GL_TEXTURE_GEN_S && cap <= GL_TEXTURE_GEN_Q)
+	{
+		return gs->texgen[cap - GL_TEXTURE_GEN_S].enabled;
+	}
+	else if (cap == GL_LIGHTING)
+	{
+		return gs->lighting_enabled;
+	}
+	else if (cap == GL_COLOR_MATERIAL)
+	{
+		return gs->color_material;
+	}
+	else if (cap == GL_POINT_SMOOTH)
+	{
+		return gs->point_smooth;
+	}
+	else if (cap == GL_LINE_SMOOTH)
+	{
+		return gs->line_smooth;
+	}
+	else if (cap == GL_LINE_STIPPLE)
+	{
+		return gs->line_stipple;
+	}
+	else if (cap == GL_POLYGON_SMOOTH)
+	{
+		return gs->polygon_smooth;
+	}
+	else if (cap == GL_POLYGON_STIPPLE)
+	{
+		return gs->polygon_stipple;
+	}
+	else if (cap == GL_CULL_FACE)
+	{
+		return gs->cull_face;
+	}
+	else if (cap == GL_TEXTURE_2D)
+	{
+		return gs->texture_2d_enabled;
+	}
+	else if (cap == GL_TEXTURE_1D)
+	{
+		return gs->texture_1d_enabled;
+	}
+	else if (cap == GL_FOG)
+	{
+		return gs->fog_enabled;
+	}
+	else if (cap == GL_SCISSOR_TEST)
+	{
+		return gs->scissor_test;
+	}
+	else if (cap == GL_ALPHA_TEST)
+	{
+		return gs->alpha_test;
+	}
+	else if (cap == GL_STENCIL_TEST)
+	{
+		return gs->stencil_test;
+	}
+	else if (cap == GL_DEPTH_TEST)
+	{
+		return gs->depth_test;
+	}
+	else if (cap == GL_BLEND)
+	{
+		return gs->blend;
+	}
+	else if (cap == GL_DITHER)
+	{
+		return gs->dither;
+	}
+	else if (cap == GL_LOGIC_OP)
+	{
+		return gs->logic_op;
+	}
+	else if (cap == GL_AUTO_NORMAL)
+	{
+		return gs->eval_auto_normal;
+	}
+	else
+	{
+		fail = true;
+	}
+	static bool _ = false;
+	return _;
+}
+
+static void set_bit(uint32_t &set, int bit, bool val)
+{
+	if (val)
+		set |= (1 << bit);
+	else
+		set &= ~(1 << bit);
+}
+
+//return false if cap is invalid
+bool gl_setable(gl_state *gs, GLenum cap, bool val)
+{
+	bool fail = false;
+	bool &state = gl_get_enabled_ref(gs, cap, fail);
+	if (!fail)
+	{
+		state = val;
+		return true;
+	}
+	else if (cap >= GL_CLIP_PLANE0 && cap < (GL_CLIP_PLANE0 + gl_max_user_clip_planes))
+	{
+		set_bit(gs->enabled_clipplanes, cap - GL_CLIP_PLANE0, val);
+	}
+	else if (cap >= GL_LIGHT0 && cap < (GL_LIGHT0 + gl_max_lights))
+	{
+		set_bit(gs->enabled_lights, cap - GL_LIGHT0, val);
+	}
+	else if (cap >= GL_MAP1_COLOR_4 && cap <= GL_MAP1_VERTEX_4)
+	{
+		set_bit(gs->enabled_eval_maps, cap - GL_MAP1_COLOR_4, val);
+	}
+	else if (cap >= GL_MAP2_COLOR_4 && cap <= GL_MAP2_VERTEX_4)
+	{
+		set_bit(gs->enabled_eval_maps, cap - GL_MAP2_COLOR_4 + 9, val);
+	}
+	else
+	{
+		return false;
+	}
+	return true;
+}
+
 void APIENTRY glEnable(GLenum cap)
 {
 	gl_state *gs = gl_current_state();
@@ -307,114 +442,17 @@ void APIENTRY glEnable(GLenum cap)
 	WRITE_DISPLAY_LIST(Enable, {}, {(int)cap});
 	VALIDATE_NOT_BEGIN_MODE;
 
-	if (cap == GL_NORMALIZE)
-	{
-		gs->normalize = true;
-	}
-	else if (cap >= GL_TEXTURE_GEN_S && cap <= GL_TEXTURE_GEN_Q)
-	{
-		gs->texgen[cap - GL_TEXTURE_GEN_S].enabled = true;
-	}
-	else if (cap >= GL_CLIP_PLANE0 && cap < (GL_CLIP_PLANE0 + gl_max_user_clip_planes))
-	{
-		gs->enabled_clipplanes |= (1 << (cap - GL_CLIP_PLANE0));
-	}
-	else if (cap == GL_LIGHTING)
-	{
-		gs->lighting_enabled = true;
-	}
-	else if (cap >= GL_LIGHT0 && cap < (GL_LIGHT0 + gl_max_lights))
-	{
-		gs->enabled_lights |= (1 << (cap - GL_LIGHT0));
-	}
-	else if (cap == GL_COLOR_MATERIAL)
+	if (cap == GL_COLOR_MATERIAL)
 	{
 		bool old = gs->color_material;
 		gs->color_material = true;
 		if (!old)
 			gs->update_color_material();
-	}
-	else if (cap == GL_POINT_SMOOTH)
-	{
-		gs->point_smooth = true;
-	}
-	else if (cap == GL_LINE_SMOOTH)
-	{
-		gs->line_smooth = true;
-	}
-	else if (cap == GL_LINE_STIPPLE)
-	{
-		gs->line_stipple = true;
-	}
-	else if (cap == GL_POLYGON_SMOOTH)
-	{
-		gs->polygon_smooth = true;
-	}
-	else if (cap == GL_POLYGON_STIPPLE)
-	{
-		gs->polygon_stipple = true;
-	}
-	else if (cap == GL_CULL_FACE)
-	{
-		gs->cull_face = true;
-	}
-	else if (cap == GL_TEXTURE_2D)
-	{
-		gs->texture_2d_enabled = true;
-	}
-	else if (cap == GL_TEXTURE_1D)
-	{
-		gs->texture_1d_enabled = true;
-	}
-	else if (cap == GL_FOG)
-	{
-		gs->fog_enabled = true;
-	}
-	else if (cap == GL_SCISSOR_TEST)
-	{
-		gs->scissor_test = true;
-	}
-	else if (cap == GL_ALPHA_TEST)
-	{
-		gs->alpha_test = true;
-	}
-	else if (cap == GL_STENCIL_TEST)
-	{
-		gs->stencil_test = true;
-	}
-	else if (cap == GL_DEPTH_TEST)
-	{
-		gs->depth_test = true;
-	}
-	else if (cap == GL_BLEND)
-	{
-		gs->blend = true;
-	}
-	else if (cap == GL_DITHER)
-	{
-		gs->dither = true;
-	}
-	else if (cap == GL_LOGIC_OP)
-	{
-		gs->logic_op = true;
-	}
-	else if (cap >= GL_MAP1_COLOR_4 && cap <= GL_MAP1_VERTEX_4)
-	{
-		gs->enabled_eval_maps |= (1 << (cap - GL_MAP1_COLOR_4));
-	}
-	else if (cap >= GL_MAP2_COLOR_4 && cap <= GL_MAP2_VERTEX_4)
-	{
-		gs->enabled_eval_maps |= (1 << (cap - GL_MAP2_COLOR_4 + 9));
-	}
-	else if (cap == GL_AUTO_NORMAL)
-	{
-		gs->eval_auto_normal = true;
-	}
-	else
-	{
-		gl_set_error_a(GL_INVALID_ENUM, cap);
 		return;
 	}
+
+	if (!gl_setable(gs, cap, true))
+		gl_set_error_a(GL_INVALID_ENUM, cap);
 }
 
 void APIENTRY glDisable(GLenum cap)
@@ -424,116 +462,57 @@ void APIENTRY glDisable(GLenum cap)
 	WRITE_DISPLAY_LIST(Disable, {}, { (int)cap });
 	VALIDATE_NOT_BEGIN_MODE;
 
-	if (cap == GL_NORMALIZE)
+	if (!gl_setable(gs, cap, false))
+		gl_set_error_a(GL_INVALID_ENUM, cap);
+}
+
+//return -1 if cap is invalid
+static int gl_isEnabled(gl_state *gs, GLenum cap)
+{
+	bool fail = false;
+	bool &state = gl_get_enabled_ref(gs, cap, fail);
+	if (!fail)
 	{
-		gs->normalize = false;
-	}
-	else if (cap >= GL_TEXTURE_GEN_S && cap <= GL_TEXTURE_GEN_Q)
-	{
-		gs->texgen[cap - GL_TEXTURE_GEN_S].enabled = false;
+		return state ? 1 : 0;
 	}
 	else if (cap >= GL_CLIP_PLANE0 && cap < (GL_CLIP_PLANE0 + gl_max_user_clip_planes))
 	{
-		gs->enabled_clipplanes &= ~(1 << (cap - GL_CLIP_PLANE0));
-	}
-	else if (cap == GL_LIGHTING)
-	{
-		gs->lighting_enabled = false;
+		return (gs->enabled_clipplanes & (1 << (cap - GL_CLIP_PLANE0))) ? 1 : 0;
 	}
 	else if (cap >= GL_LIGHT0 && cap < (GL_LIGHT0 + gl_max_lights))
 	{
-		gs->enabled_lights &= ~(1 << (cap - GL_LIGHT0));
-	}
-	else if (cap == GL_COLOR_MATERIAL)
-	{
-		gs->color_material = false;
-	}
-	else if (cap == GL_POINT_SMOOTH)
-	{
-		gs->point_smooth = false;
-	}
-	else if (cap == GL_LINE_SMOOTH)
-	{
-		gs->line_smooth = false;
-	}
-	else if (cap == GL_LINE_STIPPLE)
-	{
-		gs->line_stipple = false;
-	}
-	else if (cap == GL_POLYGON_SMOOTH)
-	{
-		gs->polygon_smooth = false;
-	}
-	else if (cap == GL_POLYGON_STIPPLE)
-	{
-		gs->polygon_stipple = false;
-	}
-	else if (cap == GL_CULL_FACE)
-	{
-		gs->cull_face = false;
-	}
-	else if (cap == GL_TEXTURE_2D)
-	{
-		gs->texture_2d_enabled = false;
-	}
-	else if (cap == GL_TEXTURE_1D)
-	{
-		gs->texture_1d_enabled = false;
-	}
-	else if (cap == GL_FOG)
-	{
-		gs->fog_enabled = false;
-	}
-	else if (cap == GL_SCISSOR_TEST)
-	{
-		gs->scissor_test = false;
-	}
-	else if (cap == GL_ALPHA_TEST)
-	{
-		gs->alpha_test = false;
-	}
-	else if (cap == GL_STENCIL_TEST)
-	{
-		gs->stencil_test = false;
-	}
-	else if (cap == GL_DEPTH_TEST)
-	{
-		gs->depth_test = false;
-	}
-	else if (cap == GL_BLEND)
-	{
-		gs->blend = false;
-	}
-	else if (cap == GL_DITHER)
-	{
-		gs->dither = false;
-	}
-	else if (cap == GL_LOGIC_OP)
-	{
-		gs->logic_op = false;
+		return (gs->enabled_lights & (1 << (cap - GL_LIGHT0))) ? 1 : 0;
 	}
 	else if (cap >= GL_MAP1_COLOR_4 && cap <= GL_MAP1_VERTEX_4)
 	{
-		gs->enabled_eval_maps &= ~(1 << (cap - GL_MAP1_COLOR_4));
+		return (gs->enabled_eval_maps & (1 << (cap - GL_MAP1_COLOR_4))) ? 1 : 0;
 	}
 	else if (cap >= GL_MAP2_COLOR_4 && cap <= GL_MAP2_VERTEX_4)
 	{
-		gs->enabled_eval_maps &= ~(1 << (cap - GL_MAP2_COLOR_4 + 9));
+		return (gs->enabled_eval_maps & (1 << (cap - GL_MAP2_COLOR_4 + 9))) ? 1 : 0;
 	}
-	else if (cap == GL_AUTO_NORMAL)
-	{
-		gs->eval_auto_normal = false;
-	}
-	else
-	{
-		gl_set_error_a(GL_INVALID_ENUM, cap);
-		return;
-	}
+
+	return -1;
 }
 
 GLboolean APIENTRY glIsEnabled(GLenum cap)
 {
-	return false;
+	gl_state *gs = gl_current_state();
+	if (!gs) return 0;
+	if (gs->begin_primitive_mode != -1)
+	{
+		gl_set_error(GL_INVALID_OPERATION);
+		return 0;
+	}
+
+	int r = gl_isEnabled(gs, cap);
+	if (r == -1)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, cap);
+		return 0;
+	}
+
+	return r;
 }
 
 void APIENTRY glHint(GLenum target, GLenum mode)
