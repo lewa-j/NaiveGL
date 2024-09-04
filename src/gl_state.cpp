@@ -463,7 +463,7 @@ void APIENTRY glDisable(GLenum cap)
 }
 
 //return -1 if cap is invalid
-static int gl_isEnabled(gl_state *gs, GLenum cap)
+int gl_isEnabled(gl_state *gs, GLenum cap)
 {
 	bool fail = false;
 	bool &state = gl_get_enabled_ref(gs, cap, fail);

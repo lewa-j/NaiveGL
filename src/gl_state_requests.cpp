@@ -2,10 +2,54 @@
 #include "gl_state.h"
 #include "gl_exports.h"
 
-void APIENTRY glGetBooleanv(GLenum pname, GLboolean *data) {}
-void APIENTRY glGetIntegerv(GLenum pname, GLint *data) {}
-void APIENTRY glGetFloatv(GLenum pname, GLfloat *data) {}
-void APIENTRY glGetDoublev(GLenum pname, GLdouble *data) {}
+template<typename T>
+static bool gl_get(gl_state *gs, GLenum pname, T *data)
+{
+	int r = gl_isEnabled(gs, pname);
+	if (r != -1)
+	{
+		*data = (T)r;// 0 or 1
+		return true;
+	}
+
+	return false;
+}
+
+void APIENTRY glGetBooleanv(GLenum pname, GLboolean *data)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (!gl_get(gs, pname, data))
+		gl_set_error_a(GL_INVALID_ENUM, pname);
+}
+
+void APIENTRY glGetIntegerv(GLenum pname, GLint *data)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (!gl_get(gs, pname, data))
+		gl_set_error_a(GL_INVALID_ENUM, pname);
+}
+
+void APIENTRY glGetFloatv(GLenum pname, GLfloat *data)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (!gl_get(gs, pname, data))
+		gl_set_error_a(GL_INVALID_ENUM, pname);
+}
+
+void APIENTRY glGetDoublev(GLenum pname, GLdouble *data)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (!gl_get(gs, pname, data))
+		gl_set_error_a(GL_INVALID_ENUM, pname);
+}
 
 void APIENTRY glGetClipPlane(GLenum plane, GLdouble *equation) {}
 void APIENTRY glGetLightiv(GLenum light, GLenum pname, GLint *params) {}

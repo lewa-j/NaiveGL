@@ -487,6 +487,8 @@ void gl_feedback_write(gl_state &st, float f);
 void gl_feedback_write_vertex(gl_state &st, glm::vec4 pos, glm::vec4 color, glm::vec4 tex_coord);
 void gl_feedback_write_vertex(gl_state &st, const gl_processed_vertex &v);
 
+//return -1 if cap is invalid
+int gl_isEnabled(gl_state *gs, GLenum cap);
 
 #define VALIDATE_NOT_BEGIN_MODE \
 if (gs->begin_primitive_mode != -1)\
