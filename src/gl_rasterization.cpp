@@ -437,7 +437,7 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 
 	if (!st.point_smooth)
 	{
-		int w = std::min((int)round(st.point_size), gl_max_point_size);
+		int w = std::min((int)lround(st.point_size), gl_max_point_size);
 		w = w < 1 ? 1 : w;
 		glm::ivec2 ic(floor(win_c + (w & 1 ? 0 : 0.5f)));//add half pixel when size is even. then truncate to int
 		if (w == 1)

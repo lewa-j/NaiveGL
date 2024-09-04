@@ -275,7 +275,7 @@ static glm::vec4 remap_color(const glm::vec4 &c, gl_state::pixelMapColor *tables
 	glm::vec4 r;
 	for (int i = 0; i < 4; i++)
 	{
-		int ci = (int)roundf(glm::clamp(c[i], 0.f, 1.f) * (tables[i].size - 1));
+		int ci = lroundf(glm::clamp(c[i], 0.f, 1.f) * (tables[i].size - 1));
 		r[i] = tables[i].data[ci];
 	}
 	return r;

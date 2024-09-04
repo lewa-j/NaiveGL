@@ -105,7 +105,7 @@ void APIENTRY glSelectBuffer(GLsizei size, GLuint *buffer)
 
 void gl_add_selection_depth(gl_state &st, float z)
 {
-	GLuint d = (GLuint)roundf(z * UINT_MAX);
+	GLuint d = lroundf(z * UINT_MAX);
 	st.select_min_depth = glm::min(st.select_min_depth, d);
 	st.select_max_depth = glm::max(st.select_max_depth, d);
 }
