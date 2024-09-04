@@ -531,6 +531,11 @@ void APIENTRY glDisable(GLenum cap)
 	}
 }
 
+GLboolean APIENTRY glIsEnabled(GLenum cap)
+{
+	return false;
+}
+
 void APIENTRY glHint(GLenum target, GLenum mode)
 {
 	gl_state *gs = gl_current_state();

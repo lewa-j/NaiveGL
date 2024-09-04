@@ -282,10 +282,33 @@ EXPORTS
 	glFinish
 	glHint
 
-	glGetString
 	glGetBooleanv
 	glGetIntegerv
 	glGetFloatv
+	glGetDoublev
+	glIsEnabled
+	glGetClipPlane
+	glGetLightiv
+	glGetLightfv
+	glGetMaterialiv
+	glGetMaterialfv
+	glGetTexEnviv
+	glGetTexEnvfv
+	glGetTexGeniv
+	glGetTexGenfv
+	glGetTexParameteriv
+	glGetTexParameterfv
+	glGetTexLevelParameteriv
+	glGetTexLevelParameterfv
+	glGetPixelMapuiv
+	glGetPixelMapusv
+	glGetPixelMapfv
+	glGetMapiv
+	glGetMapfv
+	glGetMapdv
+	glGetTexImage
+	glGetPolygonStipple
+	glGetString
 	glPushAttrib
 	glPopAttrib
 

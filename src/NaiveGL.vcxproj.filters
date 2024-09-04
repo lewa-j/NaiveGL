@@ -89,6 +89,9 @@
     <ClCompile Include="gl_feedback.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="gl_state_requests.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="win\opengl32.def">

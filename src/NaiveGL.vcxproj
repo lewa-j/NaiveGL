@@ -123,6 +123,7 @@
     <ClCompile Include="gl_rasterization.cpp" />
     <ClCompile Include="gl_selection.cpp" />
     <ClCompile Include="gl_state.cpp" />
+    <ClCompile Include="gl_state_requests.cpp" />
     <ClCompile Include="gl_texgen.cpp" />
     <ClCompile Include="gl_texture.cpp" />
     <ClCompile Include="gl_viewport.cpp" />
