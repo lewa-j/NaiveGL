@@ -85,7 +85,7 @@ static void gl_map1v(GLenum target, T u1, T u2, GLint stride, GLint order, const
 }
 
 template<typename T>
-static void APIENTRY gl_map2v(GLenum target, T u1, T u2, GLint ustride, GLint uorder, T v1, T v2, GLint vstride, GLint vorder, const T *points)
+static void gl_map2v(GLenum target, T u1, T u2, GLint ustride, GLint uorder, T v1, T v2, GLint vstride, GLint vorder, const T *points)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
@@ -186,6 +186,67 @@ void APIENTRY glMap2f(GLenum target, GLfloat u1, GLfloat u2, GLint ustride, GLin
 { gl_map2v(target, u1, u2, ustride, uorder, v1, v2, vstride, vorder, points); }
 void APIENTRY glMap2d(GLenum target, GLdouble u1, GLdouble u2, GLint ustride, GLint uorder, GLdouble v1, GLdouble v2, GLint vstride, GLint vorder, const GLdouble *points)
 { gl_map2v(target, u1, u2, ustride, uorder, v1, v2, vstride, vorder, points); }
+
+template<typename T>
+static void gl_getMapv(GLenum target, GLenum query, T *v)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (query < GL_COEFF || query > GL_DOMAIN)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, query);
+		return;
+	}
+
+	if (target >= GL_MAP1_COLOR_4 && target <= GL_MAP1_VERTEX_4)
+	{
+		gl_state::mapSpec1D &map = gs->eval_maps_1d[target - GL_MAP1_COLOR_4];
+		if (query == GL_COEFF)
+		{
+			copy_vals(v, map.control_points.data(), map.order_u * gl_map_k(target));
+		}
+		else if (query == GL_ORDER)
+		{
+			v[0] = (T)map.order_u;
+		}
+		else if (query == GL_DOMAIN)
+		{
+			copy_vals(v, map.domain_u, 2);
+		}
+	}
+	else if (target >= GL_MAP2_COLOR_4 && target <= GL_MAP2_VERTEX_4)
+	{
+		gl_state::mapSpec2D &map = gs->eval_maps_2d[target - GL_MAP2_COLOR_4];
+
+		if (query == GL_COEFF)
+		{
+			copy_vals(v, map.control_points.data(), map.order_u * map.order_v * gl_map_k(target));
+		}
+		else if (query == GL_ORDER)
+		{
+			v[0] = (T)map.order_u;
+			v[1] = (T)map.order_v;
+		}
+		else if (query == GL_DOMAIN)
+		{
+			copy_vals(v, map.domain_u, 2);
+			copy_vals(v + 2, map.domain_v, 2);
+		}
+	}
+	else
+	{
+		gl_set_error_a(GL_INVALID_ENUM, target);
+		return;
+	}
+}
+
+void APIENTRY glGetMapiv(GLenum target, GLenum query, GLint *v)
+{ gl_getMapv(target, query, v); }
+void APIENTRY glGetMapfv(GLenum target, GLenum query, GLfloat *v)
+{ gl_getMapv(target, query, v); }
+void APIENTRY glGetMapdv(GLenum target, GLenum query, GLdouble *v)
+{ gl_getMapv(target, query, v); }
 
 static int C(int n, int k)
 {

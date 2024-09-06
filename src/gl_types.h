@@ -54,6 +54,12 @@ inline void copy_vals(GLint *dst, const GLfloat *src, int count)
 		dst[i] = (int)lround(src[i]);
 }
 
+inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
+{
+	for (int i = 0; i < 4; i++)
+		dst[i] = (GLfloat)src[i];
+}
+
 #define GL_FALSE 0
 #define GL_TRUE 1
 
@@ -407,6 +413,10 @@ inline void copy_vals(GLint *dst, const GLfloat *src, int count)
 #define GL_DONT_CARE 0x1100
 #define GL_FASTEST 0x1101
 #define GL_NICEST 0x1102
+
+#define GL_COEFF 0x0A00
+#define GL_ORDER 0x0A01
+#define GL_DOMAIN 0x0A02
 
 #define GL_VENDOR 0x1F00
 #define GL_RENDERER 0x1F01
