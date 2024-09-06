@@ -51,9 +51,6 @@ void APIENTRY glGetDoublev(GLenum pname, GLdouble *data)
 		gl_set_error_a(GL_INVALID_ENUM, pname);
 }
 
-void APIENTRY glGetPixelMapuiv(GLenum map, GLuint *values) {}
-void APIENTRY glGetPixelMapusv(GLenum map, GLushort *values) {}
-void APIENTRY glGetPixelMapfv(GLenum map, GLfloat *values) {}
 void APIENTRY glGetMapiv(GLenum target, GLenum query, GLint *v) {}
 void APIENTRY glGetMapfv(GLenum target, GLenum query, GLfloat *v) {}
 void APIENTRY glGetMapdv(GLenum target, GLenum query, GLdouble *v) {}

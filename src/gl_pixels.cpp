@@ -147,7 +147,9 @@ if (map < GL_PIXEL_MAP_I_TO_I || map > GL_PIXEL_MAP_A_TO_A)\
 {\
 	gl_set_error_a(GL_INVALID_ENUM, map);\
 	return;\
-}\
+}
+
+#define VALIDATE_PIXEL_MAP_SIZE(map, mapsize) \
 if (mapsize < 0 || mapsize > gl_max_pixel_map_table)\
 {\
 	gl_set_error(GL_INVALID_VALUE);\
@@ -159,9 +161,11 @@ if (map >= GL_PIXEL_MAP_I_TO_I && map <= GL_PIXEL_MAP_I_TO_A && !is_pow(mapsize)
 	return;\
 }
 
-static int gl_pixelMapv_size(GLsizei mapsize)
+static int gl_pixelMapv_size(GLenum map, GLsizei mapsize)
 {
 	if (mapsize < 0 || mapsize > gl_max_pixel_map_table)
+		return 0;
+	if (map >= GL_PIXEL_MAP_I_TO_I && map <= GL_PIXEL_MAP_I_TO_A && !is_pow(mapsize))
 		return 0;
 	return mapsize;
 }
@@ -170,15 +174,16 @@ void APIENTRY glPixelMapuiv(GLenum map, GLsizei mapsize, const GLuint* values)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
-	int s = gl_pixelMapv_size(mapsize) * sizeof(GLuint);
+	int s = gl_pixelMapv_size(map, mapsize) * sizeof(GLuint);
 	WRITE_DISPLAY_LIST_BULK(PixelMap, values, s, {}, { (int)map, mapsize, 1, s });
 	VALIDATE_PIXEL_MAP;
+	VALIDATE_PIXEL_MAP_SIZE(map, mapsize);
 
 	if (map >= GL_PIXEL_MAP_I_TO_I && map <= GL_PIXEL_MAP_S_TO_S)
 	{
 		gl_state::pixelMapIndex& m = gs->pixel_map_index_table[map - GL_PIXEL_MAP_I_TO_I];
 		m.size = mapsize;
-		memcpy(m.data, values, mapsize * sizeof(*values));
+		memcpy(m.data, values, mapsize * sizeof(GLuint));
 	}
 	else if (map >= GL_PIXEL_MAP_I_TO_R && map <= GL_PIXEL_MAP_A_TO_A)
 	{
@@ -188,13 +193,15 @@ void APIENTRY glPixelMapuiv(GLenum map, GLsizei mapsize, const GLuint* values)
 			m.data[i] = GLtof(values[i]);
 	}
 }
+
 void APIENTRY glPixelMapusv(GLenum map, GLsizei mapsize, const GLushort* values)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
-	int s = gl_pixelMapv_size(mapsize) * sizeof(GLushort);
+	int s = gl_pixelMapv_size(map, mapsize) * sizeof(GLushort);
 	WRITE_DISPLAY_LIST_BULK(PixelMap, values, s, {}, { (int)map, mapsize, 2, s });
 	VALIDATE_PIXEL_MAP;
+	VALIDATE_PIXEL_MAP_SIZE(map, mapsize);
 
 	if (map >= GL_PIXEL_MAP_I_TO_I && map <= GL_PIXEL_MAP_S_TO_S)
 	{
@@ -211,13 +218,15 @@ void APIENTRY glPixelMapusv(GLenum map, GLsizei mapsize, const GLushort* values)
 			m.data[i] = GLtof(values[i]);
 	}
 }
+
 void APIENTRY glPixelMapfv(GLenum map, GLsizei mapsize, const GLfloat* values)
 {
 	gl_state* gs = gl_current_state();
 	if (!gs) return;
-	int s = gl_pixelMapv_size(mapsize) * sizeof(GLfloat);
+	int s = gl_pixelMapv_size(map, mapsize) * sizeof(GLfloat);
 	WRITE_DISPLAY_LIST_BULK(PixelMap, values, s, {}, { (int)map, mapsize, 3, s });
 	VALIDATE_PIXEL_MAP;
+	VALIDATE_PIXEL_MAP_SIZE(map, mapsize);
 
 	if (map >= GL_PIXEL_MAP_I_TO_I && map <= GL_PIXEL_MAP_S_TO_S)
 	{
@@ -230,7 +239,65 @@ void APIENTRY glPixelMapfv(GLenum map, GLsizei mapsize, const GLfloat* values)
 	{
 		gl_state::pixelMapColor& m = gs->pixel_map_color_table[map - GL_PIXEL_MAP_I_TO_R];
 		m.size = mapsize;
-		memcpy(m.data, values, mapsize * sizeof(*values));
+		memcpy(m.data, values, mapsize * sizeof(GLfloat));
+	}
+}
+
+void APIENTRY glGetPixelMapuiv(GLenum map, GLuint *values)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_PIXEL_MAP;
+
+	if (map >= GL_PIXEL_MAP_I_TO_I && map <= GL_PIXEL_MAP_S_TO_S)
+	{
+		gl_state::pixelMapIndex &m = gs->pixel_map_index_table[map - GL_PIXEL_MAP_I_TO_I];
+		memcpy(values, m.data, m.size * sizeof(GLuint));
+	}
+	else if (map >= GL_PIXEL_MAP_I_TO_R && map <= GL_PIXEL_MAP_A_TO_A)
+	{
+		gl_state::pixelMapColor &m = gs->pixel_map_color_table[map - GL_PIXEL_MAP_I_TO_R];
+		for (int i = 0; i < m.size; i++)
+			values[i] = (GLuint)(0xFFFFFFFF * m.data[i]);
+	}
+}
+
+void APIENTRY glGetPixelMapusv(GLenum map, GLushort *values)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_PIXEL_MAP;
+
+	if (map >= GL_PIXEL_MAP_I_TO_I && map <= GL_PIXEL_MAP_S_TO_S)
+	{
+		gl_state::pixelMapIndex &m = gs->pixel_map_index_table[map - GL_PIXEL_MAP_I_TO_I];
+		for (int i = 0; i < m.size; i++)
+			values[i] = m.data[i];
+	}
+	else if (map >= GL_PIXEL_MAP_I_TO_R && map <= GL_PIXEL_MAP_A_TO_A)
+	{
+		gl_state::pixelMapColor &m = gs->pixel_map_color_table[map - GL_PIXEL_MAP_I_TO_R];
+		for (int i = 0; i < m.size; i++)
+			values[i] = (GLushort)(0xFFFF * m.data[i]);
+	}
+}
+
+void APIENTRY glGetPixelMapfv(GLenum map, GLfloat *values)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_PIXEL_MAP;
+
+	if (map >= GL_PIXEL_MAP_I_TO_I && map <= GL_PIXEL_MAP_S_TO_S)
+	{
+		gl_state::pixelMapIndex &m = gs->pixel_map_index_table[map - GL_PIXEL_MAP_I_TO_I];
+		for (int i = 0; i < m.size; i++)
+			values[i] = (float)m.data[i];
+	}
+	else if (map >= GL_PIXEL_MAP_I_TO_R && map <= GL_PIXEL_MAP_A_TO_A)
+	{
+		gl_state::pixelMapColor &m = gs->pixel_map_color_table[map - GL_PIXEL_MAP_I_TO_R];
+		memcpy(values, m.data, m.size * sizeof(GLfloat));
 	}
 }
 

@@ -307,7 +307,7 @@ struct gl_state
 	struct pixelMapIndex
 	{
 		int size = 1;
-		int data[gl_max_pixel_map_table];
+		GLuint data[gl_max_pixel_map_table];
 	} pixel_map_index_table[2];//color, stencil
 	glm::vec2 pixel_zoom{ 1, 1 };
 
