@@ -61,6 +61,15 @@ void APIENTRY glPolygonStipple(const GLubyte *mask)
 	memcpy(gs->polygon_stipple_mask, mask, sizeof(gs->polygon_stipple_mask));
 }
 
+void APIENTRY glGetPolygonStipple(GLubyte *mask)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	memcpy(mask, gs->polygon_stipple_mask, sizeof(gs->polygon_stipple_mask));
+}
+
 void APIENTRY glPolygonMode(GLenum face, GLenum mode)
 {
 	gl_state *gs = gl_current_state();
