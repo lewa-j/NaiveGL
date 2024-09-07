@@ -193,6 +193,100 @@ struct gl_display_list_call
 	int argsi[8];
 };
 
+struct gl_state_attrib
+{
+	struct current_t
+	{
+		bool edge_flag = true;
+		glm::vec4 tex_coord{ 0,0,0,1 };
+		glm::vec3 normal{ 0,0,1 };
+		glm::vec4 color{ 1,1,1,1 };
+
+		struct raster_t {
+			glm::vec4 position{ 0,0,0,1 }; //window xyz, clip w
+			float distance = 0;
+			bool valid = true;
+			glm::vec4 color{ 1,1,1,1 };
+			glm::vec4 tex_coord{ 0,0,0,1 };
+		} raster;
+	} current;
+	//gl_state::viewport_t viewport;
+	struct transform_t
+	{
+		GLenum matrix_mode = GL_MODELVIEW;
+		bool normalize = false;
+		glm::vec4 clipplanes[gl_max_user_clip_planes];
+		uint32_t enabled_clipplanes = 0;
+	} transform;
+
+	struct fog_t
+	{
+		bool enabled = false;
+		int mode = GL_EXP;
+		float density = 1;
+		float start = 0;
+		float end = 1;
+		glm::vec4 color{ 0,0,0,0 };
+	} fog;
+
+	struct lighting_t
+	{
+		bool enabled = false;
+		bool shade_model_flat = false;
+		struct material {
+			glm::vec4 ambient{ 0.2,0.2,0.2,1 };
+			glm::vec4 diffuse{ 0.8,0.8,0.8,1 };
+			glm::vec4 specular{ 0,0,0,1 };
+			glm::vec4 emission{ 0,0,0,1 };
+			float shininess = 0.0f;
+		} materials[2]; // front and back
+		uint32_t enabled_lights = 0;
+		struct light {
+			glm::vec4 ambient{ 0,0,0,1 };
+			glm::vec4 diffuse;
+			glm::vec4 specular;
+			glm::vec4 position{ 0,0,1,0 };
+			glm::vec3 spot_direction{ 0,0,-1 };
+			float spot_exponent = 0.0f;
+			float spot_cutoff = 180.0f;
+			float attenuation[3]{ 1,0,0 };//const, linear, quad
+		} lights[gl_max_lights];
+		glm::vec4 light_model_ambient{ 0.2,0.2,0.2,1 };
+		bool light_model_local_viewer = false;
+		bool light_model_two_side = false;
+		bool color_material = false;
+		int color_material_face = GL_FRONT_AND_BACK;
+		int color_material_param = GL_AMBIENT_AND_DIFFUSE;
+	} lighting;
+
+	struct point_t
+	{
+		float size = 1.0f;
+		bool smooth = false;
+	} point;
+
+	struct line_t
+	{
+		float width = 1.0f;
+		bool smooth = false;
+		bool stipple = false;
+		uint16_t stipple_pattern = 0xFFFF;
+		int stipple_repeat = 1;
+	} line;
+
+	struct polygon_t
+	{
+		bool cull_face = false;
+		GLenum cull_face_mode = GL_BACK;
+		bool front_face_ccw = true;
+		bool smooth = false;
+		GLenum mode[2]{ GL_FILL,GL_FILL };//front and back
+		bool stipple = false;
+	} polygon;
+
+	uint8_t polygon_stipple_mask[128];
+};
+
 struct gl_state
 {
 	gl_framebuffer *framebuffer;
@@ -207,13 +301,13 @@ struct gl_state
 	glm::vec4 current_tex_coord;
 	glm::vec3 current_normal;
 	glm::vec4 current_color;
-	struct {
+	struct viewport_t {
 		int width;
 		int height;
 		int center_x;
 		int center_y;
-		float dfar;
-		float dnear;
+		float dfar = 0;
+		float dnear = 1;
 	} viewport;
 
 	GLenum matrix_mode = GL_MODELVIEW;
@@ -275,7 +369,7 @@ struct gl_state
 	bool line_stipple = false;
 	int line_stipple_factor = 1;
 	uint16_t line_stipple_pattern = 0xFFFF;
-	int line_stipple_counter = 0;
+	int line_stipple_counter = 0;//-
 	bool polygon_smooth = false;
 	bool cull_face = false;
 	GLenum cull_face_mode = GL_BACK;
