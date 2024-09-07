@@ -32,6 +32,7 @@ constexpr int gl_max_aux_buffers = 0;
 constexpr int gl_max_eval_order = 8;
 
 constexpr int gl_max_name_stack_depth = 64;
+constexpr int gl_max_attrib_stack_depth = 16;
 
 struct gl_framebuffer
 {
@@ -418,6 +419,9 @@ struct gl_state
 		GLenum polygon_smooth = GL_DONT_CARE;
 		GLenum fog = GL_DONT_CARE;
 	} hints;
+
+	GLbitfield attrib_stack[gl_max_attrib_stack_depth];
+	int attrib_sp = 0;
 
 	void init(int window_w, int window_h, bool doublebuffer);
 	void destroy();

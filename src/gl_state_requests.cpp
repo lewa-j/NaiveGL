@@ -51,5 +51,33 @@ void APIENTRY glGetDoublev(GLenum pname, GLdouble *data)
 		gl_set_error_a(GL_INVALID_ENUM, pname);
 }
 
-void APIENTRY glPushAttrib(GLbitfield mask) {}
-void APIENTRY glPopAttrib(void) {}
+void APIENTRY glPushAttrib(GLbitfield mask)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (gs->attrib_sp >= gl_max_attrib_stack_depth)
+	{
+		gl_set_error(GL_STACK_OVERFLOW);
+		return;
+	}
+
+	gs->attrib_stack[gs->attrib_sp] = mask;
+	gs->attrib_sp++;
+}
+
+void APIENTRY glPopAttrib(void)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (gs->attrib_sp == 0)
+	{
+		gl_set_error(GL_STACK_UNDERFLOW);
+		return;
+	}
+
+	gs->attrib_sp--;
+}
