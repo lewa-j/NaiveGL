@@ -1,6 +1,7 @@
 
 #include "pch.h"
 #include "gl_state.h"
+#include "gl_pixels.h"
 #include "gl_exports.h"
 #include <glm/gtx/integer.hpp>
 
@@ -136,30 +137,42 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 		return;
 	}
 
+	const uint8_t *src = (const uint8_t *)data;
+
 	const gl_state::pixelStore& ps = gs->pixel_unpack;
+	gl_PixelStoreSetup pstore;
+	pstore.init(ps, width, height, format, type);
 
-	int pixel_size = 1;
-	if (format == GL_LUMINANCE_ALPHA)
-		pixel_size = 2;
-	else if (format == GL_RGB)
-		pixel_size = 3;
-	else if (format == GL_RGBA)
-		pixel_size = 4;
+	src += pstore.skip_bytes;
 
-	if (type == GL_UNSIGNED_BYTE && border == 0 && (ps.row_length == 0 || ps.row_length == width) && (pixel_size * width % ps.alignment) == 0 && ps.skip_rows == 0 && ps.skip_pixels == 0 &&
+	if (type == GL_UNSIGNED_BYTE && border == 0 &&
 		!gs->map_color && gs->color_scale == glm::vec4{ 1,1,1,1 } && gs->color_bias == glm::vec4{ 0,0,0,0 })
 	{
-		if (format == GL_LUMINANCE && components == 1 || format == GL_LUMINANCE_ALPHA && components == 2 || format == GL_RGB && components == 3 || format == GL_RGBA && components == 4)
+		if (pstore.stride == width * components)
 		{
 			memcpy(ta.data, data, size);
 			tex.is_complete = gl_is_texture_complete(tex);
 			return;
 		}
+
+		if (format == GL_LUMINANCE && components == 1 || format == GL_LUMINANCE_ALPHA && components == 2 || format == GL_RGB && components == 3 || format == GL_RGBA && components == 4)
+		{
+			uint8_t *dst = ta.data;
+			for (int j = 0; j < height; j++)
+			{
+				const uint8_t *row = src;
+				memcpy(dst, data, size);
+				dst += width * components;
+				src += pstore.stride;
+			}
+
+			tex.is_complete = gl_is_texture_complete(tex);
+			return;
+		}
 		else
 		{
-			if (format == GL_RGBA && components == 3)
+			if (pstore.stride == width * pstore.components && format == GL_RGBA && components == 3)
 			{
-				const uint8_t *src = (const uint8_t *)data;
 				for (size_t i = 0; i < size; i += 3)
 				{
 					ta.data[i] = src[0];
@@ -212,6 +225,79 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei
 	}
 
 	//TODO
+}
+
+void APIENTRY glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void *pixels)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, target);
+		return;
+	}
+	if (level < 0 || level > gl_max_tex_level)
+	{
+		gl_set_error_a(GL_INVALID_VALUE, level);
+		return;
+	}
+	// *_INDEX and DEPTH_COMPONENT are not allowed
+	if (format < GL_RED || format > GL_LUMINANCE_ALPHA)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, target);
+		return;
+	}
+	if (type < GL_BYTE || type > GL_FLOAT)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, type);
+		return;
+	}
+
+	const gl_texture &tex = (target == GL_TEXTURE_1D) ? gs->texture_1d : gs->texture_2d;
+	const gl_texture_array &ta = tex.arrays[level];
+
+	if (!ta.data)
+		return;
+
+	uint8_t *dst = (uint8_t *)pixels;
+
+	const gl_state::pixelStore &ps = gs->pixel_pack;
+	gl_PixelStoreSetup pstore;
+	pstore.init(ps, ta.width, ta.height, format, type);
+
+	dst += pstore.skip_bytes;
+
+	const uint8_t *src = ta.data;
+
+	for (int iy = 0; iy < ta.height; iy++)
+	{
+		uint8_t *row = dst;
+		for (int ix = 0; ix < ta.width; ix++)
+		{
+			glm::vec4 col(0);
+			for (int ci = 0; ci < ta.components; ci++)
+				col[ci] = GLtof(src[ci]);
+
+			if (ta.components == 2)
+				std::swap(col.g, col.a);
+
+			col = col * gs->color_scale + gs->color_bias;
+
+			if (gs->map_color)
+				col = remap_color(col, gs->pixel_map_color_table + 4);
+			col = gl_pixel_format_conversion(format, col);
+
+			gl_pack_color_pixel(pstore.components, type, col, row);
+
+			if (ps.swap_bytes && pstore.element_size > 1)
+				gl_swap_bytes(pstore.element_size, pstore.components, row);
+
+			row += pstore.group_size;
+			src += ta.components;
+		}
+		dst += pstore.stride;
+	}
 }
 
 #define VALIDATE_TEX_PARAMETER \

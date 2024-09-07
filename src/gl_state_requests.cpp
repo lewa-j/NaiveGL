@@ -51,7 +51,6 @@ void APIENTRY glGetDoublev(GLenum pname, GLdouble *data)
 		gl_set_error_a(GL_INVALID_ENUM, pname);
 }
 
-void APIENTRY glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void *pixels) {}
 void APIENTRY glGetPolygonStipple(GLubyte *mask) {}
 
 void APIENTRY glPushAttrib(GLbitfield mask) {}

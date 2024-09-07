@@ -475,9 +475,6 @@ void gl_rasterize_clipped_line(gl_state& st, gl_processed_vertex v0, gl_processe
 void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vertex& v1, gl_processed_vertex& v2);
 void gl_rasterize_clipped_triangle(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1, const gl_processed_vertex& v2);
 
-int gl_pixels_size(GLsizei width, GLsizei height, GLenum format, GLenum type);
-void gl_unpack_pixels(gl_state *gs, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *data, uint8_t *dst);
-
 void gl_dither(glm::vec4& color, int x, int y);
 
 void gl_add_selection_depth(gl_state &st, float z);

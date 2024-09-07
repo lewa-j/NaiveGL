@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "gl_state.h"
+#include "gl_pixels.h"
 #include "gl_exports.h"
 
 void APIENTRY glRasterPos4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
@@ -337,15 +338,60 @@ static glm::vec4 pixel_to_float(const T* data, GLenum format)
 	return glm::vec4(GLtof(data[0]), 0, 0, 1);
 }
 
-static glm::vec4 remap_color(const glm::vec4 &c, gl_state::pixelMapColor *tables)
+glm::vec4 gl_unpack_color_pixel(GLenum format, GLenum type, const void *src)
 {
-	glm::vec4 r;
-	for (int i = 0; i < 4; i++)
-	{
-		int ci = lroundf(glm::clamp(c[i], 0.f, 1.f) * (tables[i].size - 1));
-		r[i] = tables[i].data[ci];
-	}
-	return r;
+	if (type == GL_BYTE)
+		return pixel_to_float((const GLbyte *)src, format);
+	if (type == GL_UNSIGNED_BYTE)
+		return pixel_to_float((const GLubyte *)src, format);
+	if (type == GL_SHORT)
+		return pixel_to_float((const GLshort *)src, format);
+	if (type == GL_UNSIGNED_SHORT)
+		return pixel_to_float((const GLushort *)src, format);
+	if (type == GL_INT)
+		return pixel_to_float((const GLint *)src, format);
+	if (type == GL_UNSIGNED_INT)
+		return pixel_to_float((const GLuint *)src, format);
+	if (type == GL_FLOAT)
+		return pixel_to_float((const float *)src, format);
+	return glm::vec4(0);
+}
+
+uint32_t gl_unpack_index_pixel(GLenum type, const void *src)
+{
+	if (type == GL_BYTE)
+		return *(const GLbyte *)src;
+	if (type == GL_UNSIGNED_BYTE)
+		return *(const GLubyte *)src;
+	if (type == GL_SHORT)
+		return *(const GLshort *)src;
+	if (type == GL_UNSIGNED_SHORT)
+		return *(const GLushort *)src;
+	if (type == GL_INT)
+		return *(const GLint *)src;
+	if (type == GL_UNSIGNED_INT)
+		return *(const GLuint *)src;
+	if (type == GL_FLOAT)
+		return (uint32_t) * (const float *)src;
+	return 0;
+}
+
+void gl_pack_index_pixel(GLenum type, uint32_t index, void *dst)
+{
+	if (type == GL_BYTE)
+		*(GLbyte *)dst = index & 0x7F;
+	else if (type == GL_UNSIGNED_BYTE)
+		*(GLubyte *)dst = index & 0xFF;
+	else if (type == GL_SHORT)
+		*(GLshort *)dst = index & 0x7FFF;
+	else if (type == GL_UNSIGNED_SHORT)
+		*(GLushort *)dst = index & 0xFFFF;
+	else if (type == GL_INT)
+		*(GLint *)dst = index & 0x7FFFFFFF;
+	else if (type == GL_UNSIGNED_INT)
+		*(GLuint *)dst = index & 0xFFFFFFFF;
+	else if (type == GL_FLOAT)
+		*(float *)dst = (float)index;
 }
 
 static glm::vec4 index_to_rgba(int index, gl_state::pixelMapColor* tables)
@@ -376,33 +422,30 @@ static void emit_stencil(gl_state& st, int x, int y, uint8_t index)
 	fb.stencil[pi] = (index & st.stencil_writemask) | (fb.stencil[pi] & ~st.stencil_writemask);
 }
 
+uint32_t gl_index_arithmetic(gl_state *gs, uint32_t index)
+{
+	if (gs->index_shift > 0)
+		index <<= gs->index_shift;
+	else if (gs->index_shift < 0)
+		index >>= -gs->index_shift;
+
+	index += gs->index_offset;
+	return index;
+}
+
 int gl_pixels_size(GLsizei width, GLsizei height, GLenum format, GLenum type)
 {
-	int pixel_size = 1;
-	if (format == GL_LUMINANCE_ALPHA)
-		pixel_size = 2;
-	else if (format == GL_RGB)
-		pixel_size = 3;
-	else if (format == GL_RGBA)
-		pixel_size = 4;
-	else if (format < GL_COLOR_INDEX || format > GL_LUMINANCE_ALPHA)
-		return 0;
-
-	int element_size = 1;
-	if (type == GL_UNSIGNED_SHORT || type == GL_SHORT)
-		element_size = 2;
-	else if (type == GL_UNSIGNED_INT || type == GL_INT || type == GL_FLOAT)
-		element_size = 4;
-	else if (type != GL_BITMAP && (type < GL_BYTE || type > GL_FLOAT))
-		return 0;
-
-	if (type == GL_BITMAP && format != GL_COLOR_INDEX && format != GL_STENCIL_INDEX)
-		return 0;
-
 	if (type == GL_BITMAP)
+	{
+		if (format != GL_COLOR_INDEX && format != GL_STENCIL_INDEX)
+			return 0;
 		return (int)(glm::ceil(width / 8.f)) * height;
+	}
 
-	return element_size * pixel_size * width * height;
+	if ((format < GL_COLOR_INDEX || format > GL_LUMINANCE_ALPHA) || (type < GL_BYTE || type > GL_FLOAT))
+		return 0;
+
+	return gl_pixel_type_size(type) * gl_pixel_format_size(format) * width * height;
 }
 
 void gl_unpack_pixels(gl_state *gs, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *data, uint8_t *dst)
@@ -412,20 +455,18 @@ void gl_unpack_pixels(gl_state *gs, GLsizei width, GLsizei height, GLenum format
 	if (type == GL_BITMAP && format != GL_COLOR_INDEX && format != GL_STENCIL_INDEX)
 		return;
 
-	const gl_state::pixelStore &ps = gs->pixel_unpack;
-	int row_length = (ps.row_length > 0) ? ps.row_length : width;
-
 	const uint8_t *src = (const uint8_t *)data;
+
+	const gl_state::pixelStore &ps = gs->pixel_unpack;
+	gl_PixelStoreSetup pstore;
+	pstore.init(ps, width, height, format, type);
+
+	src += pstore.skip_bytes;
 
 	if (type == GL_BITMAP)
 	{
-		int stride = (int)(ps.alignment * glm::ceil(row_length / float(8 * ps.alignment)));
 		int dst_stride = (int)glm::ceil(width / 8.f);
-		int skip_bits = ps.skip_pixels & 7;
-
-		src += ps.skip_pixels / 8 + ps.skip_rows * stride;
-
-		if (stride == dst_stride && !ps.lsb_first && !skip_bits)
+		if (pstore.stride == dst_stride && !ps.lsb_first && !pstore.skip_bits)
 		{
 			memcpy(dst, src, dst_stride * height);
 			return;
@@ -434,16 +475,16 @@ void gl_unpack_pixels(gl_state *gs, GLsizei width, GLsizei height, GLenum format
 		for (int j = 0; j < height; j++)
 		{
 			const uint8_t *row = src;
-			int pixel = skip_bits;
+			int pixel = pstore.skip_bits;
 
 			uint8_t *dst_row = dst;
 			int dst_pixel = 0;
 			uint8_t dst_byte = 0;
 
-			if (!ps.lsb_first && !skip_bits)
+			if (!ps.lsb_first && !pstore.skip_bits)
 			{
 				memcpy(dst, src, dst_stride);
-				src += stride;
+				src += pstore.stride;
 				dst += dst_stride;
 				continue;
 			}
@@ -479,35 +520,14 @@ void gl_unpack_pixels(gl_state *gs, GLsizei width, GLsizei height, GLenum format
 					row++;
 				}
 			}
-			src += stride;
+			src += pstore.stride;
 			dst += dst_stride;
 		}
 	}
 	else
 	{
-		int pixel_size = 1;
-		if (format == GL_LUMINANCE_ALPHA)
-			pixel_size = 2;
-		else if (format == GL_RGB)
-			pixel_size = 3;
-		else if (format == GL_RGBA)
-			pixel_size = 4;
-
-		int element_size = 1;
-		if (type == GL_UNSIGNED_SHORT || type == GL_SHORT)
-			element_size = 2;
-		else if (type == GL_UNSIGNED_INT || type == GL_INT || type == GL_FLOAT)
-			element_size = 4;
-
-		int elements_stride = int((element_size >= ps.alignment) ?
-			(pixel_size * row_length) :
-			(ps.alignment / element_size * glm::ceil((element_size * pixel_size * row_length) / (float)ps.alignment)));
-
-		src += (ps.skip_pixels * pixel_size + ps.skip_rows * elements_stride) * element_size;
-
-		int dst_stride = element_size * pixel_size * width;
-
-		if (elements_stride == pixel_size * width && !ps.swap_bytes)
+		int dst_stride = pstore.group_size * width;
+		if (pstore.stride == dst_stride && !(ps.swap_bytes && pstore.element_size > 1))
 		{
 			memcpy(dst, src, dst_stride * height);
 			return;
@@ -515,37 +535,19 @@ void gl_unpack_pixels(gl_state *gs, GLsizei width, GLsizei height, GLenum format
 
 		for (int j = 0; j < height; j++)
 		{
-			const uint8_t *row = src;
-			uint8_t *dst_row = dst;
+			memcpy(dst, src, dst_stride);
 
-			if (!ps.swap_bytes)
+			if (ps.swap_bytes && pstore.element_size > 1)
 			{
-				memcpy(dst, src, dst_stride);
-				src += elements_stride * element_size;
-				dst += dst_stride;
-				continue;
-			}
-
-			for (int i = 0; i < width; i++)
-			{
-				uint8_t group[16];
-				memcpy(group, row, element_size * pixel_size);
-				if (ps.swap_bytes && element_size > 1)
+				//swap in-place
+				uint8_t *dst_row = dst;
+				for (int i = 0; i < width; i++)
 				{
-					for (int c = 0; c < pixel_size; c++)
-					{
-						std::swap(group[c * element_size], group[(c + 1) * element_size - 1]);
-						if (element_size == 4)
-							std::swap(group[c * element_size + 1], group[c * element_size + 2]);
-					}
+					gl_swap_bytes(pstore.element_size, pstore.components, dst_row);
+					dst_row += pstore.group_size;
 				}
-
-				memcpy(dst_row, group, element_size *pixel_size);
-
-				row += pixel_size * element_size;
-				dst_row += pixel_size * element_size;
 			}
-			src += elements_stride * element_size;
+			src += pstore.stride;
 			dst += dst_stride;
 		}
 	}
@@ -619,18 +621,23 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 		return;
 	}
 
-	const gl_state::pixelStore& ps = gs->pixel_unpack;
-	int row_length = (ps.row_length > 0) ? ps.row_length : width;
+	const uint8_t *pixels = (const uint8_t *)data;
 
-	const uint8_t* pixels = (const uint8_t*)data;
+	const gl_state::pixelStore& ps = gs->pixel_unpack;
+	gl_PixelStoreSetup pstore;
+	pstore.init(ps, width, height, format, type);
+
+	pixels += pstore.skip_bytes;
+
+	gl_frag_data fdata;
+	fdata.color = gs->raster_pos.color;
+	fdata.tex_coord = gs->raster_pos.tex_coord;
+	fdata.z = gs->raster_pos.coords.z;
+	fdata.fog_z = gs->raster_pos.distance;
+	fdata.lod = 0;
 
 	if (type == GL_BITMAP)
 	{
-		int stride = (int)(ps.alignment * glm::ceil(row_length / float(8 * ps.alignment)));
-		int skip_bits = ps.skip_pixels & 7;
-
-		pixels += ps.skip_pixels/8 + ps.skip_rows * stride;
-
 		glm::vec4 bitmap_colors[2];
 		if (format != GL_STENCIL_INDEX)
 		{
@@ -638,18 +645,11 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 			bitmap_colors[1] = index_to_rgba(1, gs->pixel_map_color_table);
 		}
 
-		gl_frag_data fdata;
-		fdata.color = gs->raster_pos.color;
-		fdata.tex_coord = gs->raster_pos.tex_coord;
-		fdata.z = gs->raster_pos.coords.z;
-		fdata.fog_z = gs->raster_pos.distance;
-		fdata.lod = 0;
-
 		for (int j = 0; j < height; j++)
 		{
 			const uint8_t* group = pixels;
 
-			int pixel = skip_bits;
+			int pixel = pstore.skip_bits;
 			for (int ix = 0; ix < width; ix++)
 			{
 				bool b = 0;
@@ -690,79 +690,27 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 					group++;
 				}
 			}
-			pixels += stride;
+			pixels += pstore.stride;
 		}
 	}
 	else
 	{
-		int pixel_size = 1;
-		if (format == GL_LUMINANCE_ALPHA)
-			pixel_size = 2;
-		else if (format == GL_RGB)
-			pixel_size = 3;
-		else if (format == GL_RGBA)
-			pixel_size = 4;
-
-		int element_size = 1;
-		if (type == GL_UNSIGNED_SHORT || type == GL_SHORT)
-			element_size = 2;
-		else if (type == GL_UNSIGNED_INT || type == GL_INT || type == GL_FLOAT)
-			element_size = 4;
-
-		int elements_stride = int((element_size >= ps.alignment) ?
-			(pixel_size * row_length) :
-			(ps.alignment / element_size * glm::ceil((element_size * pixel_size * row_length) / (float)ps.alignment)));
-
-		pixels += (ps.skip_pixels * pixel_size + ps.skip_rows * elements_stride) * element_size;
-
-		gl_frag_data fdata;
-		fdata.color = gs->raster_pos.color;
-		fdata.tex_coord = gs->raster_pos.tex_coord;
-		fdata.z = gs->raster_pos.coords.z;
-		fdata.fog_z = gs->raster_pos.distance;
-		fdata.lod = 0;
-
 		for (int j = 0; j < height; j++)
 		{
 			const uint8_t* row = pixels;
 			for (int i = 0; i < width; i++)
 			{
 				uint8_t group[16];
-				memcpy(group, row, element_size * pixel_size);
-				if (ps.swap_bytes && element_size > 1)
-				{
-					for (int c = 0; c < pixel_size; c++)
-					{
-						std::swap(group[c * element_size], group[(c + 1) * element_size - 1]);
-						if (element_size == 4)
-							std::swap(group[c * element_size + 1], group[c * element_size + 2]);
-					}
-				}
+				memcpy(group, row, pstore.group_size);
+				if (ps.swap_bytes && pstore.element_size > 1)
+					gl_swap_bytes(pstore.element_size, pstore.components, group);
+
 				glm::vec4 pixel{};
 				uint32_t index = 0;
 				if (format == GL_COLOR_INDEX || format == GL_STENCIL_INDEX)
 				{
-					if (type == GL_BYTE)
-						index = *(const GLbyte*)group;
-					else if (type == GL_UNSIGNED_BYTE)
-						index = *(const GLubyte*)group;
-					else if (type == GL_SHORT)
-						index = *(const GLshort*)group;
-					else if (type == GL_UNSIGNED_SHORT)
-						index = *(const GLushort*)group;
-					else if (type == GL_INT)
-						index = *(const GLint*)group;
-					else if (type == GL_UNSIGNED_INT)
-						index = *(const GLuint*)group;
-					else if (type == GL_FLOAT)
-						index = (uint32_t)*(const float*)group;
-
-					if (gs->index_shift > 0)
-						index <<= gs->index_shift;
-					else if(gs->index_shift < 0)
-						index >>= -gs->index_shift;
-
-					index += gs->index_offset;
+					index = gl_unpack_index_pixel(type, group);
+					index = gl_index_arithmetic(gs, index);
 
 					if (format == GL_COLOR_INDEX)
 					{
@@ -777,21 +725,7 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 				}
 				else
 				{
-					if (type == GL_BYTE)
-						pixel = pixel_to_float((const GLbyte*)group, format);
-					else if (type == GL_UNSIGNED_BYTE)
-						pixel = pixel_to_float((const GLubyte*)group, format);
-					else if (type == GL_SHORT)
-						pixel = pixel_to_float((const GLshort*)group, format);
-					else if (type == GL_UNSIGNED_SHORT)
-						pixel = pixel_to_float((const GLushort*)group, format);
-					else if (type == GL_INT)
-						pixel = pixel_to_float((const GLint*)group, format);
-					else if (type == GL_UNSIGNED_INT)
-						pixel = pixel_to_float((const GLuint*)group, format);
-					else if (type == GL_FLOAT)
-						pixel = pixel_to_float((const float*)group, format);
-
+					pixel = gl_unpack_color_pixel(format, type, group);
 					if (format == GL_DEPTH_COMPONENT)
 						pixel.r = pixel.r * gs->depth_scale + gs->depth_bias;
 					else
@@ -826,9 +760,9 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 							gl_emit_fragment(*gs, x + sx, y + sy, fdata);
 				}
 
-				row += pixel_size * element_size;
+				row += pstore.group_size;
 			}
-			pixels += elements_stride * element_size;
+			pixels += pstore.stride;
 		}
 	}
 }
@@ -871,13 +805,11 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 		return;
 	}
 
-	const gl_state::pixelStore& ps = gs->pixel_unpack;
-	int row_length = (ps.row_length > 0) ? ps.row_length : width;
+	const gl_state::pixelStore &ps = gs->pixel_unpack;
+	gl_PixelStoreSetup pstore;
+	pstore.init(ps, width, height, GL_COLOR_INDEX, GL_BITMAP);
 
-	int stride = (int)(ps.alignment * glm::ceil(row_length / float(8 * ps.alignment)));
-	int skip_bits = ps.skip_pixels & 7;
-
-	data += ps.skip_pixels / 8 + ps.skip_rows * stride;
+	data += pstore.skip_bytes;
 
 	int x = (int)floorf(gs->raster_pos.coords.x - xorig);
 	int y = (int)floorf(gs->raster_pos.coords.y - yorig);
@@ -893,7 +825,7 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 	{
 		const uint8_t* group = data;
 
-		int pixel = skip_bits;
+		int pixel = pstore.skip_bits;
 		for (int ix = 0; ix < width; ix++)
 		{
 			bool b = 0;
@@ -915,7 +847,7 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 				group++;
 			}
 		}
-		data += stride;
+		data += pstore.stride;
 	}
 
 	gs->raster_pos.coords += glm::vec4(xmove, ymove, 0, 0);
@@ -975,45 +907,33 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 		return;
 	}
 
+	uint8_t *pixels = (uint8_t *)data;
+
 	const gl_framebuffer& fb = *gs->framebuffer;
-
 	const gl_state::pixelStore& ps = gs->pixel_pack;
-	int row_length = (ps.row_length > 0) ? ps.row_length : width;
+	gl_PixelStoreSetup pstore;
+	pstore.init(ps, width, height, format, type);
 
-	uint8_t* pixels = (uint8_t*)data;
-
-	int pixel_size = 1;
-	if (format == GL_LUMINANCE_ALPHA)
-		pixel_size = 2;
-	else if (format == GL_RGB)
-		pixel_size = 3;
-	else if (format == GL_RGBA)
-		pixel_size = 4;
-
-	int element_size = 1;
-	if (type == GL_UNSIGNED_SHORT || type == GL_SHORT)
-		element_size = 2;
-	else if (type == GL_UNSIGNED_INT || type == GL_INT || type == GL_FLOAT)
-		element_size = 4;
-
-	int elements_stride = int((element_size >= ps.alignment) ?
-		(pixel_size * row_length) :
-		(ps.alignment / element_size * glm::ceil((element_size * pixel_size * row_length) / (float)ps.alignment)));
-
-	pixels += (ps.skip_pixels * pixel_size + ps.skip_rows * elements_stride) * element_size;
+	pixels += pstore.skip_bytes;
 
 	if (y < 0)
 	{
-		pixels += (-y * elements_stride) * element_size;
+		pixels += -y * pstore.stride;
 		height += y;
 		y = 0;
 	}
 	if (x < 0)
 	{
-		pixels += (-x * pixel_size) * element_size;
+		pixels += -x * pstore.group_size;
 		width += x;
 		x = 0;
 	}
+
+	if (x + width > fb.width)
+		width = fb.width - x;
+
+	if (y + height > fb.height)
+		height = fb.height - y;
 
 	for (int iy = 0; iy < height; iy++)
 	{
@@ -1026,14 +946,7 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 			if (format == GL_STENCIL_INDEX)
 			{
 				index = fb.stencil[fbi];
-
-				if (gs->index_shift > 0)
-					index <<= gs->index_shift;
-				else if (gs->index_shift < 0)
-					index >>= -gs->index_shift;
-
-				index += gs->index_offset;
-
+				index = gl_index_arithmetic(gs, index);
 				if (gs->map_stencil)
 				{
 					int ti = index & (gs->pixel_map_index_table[1].size - 1);
@@ -1042,6 +955,7 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 			}
 			else if (format == GL_DEPTH_COMPONENT)
 			{
+				//TODO depth buffer assumed to be 16 bit
 				float depth = fb.depth[fbi] / (float)0xffff;
 				depth = depth * gs->depth_scale + gs->depth_bias;
 				col.r = depth;
@@ -1049,79 +963,26 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 			else
 			{
 				const int ci = fbi * 4;
-				
 				glm::ivec4 icol(fb.color[ci + 2], fb.color[ci + 1], fb.color[ci + 0], fb.color[ci + 3]);//bgra
 				col = glm::vec4(icol) / (float)0xff;
 				col = col * gs->color_scale + gs->color_bias;
 				if (gs->map_color)
 					col = remap_color(col, gs->pixel_map_color_table + 4);
-
-				if (format == GL_LUMINANCE || format == GL_LUMINANCE_ALPHA)
-				{
-					col.r = col.r + col.g + col.b;
-					col.g = col.a;
-				}
-				else if (format == GL_GREEN)
-					col.r = col.g;
-				else if (format == GL_BLUE)
-					col.r = col.b;
-				else if (format == GL_ALPHA)
-					col.r = col.a;
+				col = gl_pixel_format_conversion(format, col);
 			}
 
 			if (format == GL_STENCIL_INDEX)
-			{
-				if (type == GL_BYTE)
-					*(GLbyte*)row = index & 0x7F;
-				else if (type == GL_UNSIGNED_BYTE)
-					*(GLubyte*)row = index & 0xFF;
-				else if (type == GL_SHORT)
-					*(GLshort*)row = index & 0x7FFF;
-				else if (type == GL_UNSIGNED_SHORT)
-					*(GLushort*)row = index & 0xFFFF;
-				else if (type == GL_INT)
-					*(GLint*)row = index & 0x7FFFFFFF;
-				else if (type == GL_UNSIGNED_INT)
-					*(GLuint*)row = index & 0xFFFFFFFF;
-				else if (type == GL_FLOAT)
-					*(float*)row = index;
-			}
+				gl_pack_index_pixel(type, index, row);
 			else
-			{
-				col = glm::clamp(col, 0.f, 1.f);
-				for (int ci = 0; ci < pixel_size; ci++)
-				{
-					if (type == GL_BYTE)
-						((GLbyte*)row)[ci] = (GLbyte)((0xFF * col[ci] - 1) / 2);
-					else if (type == GL_UNSIGNED_BYTE)
-						((GLubyte*)row)[ci] = (GLubyte)(col[ci] * 0xFF);
-					else if (type == GL_SHORT)
-						((GLshort*)row)[ci] = GLshort((0xFFFF * col[ci] - 1) / 2);
-					else if (type == GL_UNSIGNED_SHORT)
-						((GLushort*)row)[ci] = (GLushort)(col[ci] * 0xFFFF);
-					else if (type == GL_INT)
-						((GLint*)row)[ci] = (GLint)((0xFFFFFFFF * col[ci] - 1) / 2);
-					else if (type == GL_UNSIGNED_INT)
-						((GLuint*)row)[ci] = (GLuint)(col[ci] * 0xFFFFFFFF);
-					else if (type == GL_FLOAT)
-						((float*)row)[ci] = (float)col[ci];
-				}
-			}
+				gl_pack_color_pixel(pstore.components, type, col, row);
 
-			if (ps.swap_bytes && element_size > 1)
-			{
-				for (int c = 0; c < pixel_size; c++)
-				{
-					std::swap(row[c * element_size], row[(c + 1) * element_size - 1]);
-					if (element_size == 4)
-						std::swap(row[c * element_size + 1], row[c * element_size + 2]);
-				}
-			}
+			if (ps.swap_bytes && pstore.element_size > 1)
+				gl_swap_bytes(pstore.element_size, pstore.components, row);
 
 			fbi++;
-			row += pixel_size * element_size;
+			row += pstore.group_size;
 		}
-		pixels += elements_stride * element_size;
+		pixels += pstore.stride;
 	}
 }
 

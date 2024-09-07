@@ -137,8 +137,9 @@ EXPORT PROC APIENTRY wglGetProcAddress(LPCSTR func_name)
 	}
 
 	if (!r)
+	{
 		gl_log("wglGetProcAddress(%s) = %p\n", func_name, r);
-
+	}
 	return r;
 }
 
