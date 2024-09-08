@@ -27,14 +27,14 @@ inline float GLtof(GLdouble v) { return (float)v; }
 
 inline bool is_pow(int a) { return !(a & (a - 1)); }
 
-inline void copy_color(GLfloat *dst, const GLfloat *src)
+inline void copy_color(GLfloat *dst, const GLfloat *src, int count = 4)
 {
-	memcpy(dst, src, sizeof(GLfloat) * 4);
+	memcpy(dst, src, sizeof(GLfloat) * count);
 }
 
-inline void copy_color(GLint *dst, const GLfloat *src)
+inline void copy_color(GLint *dst, const GLfloat *src, int count = 4)
 {
-	for (int i = 0; i < 4; i++)
+	for (int i = 0; i < count; i++)
 		dst[i] = (int)((0xFFFFFFFF * src[i] - 1) / 2);
 }
 
@@ -56,8 +56,8 @@ inline void copy_vals(GLint *dst, const GLfloat *src, int count)
 
 inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 {
-	for (int i = 0; i < 4; i++)
-		dst[i] = (GLfloat)src[i];
+	for (int i = 0; i < count; i++)
+		dst[i] = src[i];
 }
 
 #define GL_FALSE 0

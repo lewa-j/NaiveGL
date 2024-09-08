@@ -192,91 +192,91 @@ GLint APIENTRY glRenderMode(GLenum mode)
 	return ret;
 }
 
-bool &gl_get_enabled_ref(gl_state *gs, GLenum cap, bool &fail)
+bool &gl_get_enabled_ref(gl_state &gs, GLenum cap, bool &fail)
 {
 	if (cap == GL_NORMALIZE)
 	{
-		return gs->transform.normalize;
+		return gs.transform.normalize;
 	}
 	else if (cap >= GL_TEXTURE_GEN_S && cap <= GL_TEXTURE_GEN_Q)
 	{
-		return gs->texgen[cap - GL_TEXTURE_GEN_S].enabled;
+		return gs.texgen[cap - GL_TEXTURE_GEN_S].enabled;
 	}
 	else if (cap == GL_LIGHTING)
 	{
-		return gs->lighting.enabled;
+		return gs.lighting.enabled;
 	}
 	else if (cap == GL_COLOR_MATERIAL)
 	{
-		return gs->lighting.color_material;
+		return gs.lighting.color_material;
 	}
 	else if (cap == GL_POINT_SMOOTH)
 	{
-		return gs->point.smooth;
+		return gs.point.smooth;
 	}
 	else if (cap == GL_LINE_SMOOTH)
 	{
-		return gs->line.smooth;
+		return gs.line.smooth;
 	}
 	else if (cap == GL_LINE_STIPPLE)
 	{
-		return gs->line.stipple;
+		return gs.line.stipple;
 	}
 	else if (cap == GL_POLYGON_SMOOTH)
 	{
-		return gs->polygon.smooth;
+		return gs.polygon.smooth;
 	}
 	else if (cap == GL_POLYGON_STIPPLE)
 	{
-		return gs->polygon.stipple;
+		return gs.polygon.stipple;
 	}
 	else if (cap == GL_CULL_FACE)
 	{
-		return gs->polygon.cull_face;
+		return gs.polygon.cull_face;
 	}
 	else if (cap == GL_TEXTURE_2D)
 	{
-		return gs->texture_2d_enabled;
+		return gs.texture_2d_enabled;
 	}
 	else if (cap == GL_TEXTURE_1D)
 	{
-		return gs->texture_1d_enabled;
+		return gs.texture_1d_enabled;
 	}
 	else if (cap == GL_FOG)
 	{
-		return gs->fog.enabled;
+		return gs.fog.enabled;
 	}
 	else if (cap == GL_SCISSOR_TEST)
 	{
-		return gs->scissor.test;
+		return gs.scissor.test;
 	}
 	else if (cap == GL_ALPHA_TEST)
 	{
-		return gs->color_buffer.alpha_test;
+		return gs.color_buffer.alpha_test;
 	}
 	else if (cap == GL_STENCIL_TEST)
 	{
-		return gs->stencil.test;
+		return gs.stencil.test;
 	}
 	else if (cap == GL_DEPTH_TEST)
 	{
-		return gs->depth.test;
+		return gs.depth.test;
 	}
 	else if (cap == GL_BLEND)
 	{
-		return gs->color_buffer.blend;
+		return gs.color_buffer.blend;
 	}
 	else if (cap == GL_DITHER)
 	{
-		return gs->color_buffer.dither;
+		return gs.color_buffer.dither;
 	}
 	else if (cap == GL_LOGIC_OP)
 	{
-		return gs->color_buffer.logic_op;
+		return gs.color_buffer.logic_op;
 	}
 	else if (cap == GL_AUTO_NORMAL)
 	{
-		return gs->eval.auto_normal;
+		return gs.eval.auto_normal;
 	}
 	else
 	{
@@ -295,7 +295,7 @@ static void set_bit(uint32_t &set, int bit, bool val)
 }
 
 //return false if cap is invalid
-bool gl_setable(gl_state *gs, GLenum cap, bool val)
+bool gl_setable(gl_state &gs, GLenum cap, bool val)
 {
 	bool fail = false;
 	bool &state = gl_get_enabled_ref(gs, cap, fail);
@@ -306,19 +306,19 @@ bool gl_setable(gl_state *gs, GLenum cap, bool val)
 	}
 	else if (cap >= GL_CLIP_PLANE0 && cap < (GL_CLIP_PLANE0 + gl_max_user_clip_planes))
 	{
-		set_bit(gs->transform.enabled_clip_planes, cap - GL_CLIP_PLANE0, val);
+		set_bit(gs.transform.enabled_clip_planes, cap - GL_CLIP_PLANE0, val);
 	}
 	else if (cap >= GL_LIGHT0 && cap < (GL_LIGHT0 + gl_max_lights))
 	{
-		set_bit(gs->lighting.enabled_lights, cap - GL_LIGHT0, val);
+		set_bit(gs.lighting.enabled_lights, cap - GL_LIGHT0, val);
 	}
 	else if (cap >= GL_MAP1_COLOR_4 && cap <= GL_MAP1_VERTEX_4)
 	{
-		set_bit(gs->eval.enabled_maps, cap - GL_MAP1_COLOR_4, val);
+		set_bit(gs.eval.enabled_maps, cap - GL_MAP1_COLOR_4, val);
 	}
 	else if (cap >= GL_MAP2_COLOR_4 && cap <= GL_MAP2_VERTEX_4)
 	{
-		set_bit(gs->eval.enabled_maps, cap - GL_MAP2_COLOR_4 + 9, val);
+		set_bit(gs.eval.enabled_maps, cap - GL_MAP2_COLOR_4 + 9, val);
 	}
 	else
 	{
@@ -343,7 +343,7 @@ void APIENTRY glEnable(GLenum cap)
 		return;
 	}
 
-	if (!gl_setable(gs, cap, true))
+	if (!gl_setable(*gs, cap, true))
 		gl_set_error_a(GL_INVALID_ENUM, cap);
 }
 
@@ -354,12 +354,12 @@ void APIENTRY glDisable(GLenum cap)
 	WRITE_DISPLAY_LIST(Disable, {}, { (int)cap });
 	VALIDATE_NOT_BEGIN_MODE;
 
-	if (!gl_setable(gs, cap, false))
+	if (!gl_setable(*gs, cap, false))
 		gl_set_error_a(GL_INVALID_ENUM, cap);
 }
 
 //return -1 if cap is invalid
-int gl_isEnabled(gl_state *gs, GLenum cap)
+int gl_isEnabled(gl_state &gs, GLenum cap)
 {
 	bool fail = false;
 	bool &state = gl_get_enabled_ref(gs, cap, fail);
@@ -369,19 +369,19 @@ int gl_isEnabled(gl_state *gs, GLenum cap)
 	}
 	else if (cap >= GL_CLIP_PLANE0 && cap < (GL_CLIP_PLANE0 + gl_max_user_clip_planes))
 	{
-		return (gs->transform.enabled_clip_planes & (1 << (cap - GL_CLIP_PLANE0))) ? 1 : 0;
+		return (gs.transform.enabled_clip_planes & (1 << (cap - GL_CLIP_PLANE0))) ? 1 : 0;
 	}
 	else if (cap >= GL_LIGHT0 && cap < (GL_LIGHT0 + gl_max_lights))
 	{
-		return (gs->lighting.enabled_lights & (1 << (cap - GL_LIGHT0))) ? 1 : 0;
+		return (gs.lighting.enabled_lights & (1 << (cap - GL_LIGHT0))) ? 1 : 0;
 	}
 	else if (cap >= GL_MAP1_COLOR_4 && cap <= GL_MAP1_VERTEX_4)
 	{
-		return (gs->eval.enabled_maps & (1 << (cap - GL_MAP1_COLOR_4))) ? 1 : 0;
+		return (gs.eval.enabled_maps & (1 << (cap - GL_MAP1_COLOR_4))) ? 1 : 0;
 	}
 	else if (cap >= GL_MAP2_COLOR_4 && cap <= GL_MAP2_VERTEX_4)
 	{
-		return (gs->eval.enabled_maps & (1 << (cap - GL_MAP2_COLOR_4 + 9))) ? 1 : 0;
+		return (gs.eval.enabled_maps & (1 << (cap - GL_MAP2_COLOR_4 + 9))) ? 1 : 0;
 	}
 
 	return -1;
@@ -393,7 +393,7 @@ GLboolean APIENTRY glIsEnabled(GLenum cap)
 	if (!gs) return GL_FALSE;
 	VALIDATE_NOT_BEGIN_MODE_RET(GL_FALSE);
 
-	int r = gl_isEnabled(gs, cap);
+	int r = gl_isEnabled(*gs, cap);
 	if (r == -1)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, cap);

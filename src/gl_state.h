@@ -11,28 +11,26 @@
 #endif
 
 constexpr int gl_max_viewport_dims[2]{0x4000,0x4000};
-
 constexpr int gl_max_viewmodel_mtx = 32;
 constexpr int gl_max_projection_mtx = 2;
 constexpr int gl_max_texture_mtx = 2;
-
 //max possible is 32, cause of enabled_* type
 constexpr int gl_max_user_clip_planes = 6;
 constexpr int gl_max_lights = 8;
-
 constexpr int gl_max_point_size = 2048;
 constexpr float gl_point_size_range[2]{ 0.1f, 2048 };
-
+constexpr float gl_point_size_granularity = 0.1f;
+constexpr float gl_line_width_range[2]{ 1, 1 };
+constexpr float gl_line_width_granularity = 1;
 constexpr int gl_max_pixel_map_table = 32;
 constexpr int gl_max_texture_size = 64;
 constexpr int gl_max_tex_level = 6;// log2(gl_max_texture_size)
-
 constexpr int gl_max_aux_buffers = 0;
-
 constexpr int gl_max_eval_order = 8;
-
 constexpr int gl_max_name_stack_depth = 64;
+constexpr int gl_max_list_nesting = 64;
 constexpr int gl_max_attrib_stack_depth = 16;
+constexpr int gl_subpixel_bits = 8;
 
 struct gl_framebuffer
 {
@@ -589,7 +587,7 @@ void gl_feedback_write_vertex(gl_state &st, glm::vec4 pos, glm::vec4 color, glm:
 void gl_feedback_write_vertex(gl_state &st, const gl_processed_vertex &v);
 
 //return -1 if cap is invalid
-int gl_isEnabled(gl_state *gs, GLenum cap);
+int gl_isEnabled(gl_state &gs, GLenum cap);
 
 #define VALIDATE_NOT_BEGIN_MODE \
 if (gs->begin_primitive_mode != -1)\
