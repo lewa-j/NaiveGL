@@ -45,8 +45,8 @@ static bool gl_is_texture_complete(gl_texture &tex)
 	if (w < 1 || h < 1)
 		return false;
 
-	bool mipmap = (tex.min_filter == GL_NEAREST_MIPMAP_NEAREST || tex.min_filter == GL_NEAREST_MIPMAP_LINEAR
-		|| tex.min_filter == GL_LINEAR_MIPMAP_NEAREST || tex.min_filter == GL_LINEAR_MIPMAP_LINEAR);
+	bool mipmap = (tex.params.min_filter == GL_NEAREST_MIPMAP_NEAREST || tex.params.min_filter == GL_NEAREST_MIPMAP_LINEAR
+		|| tex.params.min_filter == GL_LINEAR_MIPMAP_NEAREST || tex.params.min_filter == GL_LINEAR_MIPMAP_LINEAR);
 
 	if (!mipmap)
 		return true;
@@ -146,7 +146,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 	src += pstore.skip_bytes;
 
 	if (type == GL_UNSIGNED_BYTE && border == 0 &&
-		!gs->map_color && gs->color_scale == glm::vec4{ 1,1,1,1 } && gs->color_bias == glm::vec4{ 0,0,0,0 })
+		!gs->pixel.map_color && gs->pixel.color_scale == glm::vec4{ 1,1,1,1 } && gs->pixel.color_bias == glm::vec4{ 0,0,0,0 })
 	{
 		if (pstore.stride == width * components)
 		{
@@ -282,9 +282,9 @@ void APIENTRY glGetTexImage(GLenum target, GLint level, GLenum format, GLenum ty
 			if (ta.components == 2)
 				std::swap(col.g, col.a);
 
-			col = col * gs->color_scale + gs->color_bias;
+			col = col * gs->pixel.color_scale + gs->pixel.color_bias;
 
-			if (gs->map_color)
+			if (gs->pixel.map_color)
 				col = remap_color(col, gs->pixel_map_color_table + 4);
 			col = gl_pixel_format_conversion(format, col);
 
@@ -340,15 +340,16 @@ void APIENTRY glTexParameteri(GLenum target, GLenum pname, GLint param)
 	}
 
 	gl_texture& tex = target == GL_TEXTURE_2D ? gs->texture_2d : gs->texture_1d;
+	gl_texture::params_t &p = tex.params;
 
 	if (pname == GL_TEXTURE_MAG_FILTER)
-		tex.mag_filter = param;
+		p.mag_filter = param;
 	else if (pname == GL_TEXTURE_MIN_FILTER)
-		tex.min_filter = param;
+		p.min_filter = param;
 	else if (pname == GL_TEXTURE_WRAP_S)
-		tex.wrap_s = param;
+		p.wrap_s = param;
 	else if (pname == GL_TEXTURE_WRAP_T)
-		tex.wrap_t = param;
+		p.wrap_t = param;
 
 	tex.is_complete = gl_is_texture_complete(tex);
 }
@@ -375,15 +376,15 @@ void gl_texParameterv(gl_state *gs, GLenum target, GLenum pname, const T* params
 	gl_texture& tex = target == GL_TEXTURE_2D ? gs->texture_2d : gs->texture_1d;
 
 	if (pname == GL_TEXTURE_MAG_FILTER)
-		tex.mag_filter = (int)params[0];
+		tex.params.mag_filter = (int)params[0];
 	else if (pname == GL_TEXTURE_MIN_FILTER)
-		tex.min_filter = (int)params[0];
+		tex.params.min_filter = (int)params[0];
 	else if (pname == GL_TEXTURE_WRAP_S)
-		tex.wrap_s = (int)params[0];
+		tex.params.wrap_s = (int)params[0];
 	else if (pname == GL_TEXTURE_WRAP_T)
-		tex.wrap_t = (int)params[0];
+		tex.params.wrap_t = (int)params[0];
 	else if (pname == GL_TEXTURE_BORDER_COLOR)
-		tex.border_color = glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3]));
+		tex.params.border_color = glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3]));
 
 	tex.is_complete = gl_is_texture_complete(tex);
 }
@@ -413,15 +414,15 @@ void gl_getTexParameterv(GLenum target, GLenum pname, T *params)
 	gl_texture &tex = target == GL_TEXTURE_2D ? gs->texture_2d : gs->texture_1d;
 
 	if (pname == GL_TEXTURE_MAG_FILTER)
-		*params = (T)tex.mag_filter;
+		*params = (T)tex.params.mag_filter;
 	else if (pname == GL_TEXTURE_MIN_FILTER)
-		*params = (T)tex.min_filter;
+		*params = (T)tex.params.min_filter;
 	else if (pname == GL_TEXTURE_WRAP_S)
-		*params = (T)tex.wrap_s;
+		*params = (T)tex.params.wrap_s;
 	else if (pname == GL_TEXTURE_WRAP_T)
-		*params = (T)tex.wrap_t;
+		*params = (T)tex.params.wrap_t;
 	else if (pname == GL_TEXTURE_BORDER_COLOR)
-		copy_color(params, &tex.border_color.x);
+		copy_color(params, &tex.params.border_color.x);
 }
 
 void APIENTRY glGetTexParameteriv(GLenum target, GLenum pname, GLint *params)
@@ -512,7 +513,7 @@ void APIENTRY glTexEnvi(GLenum target, GLenum pname, GLint param)
 
 	if (pname == GL_TEXTURE_ENV_MODE)
 	{
-		gs->texture_env_function = param;
+		gs->texture_env.mode = param;
 	}
 }
 void APIENTRY glTexEnvf(GLenum target, GLenum pname, GLfloat param)
@@ -538,9 +539,9 @@ void APIENTRY glTexEnviv(GLenum target, GLenum pname, const GLint* params)
 	VALIDATE_TEX_ENV_PARAM(params[0]);
 
 	if (pname == GL_TEXTURE_ENV_MODE)
-		gs->texture_env_function = params[0];
+		gs->texture_env.mode = params[0];
 	else if (pname == GL_TEXTURE_ENV_COLOR)
-		gs->texture_env_color = glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3]));
+		gs->texture_env.color = glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3]));
 }
 
 void APIENTRY glTexEnvfv(GLenum target, GLenum pname, const GLfloat* params)
@@ -552,9 +553,9 @@ void APIENTRY glTexEnvfv(GLenum target, GLenum pname, const GLfloat* params)
 	VALIDATE_TEX_ENV_PARAM((GLenum)params[0]);
 
 	if (pname == GL_TEXTURE_ENV_MODE)
-		gs->texture_env_function = (int)params[0];
+		gs->texture_env.mode = (int)params[0];
 	else if (pname == GL_TEXTURE_ENV_COLOR)
-		gs->texture_env_color = glm::vec4(params[0], params[1], params[2], params[3]);
+		gs->texture_env.color = glm::vec4(params[0], params[1], params[2], params[3]);
 }
 
 template<typename T>
@@ -565,9 +566,9 @@ void gl_getTexEnvv(GLenum target, GLenum pname, T *params)
 	VALIDATE_TEX_ENV;
 
 	if (pname == GL_TEXTURE_ENV_MODE)
-		*params = (T)gs->texture_env_function;
+		*params = (T)gs->texture_env.mode;
 	else if (pname == GL_TEXTURE_ENV_COLOR)
-		copy_color(params, &gs->texture_env_color.x);
+		copy_color(params, &gs->texture_env.color.x);
 }
 
 void APIENTRY glGetTexEnviv(GLenum target, GLenum pname, GLint *params)
@@ -592,9 +593,9 @@ glm::vec4 gl_tex_tap(const gl_texture_array& a, glm::ivec2 uv)
 
 glm::vec4 gl_tex_nearest_tap(const gl_texture& tex, const gl_texture_array& a, glm::vec2 c)
 {
-	if (tex.wrap_s == GL_REPEAT)
+	if (tex.params.wrap_s == GL_REPEAT)
 		c.x = glm::fract(c.x);
-	if (tex.wrap_t == GL_REPEAT)
+	if (tex.params.wrap_t == GL_REPEAT)
 		c.y = glm::fract(c.y);
 	c = glm::clamp(c, glm::vec2(0), glm::vec2(1));
 	glm::ivec2 uv{ floor(c.x * a.width), floor(c.y * a.height) };
@@ -611,12 +612,12 @@ glm::vec4 gl_tex_linear_tap(const gl_texture &tex, const gl_texture_array& a, gl
 	int j0 = (int)glm::floor(uv.y - 0.5f);
 	int i1 = i0 + 1;
 	int j1 = j0 + 1;
-	if (tex.wrap_s == GL_REPEAT)
+	if (tex.params.wrap_s == GL_REPEAT)
 	{
 		i0 = glm::mod(i0, a.width);
 		i1 = glm::mod(i1, a.width);
 	}
-	if (tex.wrap_t == GL_REPEAT)
+	if (tex.params.wrap_t == GL_REPEAT)
 	{
 		j0 = glm::mod(j0, a.height);
 		j1 = glm::mod(j1, a.height);
@@ -639,36 +640,36 @@ bool gl_state::need_tex_lod()
 	if (!tex.is_complete)
 		return false;
 
-	return tex.mag_filter != tex.min_filter;
+	return tex.params.mag_filter != tex.params.min_filter;
 }
 
 glm::vec4 gl_state::sample_tex2d(const gl_texture& tex, const glm::vec4& tex_coord, float lod)
 {
 	float c = 0;
-	if (tex.mag_filter == GL_LINEAR && (tex.min_filter == GL_NEAREST_MIPMAP_NEAREST || tex.min_filter == GL_LINEAR_MIPMAP_NEAREST))
+	if (tex.params.mag_filter == GL_LINEAR && (tex.params.min_filter == GL_NEAREST_MIPMAP_NEAREST || tex.params.min_filter == GL_LINEAR_MIPMAP_NEAREST))
 		c = 0.5;
 
-	if (lod < c || tex.min_filter == tex.mag_filter)
+	if (lod < c || tex.params.min_filter == tex.params.mag_filter)
 	{
 		const gl_texture_array& a = tex.arrays[0];
 		if (!a.data)
 			return glm::vec4(1, 1, 1, 1);
 
-		if (tex.mag_filter == GL_NEAREST)
+		if (tex.params.mag_filter == GL_NEAREST)
 			return gl_tex_nearest_tap(tex, a, tex_coord);
 		else
 			return gl_tex_linear_tap(tex, a, tex_coord);
 	}
 
 	int ai = 0;
-	if (tex.min_filter == GL_NEAREST_MIPMAP_NEAREST || tex.min_filter == GL_LINEAR_MIPMAP_NEAREST)
+	if (tex.params.min_filter == GL_NEAREST_MIPMAP_NEAREST || tex.params.min_filter == GL_LINEAR_MIPMAP_NEAREST)
 	{
 		if (lod <= 0.5)
 			ai = 0;
 		else
 			ai = glm::clamp((int)glm::floor(lod + 0.5f), 0, tex.max_lod - 1);
 	}
-	else if (tex.min_filter == GL_NEAREST_MIPMAP_LINEAR || tex.min_filter == GL_LINEAR_MIPMAP_LINEAR)
+	else if (tex.params.min_filter == GL_NEAREST_MIPMAP_LINEAR || tex.params.min_filter == GL_LINEAR_MIPMAP_LINEAR)
 	{
 		ai = glm::clamp((int)glm::floor(lod), 0, tex.max_lod - 1);
 	}
@@ -678,9 +679,9 @@ glm::vec4 gl_state::sample_tex2d(const gl_texture& tex, const glm::vec4& tex_coo
 		return glm::vec4(1, 1, 1, 1);
 
 	glm::vec4 col;
-	if (tex.min_filter == GL_LINEAR || tex.min_filter == GL_LINEAR_MIPMAP_NEAREST || tex.min_filter == GL_LINEAR_MIPMAP_LINEAR)
+	if (tex.params.min_filter == GL_LINEAR || tex.params.min_filter == GL_LINEAR_MIPMAP_NEAREST || tex.params.min_filter == GL_LINEAR_MIPMAP_LINEAR)
 	{
-		if (tex.min_filter == GL_LINEAR_MIPMAP_LINEAR && ai < tex.max_lod - 1 && tex.arrays[ai + 1].data)
+		if (tex.params.min_filter == GL_LINEAR_MIPMAP_LINEAR && ai < tex.max_lod - 1 && tex.arrays[ai + 1].data)
 		{
 			float f = glm::fract(lod);
 			col = (1 - f) * gl_tex_linear_tap(tex, a, tex_coord)
@@ -689,7 +690,7 @@ glm::vec4 gl_state::sample_tex2d(const gl_texture& tex, const glm::vec4& tex_coo
 		else
 			col = gl_tex_linear_tap(tex, a, tex_coord);
 	}
-	else if (tex.min_filter == GL_NEAREST_MIPMAP_LINEAR && ai < tex.max_lod - 1 && tex.arrays[ai + 1].data)
+	else if (tex.params.min_filter == GL_NEAREST_MIPMAP_LINEAR && ai < tex.max_lod - 1 && tex.arrays[ai + 1].data)
 	{
 		float f = glm::fract(lod);
 		col = (1 - f) * gl_tex_nearest_tap(tex, a, tex_coord)

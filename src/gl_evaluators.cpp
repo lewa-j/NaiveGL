@@ -70,9 +70,9 @@ static void gl_map1v(GLenum target, T u1, T u2, GLint stride, GLint order, const
 
 	gl_state::mapSpec1D &map = gs->eval_maps_1d[target - GL_MAP1_COLOR_4];
 
-	map.order_u = order;
-	map.domain_u[0] = (float)u1;
-	map.domain_u[1] = (float)u2;
+	map.order = order;
+	map.domain[0] = (float)u1;
+	map.domain[1] = (float)u2;
 	map.control_points.resize(order * k);
 
 	for (int i = 0; i < order; i++)
@@ -157,12 +157,12 @@ static void gl_map2v(GLenum target, T u1, T u2, GLint ustride, GLint uorder, T v
 
 	gl_state::mapSpec2D &map = gs->eval_maps_2d[target - GL_MAP2_COLOR_4];
 
-	map.order_u = uorder;
-	map.order_v = vorder;
-	map.domain_u[0] = (float)u1;
-	map.domain_u[1] = (float)u2;
-	map.domain_v[0] = (float)v1;
-	map.domain_v[1] = (float)v2;
+	map.order[0] = uorder;
+	map.order[1] = vorder;
+	map.domain[0] = (float)u1;
+	map.domain[1] = (float)u2;
+	map.domain[2] = (float)v1;
+	map.domain[3] = (float)v2;
 	map.control_points.resize(uorder * vorder * k);
 
 	for (int i = 0; i < uorder; i++)
@@ -204,15 +204,15 @@ static void gl_getMapv(GLenum target, GLenum query, T *v)
 		gl_state::mapSpec1D &map = gs->eval_maps_1d[target - GL_MAP1_COLOR_4];
 		if (query == GL_COEFF)
 		{
-			copy_vals(v, map.control_points.data(), map.order_u * gl_map_k(target));
+			copy_vals(v, map.control_points.data(), map.order * gl_map_k(target));
 		}
 		else if (query == GL_ORDER)
 		{
-			v[0] = (T)map.order_u;
+			v[0] = (T)map.order;
 		}
 		else if (query == GL_DOMAIN)
 		{
-			copy_vals(v, map.domain_u, 2);
+			copy_vals(v, map.domain, 2);
 		}
 	}
 	else if (target >= GL_MAP2_COLOR_4 && target <= GL_MAP2_VERTEX_4)
@@ -221,17 +221,16 @@ static void gl_getMapv(GLenum target, GLenum query, T *v)
 
 		if (query == GL_COEFF)
 		{
-			copy_vals(v, map.control_points.data(), map.order_u * map.order_v * gl_map_k(target));
+			copy_vals(v, map.control_points.data(), map.order[0] * map.order[1] * gl_map_k(target));
 		}
 		else if (query == GL_ORDER)
 		{
-			v[0] = (T)map.order_u;
-			v[1] = (T)map.order_v;
+			v[0] = (T)map.order[0];
+			v[1] = (T)map.order[1];
 		}
 		else if (query == GL_DOMAIN)
 		{
-			copy_vals(v, map.domain_u, 2);
-			copy_vals(v + 2, map.domain_v, 2);
+			copy_vals(v, map.domain, 4);
 		}
 	}
 	else
@@ -270,13 +269,13 @@ static float B(int n, int i, float u)
 template<int size>
 static glm::vec<size, float> evaluate1d(const gl_state::mapSpec1D &map, float in_u)
 {
-	float u = (in_u - map.domain_u[0]) / (map.domain_u[1] - map.domain_u[0]);
+	float u = (in_u - map.domain[0]) / (map.domain[1] - map.domain[0]);
 	glm::vec<size, float> p(0);
-	for (int i = 0; i < map.order_u; i++)
+	for (int i = 0; i < map.order; i++)
 	{
 		glm::vec<size, float> point;
 		memcpy(&point.x, &map.control_points[i * size], sizeof(point));
-		p += B(map.order_u - 1, i, u) * point;
+		p += B(map.order - 1, i, u) * point;
 	}
 	return p;
 }
@@ -297,37 +296,37 @@ void APIENTRY glEvalCoord1f(GLfloat u)
 		return;
 	}
 
-	if (!(gs->enabled_eval_maps & 0x180)) // GL_MAP1_VERTEX_3 and GL_MAP1_VERTEX_4 disabled
+	if (!(gs->eval.enabled_maps & 0x180)) // GL_MAP1_VERTEX_3 and GL_MAP1_VERTEX_4 disabled
 		return;
 
-	glm::vec4 color = gs->current_color;
-	glm::vec4 tex_coord = gs->current_tex_coord;
-	glm::vec3 normal = gs->current_normal;
+	glm::vec4 color = gs->current.color;
+	glm::vec4 tex_coord = gs->current.tex_coord;
+	glm::vec3 normal = gs->current.normal;
 
-	if (gs->enabled_eval_maps & (1 << map1_index(GL_MAP1_COLOR_4)))
+	if (gs->eval.enabled_maps & (1 << map1_index(GL_MAP1_COLOR_4)))
 		color = evaluate1d<4>(gs->eval_maps_1d[map1_index(GL_MAP1_COLOR_4)], u);
 
 	// color index mode
 	// GL_MAP1_INDEX
 
-	if (gs->enabled_eval_maps & (1 << map1_index(GL_MAP1_TEXTURE_COORD_4)))
+	if (gs->eval.enabled_maps & (1 << map1_index(GL_MAP1_TEXTURE_COORD_4)))
 		tex_coord = evaluate1d<4>(gs->eval_maps_1d[map1_index(GL_MAP1_TEXTURE_COORD_4)], u);
-	else if (gs->enabled_eval_maps & (1 << map1_index(GL_MAP1_TEXTURE_COORD_3)))
+	else if (gs->eval.enabled_maps & (1 << map1_index(GL_MAP1_TEXTURE_COORD_3)))
 		tex_coord = glm::make_vec4(evaluate1d<3>(gs->eval_maps_1d[map1_index(GL_MAP1_TEXTURE_COORD_3)], u));
-	else if (gs->enabled_eval_maps & (1 << map1_index(GL_MAP1_TEXTURE_COORD_2)))
+	else if (gs->eval.enabled_maps & (1 << map1_index(GL_MAP1_TEXTURE_COORD_2)))
 		tex_coord = glm::make_vec4(evaluate1d<2>(gs->eval_maps_1d[map1_index(GL_MAP1_TEXTURE_COORD_2)], u));
-	else if (gs->enabled_eval_maps & (1 << map1_index(GL_MAP1_TEXTURE_COORD_1)))
+	else if (gs->eval.enabled_maps & (1 << map1_index(GL_MAP1_TEXTURE_COORD_1)))
 		tex_coord = glm::make_vec4(evaluate1d<1>(gs->eval_maps_1d[map1_index(GL_MAP1_TEXTURE_COORD_1)], u));
 
-	if (gs->enabled_eval_maps & (1 << map1_index(GL_MAP1_NORMAL)))
+	if (gs->eval.enabled_maps & (1 << map1_index(GL_MAP1_NORMAL)))
 		normal = evaluate1d<3>(gs->eval_maps_1d[map1_index(GL_MAP1_NORMAL)], u);
 
-	if (gs->enabled_eval_maps & (1 << map1_index(GL_MAP1_VERTEX_4)))
+	if (gs->eval.enabled_maps & (1 << map1_index(GL_MAP1_VERTEX_4)))
 	{
 		glm::vec4 p = evaluate1d<4>(gs->eval_maps_1d[map1_index(GL_MAP1_VERTEX_4)], u);
 		gl_emit_vertex(gs, p, color, tex_coord, normal);
 	}
-	else if (gs->enabled_eval_maps & (1 << map1_index(GL_MAP1_VERTEX_3)))
+	else if (gs->eval.enabled_maps & (1 << map1_index(GL_MAP1_VERTEX_3)))
 	{
 		glm::vec3 p = evaluate1d<3>(gs->eval_maps_1d[map1_index(GL_MAP1_VERTEX_3)], u);
 		gl_emit_vertex(gs, glm::make_vec4(p), color, tex_coord, normal);
@@ -344,16 +343,16 @@ void APIENTRY glEvalCoord1dv(const GLdouble *u)
 template<int size>
 static glm::vec<size, float> evaluate2d(const gl_state::mapSpec2D &map, float in_u, float in_v)
 {
-	float u = (in_u - map.domain_u[0]) / (map.domain_u[1] - map.domain_u[0]);
-	float v = (in_v - map.domain_v[0]) / (map.domain_v[1] - map.domain_v[0]);
+	float u = (in_u - map.domain[0]) / (map.domain[1] - map.domain[0]);
+	float v = (in_v - map.domain[2]) / (map.domain[3] - map.domain[2]);
 	glm::vec<size, float> p(0);
-	for (int i = 0; i < map.order_u; i++)
+	for (int i = 0; i < map.order[0]; i++)
 	{
-		for (int j = 0; j < map.order_v; j++)
+		for (int j = 0; j < map.order[1]; j++)
 		{
 			glm::vec<size, float> point;
-			memcpy(&point.x, &map.control_points[(i * map.order_v + j) * size], sizeof(point));
-			p += B(map.order_u - 1, i, u) * B(map.order_v - 1, j, v) * point;
+			memcpy(&point.x, &map.control_points[(i * map.order[1] + j) * size], sizeof(point));
+			p += B(map.order[0] - 1, i, u) * B(map.order[1] - 1, j, v) * point;
 		}
 	}
 	return p;
@@ -375,35 +374,35 @@ void APIENTRY glEvalCoord2f(GLfloat u, GLfloat v)
 		return;
 	}
 
-	if (!(gs->enabled_eval_maps & 0x30000)) // GL_MAP2_VERTEX_3 and GL_MAP2_VERTEX_4 disabled
+	if (!(gs->eval.enabled_maps & 0x30000)) // GL_MAP2_VERTEX_3 and GL_MAP2_VERTEX_4 disabled
 		return;
 
-	glm::vec4 color = gs->current_color;
-	glm::vec4 tex_coord = gs->current_tex_coord;
-	glm::vec3 normal = gs->current_normal;
+	glm::vec4 color = gs->current.color;
+	glm::vec4 tex_coord = gs->current.tex_coord;
+	glm::vec3 normal = gs->current.normal;
 
-	if (gs->enabled_eval_maps & 1 << (map2_index(GL_MAP2_COLOR_4) + 9))
+	if (gs->eval.enabled_maps & 1 << (map2_index(GL_MAP2_COLOR_4) + 9))
 		color = evaluate2d<4>(gs->eval_maps_2d[map2_index(GL_MAP2_COLOR_4)], u, v);
 
 	// color index mode
 	// GL_MAP2_INDEX
 
-	if (gs->enabled_eval_maps & 1 << (map2_index(GL_MAP2_TEXTURE_COORD_4) + 9))
+	if (gs->eval.enabled_maps & 1 << (map2_index(GL_MAP2_TEXTURE_COORD_4) + 9))
 		tex_coord = evaluate2d<4>(gs->eval_maps_2d[map2_index(GL_MAP2_TEXTURE_COORD_4)], u, v);
-	else if (gs->enabled_eval_maps & 1 << (map2_index(GL_MAP2_TEXTURE_COORD_3) + 9))
+	else if (gs->eval.enabled_maps & 1 << (map2_index(GL_MAP2_TEXTURE_COORD_3) + 9))
 		tex_coord = glm::make_vec4(evaluate2d<3>(gs->eval_maps_2d[map2_index(GL_MAP2_TEXTURE_COORD_3)], u, v));
-	else if (gs->enabled_eval_maps & 1 << (map2_index(GL_MAP2_TEXTURE_COORD_2) + 9))
+	else if (gs->eval.enabled_maps & 1 << (map2_index(GL_MAP2_TEXTURE_COORD_2) + 9))
 		tex_coord = glm::make_vec4(evaluate2d<2>(gs->eval_maps_2d[map2_index(GL_MAP2_TEXTURE_COORD_2)], u, v));
-	else if (gs->enabled_eval_maps & 1 << (map2_index(GL_MAP2_TEXTURE_COORD_1) + 9))
+	else if (gs->eval.enabled_maps & 1 << (map2_index(GL_MAP2_TEXTURE_COORD_1) + 9))
 		tex_coord = glm::make_vec4(evaluate2d<1>(gs->eval_maps_2d[map2_index(GL_MAP2_TEXTURE_COORD_1)], u, v));
 
-	if (!gs->eval_auto_normal && gs->enabled_eval_maps & 1 << (map2_index(GL_MAP2_NORMAL) + 9))
+	if (!gs->eval.auto_normal && gs->eval.enabled_maps & 1 << (map2_index(GL_MAP2_NORMAL) + 9))
 		normal = evaluate2d<3>(gs->eval_maps_2d[map2_index(GL_MAP2_NORMAL)], u, v);
 
-	if (gs->enabled_eval_maps & 1 << (map2_index(GL_MAP2_VERTEX_4) + 9))
+	if (gs->eval.enabled_maps & 1 << (map2_index(GL_MAP2_VERTEX_4) + 9))
 	{
 		glm::vec4 p = evaluate2d<4>(gs->eval_maps_2d[map2_index(GL_MAP2_VERTEX_4)], u, v);
-		if (gs->eval_auto_normal)
+		if (gs->eval.auto_normal)
 		{
 			float du = 0.001f;
 			float dv = 0.001f;
@@ -417,10 +416,10 @@ void APIENTRY glEvalCoord2f(GLfloat u, GLfloat v)
 		}
 		gl_emit_vertex(gs, p, color, tex_coord, normal);
 	}
-	else if (gs->enabled_eval_maps & 1 << (map2_index(GL_MAP2_VERTEX_3) + 9))
+	else if (gs->eval.enabled_maps & 1 << (map2_index(GL_MAP2_VERTEX_3) + 9))
 	{
 		glm::vec3 p = evaluate2d<3>(gs->eval_maps_2d[map2_index(GL_MAP2_VERTEX_3)], u, v);
-		if (gs->eval_auto_normal)
+		if (gs->eval.auto_normal)
 		{
 			float du = 0.001f;
 			float dv = 0.001f;
@@ -452,9 +451,9 @@ void APIENTRY glMapGrid1f(GLint un, GLfloat u1, GLfloat u2)
 		return;
 	}
 
-	gs->eval_1d_grid_segments = un;
-	gs->eval_1d_grid_domain[0] = u1;
-	gs->eval_1d_grid_domain[1] = u2;
+	gs->eval.map1d_grid_segments = un;
+	gs->eval.map1d_grid_domain[0] = u1;
+	gs->eval.map1d_grid_domain[1] = u2;
 }
 void APIENTRY glMapGrid1d(GLint un, GLdouble u1, GLdouble u2)
 { glMapGrid1f(un, (float)u1, (float)u2); }
@@ -476,12 +475,12 @@ void APIENTRY glMapGrid2f(GLint un, GLfloat u1, GLfloat u2, GLint vn, GLfloat v1
 		return;
 	}
 
-	gs->eval_2d_grid_segments[0] = un;
-	gs->eval_2d_grid_domain_u[0] = u1;
-	gs->eval_2d_grid_domain_u[1] = u2;
-	gs->eval_2d_grid_segments[1] = vn;
-	gs->eval_2d_grid_domain_v[0] = v1;
-	gs->eval_2d_grid_domain_v[1] = v2;
+	gs->eval.map2d_grid_segments[0] = un;
+	gs->eval.map2d_grid_segments[1] = vn;
+	gs->eval.map2d_grid_domain[0] = u1;
+	gs->eval.map2d_grid_domain[1] = u2;
+	gs->eval.map2d_grid_domain[2] = v1;
+	gs->eval.map2d_grid_domain[3] = v2;
 }
 void APIENTRY glMapGrid2d(GLint un, GLdouble u1, GLdouble u2, GLint vn, GLdouble v1, GLdouble v2)
 { glMapGrid2f(un, (float)u1, (float)u2, vn, (float)v1, (float)v2); }
@@ -489,11 +488,11 @@ void APIENTRY glMapGrid2d(GLint un, GLdouble u1, GLdouble u2, GLint vn, GLdouble
 static void gl_evalPoint1(gl_state *gs, float du, GLint p)
 {
 	if (p == 0)
-		glEvalCoord1f(gs->eval_1d_grid_domain[0]);
-	else if (p == gs->eval_1d_grid_segments)
-		glEvalCoord1f(gs->eval_1d_grid_domain[1]);
+		glEvalCoord1f(gs->eval.map1d_grid_domain[0]);
+	else if (p == gs->eval.map1d_grid_segments)
+		glEvalCoord1f(gs->eval.map1d_grid_domain[1]);
 	else
-		glEvalCoord1f(p * du + gs->eval_1d_grid_domain[0]);
+		glEvalCoord1f(p * du + gs->eval.map1d_grid_domain[0]);
 }
 
 void APIENTRY glEvalMesh1(GLenum mode, GLint p1, GLint p2)
@@ -509,7 +508,7 @@ void APIENTRY glEvalMesh1(GLenum mode, GLint p1, GLint p2)
 		return;
 	}
 
-	float du = (gs->eval_1d_grid_domain[1] - gs->eval_1d_grid_domain[0]) / gs->eval_1d_grid_segments;
+	float du = (gs->eval.map1d_grid_domain[1] - gs->eval.map1d_grid_domain[0]) / gs->eval.map1d_grid_segments;
 
 	glBegin((mode == GL_POINT) ? GL_POINTS : GL_LINE_STRIP);
 	for (int i = p1; i <= p2; i++)
@@ -524,18 +523,18 @@ static void gl_evalPoint2(gl_state *gs, float du, float dv, GLint p, GLint q)
 	float u;
 	float v;
 	if (p == 0)
-		u = gs->eval_2d_grid_domain_u[0];
-	else if (p == gs->eval_2d_grid_segments[0])
-		u = gs->eval_2d_grid_domain_u[1];
+		u = gs->eval.map2d_grid_domain[0];
+	else if (p == gs->eval.map2d_grid_segments[0])
+		u = gs->eval.map2d_grid_domain[1];
 	else
-		u = p * du + gs->eval_2d_grid_domain_u[0];
+		u = p * du + gs->eval.map2d_grid_domain[0];
 
 	if (q == 0)
-		v = gs->eval_2d_grid_domain_v[0];
-	else if (q == gs->eval_2d_grid_segments[1])
-		v = gs->eval_2d_grid_domain_v[1];
+		v = gs->eval.map2d_grid_domain[2];
+	else if (q == gs->eval.map2d_grid_segments[1])
+		v = gs->eval.map2d_grid_domain[3];
 	else
-		v = q * dv + gs->eval_2d_grid_domain_v[0];
+		v = q * dv + gs->eval.map2d_grid_domain[2];
 
 	glEvalCoord2f(u, v);
 }
@@ -553,8 +552,8 @@ void APIENTRY glEvalMesh2(GLenum mode, GLint p1, GLint p2, GLint q1, GLint q2)
 		return;
 	}
 
-	float du = (gs->eval_2d_grid_domain_u[1] - gs->eval_2d_grid_domain_u[0]) / gs->eval_2d_grid_segments[0];
-	float dv = (gs->eval_2d_grid_domain_v[1] - gs->eval_2d_grid_domain_v[0]) / gs->eval_2d_grid_segments[1];
+	float du = (gs->eval.map2d_grid_domain[1] - gs->eval.map2d_grid_domain[0]) / gs->eval.map2d_grid_segments[0];
+	float dv = (gs->eval.map2d_grid_domain[3] - gs->eval.map2d_grid_domain[2]) / gs->eval.map2d_grid_segments[1];
 	if (mode == GL_FILL)
 	{
 		for (int i = q1; i < q2; i++)
@@ -609,7 +608,7 @@ void APIENTRY glEvalPoint1(GLint p)
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(EvalPoint1, {}, { p });
 
-	float du = (gs->eval_1d_grid_domain[1] - gs->eval_1d_grid_domain[0]) / gs->eval_1d_grid_segments;
+	float du = (gs->eval.map1d_grid_domain[1] - gs->eval.map1d_grid_domain[0]) / gs->eval.map1d_grid_segments;
 	gl_evalPoint1(gs, du, p);
 }
 
@@ -619,7 +618,7 @@ void APIENTRY glEvalPoint2(GLint p, GLint q)
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(EvalPoint2, {}, { p, q });
 
-	float du = (gs->eval_2d_grid_domain_u[1] - gs->eval_2d_grid_domain_u[0]) / gs->eval_2d_grid_segments[0];
-	float dv = (gs->eval_2d_grid_domain_v[1] - gs->eval_2d_grid_domain_v[0]) / gs->eval_2d_grid_segments[1];
+	float du = (gs->eval.map2d_grid_domain[1] - gs->eval.map2d_grid_domain[0]) / gs->eval.map2d_grid_segments[0];
+	float dv = (gs->eval.map2d_grid_domain[3] - gs->eval.map2d_grid_domain[2]) / gs->eval.map2d_grid_segments[1];
 	gl_evalPoint2(gs, du, dv, p, q);
 }

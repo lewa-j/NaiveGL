@@ -26,27 +26,27 @@ const glm::mat4 &gl_state::get_mtx_texture()
 
 static int &get_current_mtx_sp(gl_state *gs)
 {
-	if (gs->matrix_mode == GL_MODELVIEW)
+	if (gs->transform.matrix_mode == GL_MODELVIEW)
 		return gs->modelview_sp;
-	if (gs->matrix_mode == GL_PROJECTION)
+	if (gs->transform.matrix_mode == GL_PROJECTION)
 		return gs->projection_sp;
 	return gs->texture_mtx_sp;
 }
 
 static int get_current_mtx_max(gl_state *gs)
 {
-	if (gs->matrix_mode == GL_MODELVIEW)
+	if (gs->transform.matrix_mode == GL_MODELVIEW)
 		return gl_max_viewmodel_mtx;
-	if (gs->matrix_mode == GL_PROJECTION)
+	if (gs->transform.matrix_mode == GL_PROJECTION)
 		return gl_max_projection_mtx;
 	return gl_max_texture_mtx;
 }
 
 static glm::mat4 &get_current_mtx(gl_state *gs)
 {
-	if (gs->matrix_mode == GL_MODELVIEW)
+	if (gs->transform.matrix_mode == GL_MODELVIEW)
 		return gs->modelview_stack[gs->modelview_sp];
-	if (gs->matrix_mode == GL_PROJECTION)
+	if (gs->transform.matrix_mode == GL_PROJECTION)
 		return gs->projection_stack[gs->projection_sp];
 	return gs->texture_mtx_stack[gs->texture_mtx_sp];
 }
@@ -64,7 +64,7 @@ void APIENTRY glMatrixMode(GLenum mode)
 		return;
 	}
 
-	gs->matrix_mode = mode;
+	gs->transform.matrix_mode = mode;
 }
 
 void APIENTRY glLoadMatrixd(const GLdouble *m)

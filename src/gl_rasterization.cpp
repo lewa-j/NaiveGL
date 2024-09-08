@@ -14,7 +14,7 @@ void APIENTRY glPointSize(GLfloat size)
 		return;
 	}
 
-	gs->point_size = size;
+	gs->point.size = size;
 }
 
 void APIENTRY glLineWidth(GLfloat width)
@@ -28,7 +28,7 @@ void APIENTRY glLineWidth(GLfloat width)
 		return;
 	}
 
-	gs->line_width = width;
+	gs->line.width = width;
 }
 
 void APIENTRY glLineStipple(GLint factor, GLushort pattern)
@@ -37,8 +37,8 @@ void APIENTRY glLineStipple(GLint factor, GLushort pattern)
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
 
-	gs->line_stipple_factor = glm::clamp(factor, 1, 256);
-	gs->line_stipple_pattern = pattern;
+	gs->line.stipple_repeat = glm::clamp(factor, 1, 256);
+	gs->line.stipple_pattern = pattern;
 }
 
 void APIENTRY glCullFace(GLenum face)
@@ -48,7 +48,7 @@ void APIENTRY glCullFace(GLenum face)
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_FACE;
 
-	gs->cull_face_mode = face;
+	gs->polygon.cull_face_mode = face;
 }
 
 void APIENTRY glPolygonStipple(const GLubyte *mask)
@@ -83,9 +83,9 @@ void APIENTRY glPolygonMode(GLenum face, GLenum mode)
 	}
 
 	if (face != GL_BACK)
-		gs->polygon_mode[0] = mode;
+		gs->polygon.mode[0] = mode;
 	if (face != GL_FRONT)
-		gs->polygon_mode[1] = mode;
+		gs->polygon.mode[1] = mode;
 }
 
 static void gl_fog_scalar(const char *func, gl_state *gs, GLenum pname, GLfloat param)
@@ -107,13 +107,13 @@ static void gl_fog_scalar(const char *func, gl_state *gs, GLenum pname, GLfloat 
 	}
 
 	if (pname == GL_FOG_MODE)
-		gs->fog_mode = (int)param;
+		gs->fog.mode = (int)param;
 	else if (pname == GL_FOG_DENSITY)
-		gs->fog_density = param;
+		gs->fog.density = param;
 	else if (pname == GL_FOG_START)
-		gs->fog_start = param;
+		gs->fog.start = param;
 	else if (pname == GL_FOG_END)
-		gs->fog_end = param;
+		gs->fog.end = param;
 	//else GL_FOG_INDEX
 }
 
@@ -143,7 +143,7 @@ void gl_fogv(gl_state *gs, GLenum pname, const T* params)
 {
 	VALIDATE_NOT_BEGIN_MODE;
 	if (pname == GL_FOG_COLOR)
-		gs->fog_color = glm::clamp(glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])), 0.0f, 1.0f);
+		gs->fog.color = glm::clamp(glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])), 0.0f, 1.0f);
 	else
 		gl_fog_scalar(__FUNCTION__, gs, pname, (GLfloat)params[0]);
 }
@@ -186,7 +186,7 @@ static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &da
 		cpts = st.texture_1d.arrays[0].components;
 	}
 
-	if (st.texture_env_function == GL_DECAL)
+	if (st.texture_env.mode == GL_DECAL)
 	{
 		if (cpts == 4)
 			color = glm::vec4((1 - tex_color.a) * glm::vec3(color) + tex_color.a * glm::vec3(tex_color), color.a);
@@ -194,12 +194,12 @@ static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &da
 			color = glm::vec4(glm::vec3(tex_color), color.a);
 		// 1 and 2 components are undefined
 	}
-	else if (st.texture_env_function == GL_BLEND)
+	else if (st.texture_env.mode == GL_BLEND)
 	{
-		color = glm::vec4((1 - tex_color.r) * glm::vec3(color) + tex_color.r * glm::vec3(st.texture_env_color), tex_color.a * color.a);
+		color = glm::vec4((1 - tex_color.r) * glm::vec3(color) + tex_color.r * glm::vec3(st.texture_env.color), tex_color.a * color.a);
 		// 3 and 4 components are undefined
 	}
-	else //if (st.texture_env_function == GL_MODULATE)
+	else //if (st.texture_env.mode == GL_MODULATE)
 	{
 		if (cpts < 3)
 			color = glm::vec4(tex_color.r * glm::vec3(color), tex_color.a * color.a);
@@ -212,15 +212,15 @@ glm::vec4 gl_state::get_fog_color(const glm::vec4& cr, float c)
 {
 	float f = 0;
 
-	if (fog_mode == GL_EXP)
-		f = exp(-fog_density * c);
-	else if (fog_mode == GL_EXP2)
-		f = exp(-(fog_density * c) * (fog_density * c));
-	else if (fog_mode == GL_LINEAR)
-		f = (fog_end - c) / (fog_end - fog_start);
+	if (fog.mode == GL_EXP)
+		f = exp(-fog.density * c);
+	else if (fog.mode == GL_EXP2)
+		f = exp(-(fog.density * c) * (fog.density * c));
+	else if (fog.mode == GL_LINEAR)
+		f = (fog.end - c) / (fog.end - fog.start);
 
 	f = glm::clamp(f, 0.f, 1.f);
-	return glm::vec4(f * glm::vec3(cr) + (1 - f) * glm::vec3(fog_color), cr.w);
+	return glm::vec4(f * glm::vec3(cr) + (1 - f) * glm::vec3(fog.color), cr.w);
 }
 
 static bool gl_test_value(GLenum func, int a, int b)
@@ -321,9 +321,9 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 	if (x < 0 || x >= fb.width || y < 0 || y >= fb.height)
 		return;
 
-	if (st.scissor_test)
+	if (st.scissor.test)
 	{
-		const glm::ivec4 &s = st.scissor_rect;
+		const glm::ivec4 &s = st.scissor.box;
 		if (x < s.x || x >= s.x + s.z || y < s.y || y >= s.y + s.w)
 			return;
 	}
@@ -336,60 +336,60 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 	// TODO apply coverage to alpha for antialiasing
 	// NOTE smooth point rasterization already applies coverage to pixel alpha
 
-	if (st.alpha_test && !gl_test_value(st.alpha_test_func, int(color.a * 255), int(st.alpha_test_ref * 255)))
+	if (st.color_buffer.alpha_test && !gl_test_value(st.color_buffer.alpha_test_func, int(color.a * 255), int(st.color_buffer.alpha_test_ref * 255)))
 		return;
 
 	int pi = (fb.width * y + x);
 
-	if (st.stencil_test && fb.stencil)
+	if (st.stencil.test && fb.stencil)
 	{
 		int sv = fb.stencil[pi];
-		if (!gl_test_value(st.stencil_func, st.stencil_test_ref & st.stencil_test_mask, sv & st.stencil_test_mask))
+		if (!gl_test_value(st.stencil.func, st.stencil.ref & st.stencil.value_mask, sv & st.stencil.value_mask))
 		{
-			gl_stencil_op(st.stencil_op_sfail, st.stencil_test_ref, sv);
-			if (st.stencil_writemask)
-				fb.stencil[pi] = (sv & 0xFF & st.stencil_writemask) | (fb.stencil[pi] & ~st.stencil_writemask);
+			gl_stencil_op(st.stencil.fail, st.stencil.ref, sv);
+			if (st.stencil.writemask)
+				fb.stencil[pi] = (sv & 0xFF & st.stencil.writemask) | (fb.stencil[pi] & ~st.stencil.writemask);
 			return;
 		}
 	}
 
-	if (st.depth_test && fb.depth)
+	if (st.depth.test && fb.depth)
 	{
 		uint16_t dv = fb.depth[pi];
 		uint16_t dn = uint16_t(glm::clamp(data.z,0.f,1.f) * 0xFFFF);
-		if (!gl_test_value(st.depth_func, dn, dv))
+		if (!gl_test_value(st.depth.func, dn, dv))
 		{
 			//depth fail
-			if (st.stencil_test && fb.stencil)
+			if (st.stencil.test && fb.stencil)
 			{
 				int sv = fb.stencil[pi];
-				gl_stencil_op(st.stencil_op_dpfail, st.stencil_test_ref, sv);
-				if (st.stencil_writemask)
-					fb.stencil[pi] = (sv & 0xFF & st.stencil_writemask) | (fb.stencil[pi] & ~st.stencil_writemask);
+				gl_stencil_op(st.stencil.dpfail, st.stencil.ref, sv);
+				if (st.stencil.writemask)
+					fb.stencil[pi] = (sv & 0xFF & st.stencil.writemask) | (fb.stencil[pi] & ~st.stencil.writemask);
 			}
 			return;
 		}
-		if (st.depth_mask)
+		if (st.depth.writemask)
 			fb.depth[pi] = dn;
 	}
 
 	//depth pass
-	if (st.stencil_test && fb.stencil)
+	if (st.stencil.test && fb.stencil)
 	{
 		int sv = fb.stencil[pi];
-		gl_stencil_op(st.stencil_op_dppass, st.stencil_test_ref, sv);
-		if (st.stencil_writemask)
-			fb.stencil[pi] = (sv & 0xFF & st.stencil_writemask) | (fb.stencil[pi] & ~st.stencil_writemask);
+		gl_stencil_op(st.stencil.dppass, st.stencil.ref, sv);
+		if (st.stencil.writemask)
+			fb.stencil[pi] = (sv & 0xFF & st.stencil.writemask) | (fb.stencil[pi] & ~st.stencil.writemask);
 	}
 
-	if (st.draw_buffer == GL_NONE)
+	if (st.color_buffer.draw_buffer == GL_NONE)
 		return;
 
-	if (st.fog_enabled)
+	if (st.fog.enabled)
 		color = st.get_fog_color(color, data.fog_z);
 
 	int ci = pi * 4;
-	if (st.blend && (st.blend_func_src != GL_ONE || st.blend_func_dst != GL_ZERO))
+	if (st.color_buffer.blend && (st.color_buffer.blend_func_src != GL_ONE || st.color_buffer.blend_func_dst != GL_ZERO))
 	{
 		//bgra
 		glm::vec4 dst_color = glm::vec4(
@@ -397,22 +397,22 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 			fb.color[ci + 1],
 			fb.color[ci + 0],
 			fb.color[ci + 3]) / 255.f;
-		color = gl_blend(st.blend_func_src, st.blend_func_dst, color, dst_color);
+		color = gl_blend(st.color_buffer.blend_func_src, st.color_buffer.blend_func_dst, color, dst_color);
 	}
 
-	if (st.dither)
+	if (st.color_buffer.dither)
 	{
 		gl_dither(color, x, y);
 	}
 	
 	//bgra
-	if (st.color_mask.b)
+	if (st.color_buffer.color_writemask.b)
 		fb.color[ci]     = uint8_t(color.b * 0xFF);
-	if (st.color_mask.g)
+	if (st.color_buffer.color_writemask.g)
 		fb.color[ci + 1] = uint8_t(color.g * 0xFF);
-	if (st.color_mask.r)
+	if (st.color_buffer.color_writemask.r)
 		fb.color[ci + 2] = uint8_t(color.r * 0xFF);
-	if (st.color_mask.a)
+	if (st.color_buffer.color_writemask.a)
 		fb.color[ci + 3] = uint8_t(color.a * 0xFF);
 }
 
@@ -444,9 +444,9 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 	data.fog_z = abs(vertex.position.z);
 	data.lod = 0;
 
-	if (!st.point_smooth)
+	if (!st.point.smooth)
 	{
-		int w = std::min((int)lround(st.point_size), gl_max_point_size);
+		int w = std::min((int)lround(st.point.size), gl_max_point_size);
 		w = w < 1 ? 1 : w;
 		glm::ivec2 ic(floor(win_c + (w & 1 ? 0 : 0.5f)));//add half pixel when size is even. then truncate to int
 		if (w == 1)
@@ -462,7 +462,7 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 	else
 	{
 		//NOTE: POINT_SIZE_GRANULARITY ignored
-		float w = glm::clamp(st.point_size, gl_point_size_range[0], gl_point_size_range[1]);
+		float w = glm::clamp(st.point.size, gl_point_size_range[0], gl_point_size_range[1]);
 		int wi = int(ceil(w) + 1);
 		glm::ivec2 ic(floor(win_c));
 		ic -= (wi >> 1);
@@ -483,13 +483,13 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 
 static bool line_stipple(gl_state &st)
 {
-	if (!st.line_stipple)
+	if (!st.line.stipple)
 		return true;
 
-	int b = (st.line_stipple_counter / st.line_stipple_factor) & 0xF;
+	int b = (st.line_stipple_counter / st.line.stipple_repeat) & 0xF;
 	st.line_stipple_counter++;
 
-	return (st.line_stipple_pattern >> b) & 1;
+	return (st.line.stipple_pattern >> b) & 1;
 }
 
 void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1)
@@ -593,10 +593,10 @@ void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_pro
 				data.lod = glm::log2(scale_factor);
 			}
 
-			if (st.fog_enabled)
+			if (st.fog.enabled)
 				data.fog_z = abs(glm::mix(v0.position.z, v1.position.z, t));
 
-			if (st.depth_test && st.framebuffer->depth)
+			if (st.depth.test && st.framebuffer->depth)
 				data.z = glm::mix(win_c0.z, win_c1.z, t);
 			gl_emit_fragment(st, low ? y : x, low ? x : y, data);
 		}
@@ -626,7 +626,7 @@ void gl_emit_line(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1
 	if (v0.clip.y > v0.clip.w && v1.clip.y > v1.clip.w)
 		return;
 
-	if (st.shade_model_flat)
+	if (st.lighting.shade_model_flat)
 		v0.color = v1.color;
 
 	if (st.clip_point(v0.position, v0.clip) && st.clip_point(v1.position, v1.clip))
@@ -644,7 +644,7 @@ static bool triangle_side(gl_state& st, const gl_processed_vertex& v0, const gl_
 	pts[2] = st.get_window_coords(glm::vec3(v2.clip) / v2.clip.w);
 
 	float sarea = (pts[2].x - pts[1].x) * (pts[0].y - pts[1].y) - (pts[0].x - pts[1].x) * (pts[2].y - pts[1].y);
-	return sarea > 0 != st.front_face_ccw;
+	return sarea > 0 != st.polygon.front_face_ccw;
 }
 
 glm::vec3 barycentric(glm::vec3* pts, glm::vec2 P)
@@ -657,12 +657,12 @@ glm::vec3 barycentric(glm::vec3* pts, glm::vec2 P)
 
 void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vertex& v1, gl_processed_vertex& v2)
 {
-	if (st.cull_face)
+	if (st.polygon.cull_face)
 	{
-		if (st.cull_face_mode == GL_FRONT_AND_BACK)
+		if (st.polygon.cull_face_mode == GL_FRONT_AND_BACK)
 			return;
 
-		if (st.last_side != (st.cull_face_mode == GL_FRONT))
+		if (st.last_side != (st.polygon.cull_face_mode == GL_FRONT))
 			return;
 	}
 
@@ -675,7 +675,7 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 		return;
 	}
 
-	if (st.polygon_mode[st.last_side] == GL_LINE)
+	if (st.polygon.mode[st.last_side] == GL_LINE)
 	{
 		if (v0.edge) gl_rasterize_line(st, v0, v1);
 		if (v1.edge) gl_rasterize_line(st, v1, v2);
@@ -694,12 +694,12 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 	}
 
 	glm::ivec4 rect(0, 0, st.framebuffer->width-1, st.framebuffer->height-1);
-	if (st.scissor_test)
+	if (st.scissor.test)
 	{
-		rect.x = glm::max(0, st.scissor_rect.x);
-		rect.y = glm::max(0, st.scissor_rect.y);
-		rect.z = glm::min(st.scissor_rect.z, st.framebuffer->width - st.scissor_rect.x);
-		rect.w = glm::min(st.scissor_rect.w, st.framebuffer->height - st.scissor_rect.y);
+		rect.x = glm::max(0, st.scissor.box.x);
+		rect.y = glm::max(0, st.scissor.box.y);
+		rect.z = glm::min(st.scissor.box.z, st.framebuffer->width - st.scissor.box.x);
+		rect.w = glm::min(st.scissor.box.w, st.framebuffer->height - st.scissor.box.y);
 	}
 
 	glm::ivec2 bbmin(rect.x + rect.z, rect.y + rect.w);
@@ -730,7 +730,7 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 	{
 		for (P.y = bbmin.y; P.y <= bbmax.y; P.y++)
 		{
-			if (st.polygon_stipple)
+			if (st.polygon.stipple)
 			{
 				if (!(st.polygon_stipple_mask[(P.y & 0x1F) * 4 + ((P.x >> 3) & 3)] & (128 >> (P.x & 7))))
 					continue;
@@ -767,10 +767,10 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 				data.lod = glm::log2(scale_factor);
 			}
 
-			if (st.fog_enabled)
+			if (st.fog.enabled)
 				data.fog_z = abs(bc_screen.x * v0.position.z + bc_screen.y * v1.position.z + bc_screen.z * v2.position.z);
 
-			if (st.depth_test && st.framebuffer->depth)
+			if (st.depth.test && st.framebuffer->depth)
 				data.z = abs(bc_screen.x * win_c[0].z + bc_screen.y * win_c[1].z + bc_screen.z * win_c[2].z);
 
 			gl_emit_fragment(st, P.x, P.y, data);
@@ -795,9 +795,9 @@ void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_fu
 
 	st.last_side = triangle_side(st, v0, v1, v2);
 
-	if (st.light_model_two_side)
+	if (st.lighting.light_model_two_side)
 	{
-		if (!st.shade_model_flat)
+		if (!st.lighting.shade_model_flat)
 		{
 			v0.color = st.get_vertex_color(v0.position, v0.original_color, v0.normal, !st.last_side);
 			v1.color = st.get_vertex_color(v1.position, v1.original_color, v1.normal, !st.last_side);
@@ -805,13 +805,13 @@ void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_fu
 		v2.color = st.get_vertex_color(v2.position, v2.original_color, v2.normal, !st.last_side);
 	}
 
-	if (st.shade_model_flat)
+	if (st.lighting.shade_model_flat)
 	{
 		v0.color = v2.color;
 		v1.color = v2.color;
 	}
 
-	if (st.polygon_mode[st.last_side] == GL_POINT)
+	if (st.polygon.mode[st.last_side] == GL_POINT)
 	{
 		if (v0.edge) gl_emit_point(st, v0);
 		if (v1.edge) gl_emit_point(st, v1);

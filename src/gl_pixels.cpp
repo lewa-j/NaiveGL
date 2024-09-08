@@ -13,18 +13,18 @@ void APIENTRY glRasterPos4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 	glm::vec4 p_object(x, y, z, w);
 	glm::vec4 p_eye{ gs->get_modelview() * p_object };
 	glm::vec4 p_clip{ gs->get_projection() * p_eye };
-	gs->raster_pos.valid = gs->clip_point(p_eye, p_clip);
-	if (!gs->raster_pos.valid)
+	gs->current.raster.valid = gs->clip_point(p_eye, p_clip);
+	if (!gs->current.raster.valid)
 		return;
 
-	gs->raster_pos.tex_coord = gs->get_vertex_texcoord(gs->current_tex_coord, gs->current_normal, p_object, p_eye);
-	gs->raster_pos.color = gs->get_vertex_color(p_eye, gs->current_color, gs->get_eye_normal(gs->current_normal), true);
-	gs->raster_pos.distance = glm::length(glm::vec3(p_eye));//can be approximated p_eye.z
-	gs->raster_pos.coords = glm::vec4(gs->get_window_coords(glm::vec3(p_clip) / p_clip.w), p_clip.w);
+	gs->current.raster.tex_coord = gs->get_vertex_texcoord(gs->current.tex_coord, gs->current.normal, p_object, p_eye);
+	gs->current.raster.color = gs->get_vertex_color(p_eye, gs->current.color, gs->get_eye_normal(gs->current.normal), true);
+	gs->current.raster.distance = glm::length(glm::vec3(p_eye));//can be approximated p_eye.z
+	gs->current.raster.position = glm::vec4(gs->get_window_coords(glm::vec3(p_clip) / p_clip.w), p_clip.w);
 
 	if (gs->render_mode == GL_SELECT)
 	{
-		gl_add_selection_depth(*gs, gs->raster_pos.coords.z);
+		gl_add_selection_depth(*gs, gs->current.raster.position.z);
 		gs->select_hit = true;
 		return;
 	}
@@ -96,6 +96,7 @@ void APIENTRY glPixelStorei(GLenum pname, GLint param)
 	else if (pname == GL_UNPACK_ALIGNMENT)
 		ps.alignment = param;
 }
+
 void APIENTRY glPixelStoref(GLenum pname, GLfloat param) { glPixelStorei(pname, (GLint)param); }
 
 void APIENTRY glPixelTransferf(GLenum pname, GLfloat param)
@@ -112,34 +113,35 @@ void APIENTRY glPixelTransferf(GLenum pname, GLfloat param)
 	}
 
 	if (pname == GL_MAP_COLOR)
-		gs->map_color = !!param;
+		gs->pixel.map_color = !!param;
 	else if (pname == GL_MAP_STENCIL)
-		gs->map_stencil = !!param;
+		gs->pixel.map_stencil = !!param;
 	else if (pname == GL_INDEX_SHIFT)
-		gs->index_shift = (int)param;
+		gs->pixel.index_shift = (int)param;
 	else if (pname == GL_INDEX_OFFSET)
-		gs->index_offset = (int)param;
+		gs->pixel.index_offset = (int)param;
 	else if (pname == GL_RED_SCALE)
-		gs->color_scale.r = param;
+		gs->pixel.color_scale.r = param;
 	else if (pname == GL_GREEN_SCALE)
-		gs->color_scale.g = param;
+		gs->pixel.color_scale.g = param;
 	else if (pname == GL_BLUE_SCALE)
-		gs->color_scale.b = param;
+		gs->pixel.color_scale.b = param;
 	else if (pname == GL_ALPHA_SCALE)
-		gs->color_scale.a = param;
+		gs->pixel.color_scale.a = param;
 	else if (pname == GL_RED_BIAS)
-		gs->color_bias.r = param;
+		gs->pixel.color_bias.r = param;
 	else if (pname == GL_GREEN_BIAS)
-		gs->color_bias.g = param;
+		gs->pixel.color_bias.g = param;
 	else if (pname == GL_BLUE_BIAS)
-		gs->color_bias.b = param;
+		gs->pixel.color_bias.b = param;
 	else if (pname == GL_ALPHA_BIAS)
-		gs->color_bias.a = param;
+		gs->pixel.color_bias.a = param;
 	else if (pname == GL_DEPTH_SCALE)
-		gs->depth_scale = param;
+		gs->pixel.depth_scale = param;
 	else if (pname == GL_DEPTH_BIAS)
-		gs->depth_bias = param;
+		gs->pixel.depth_bias = param;
 }
+
 void APIENTRY glPixelTransferi(GLenum pname, GLint param) { glPixelTransferf(pname, (GLfloat)param); }
 
 #define VALIDATE_PIXEL_MAP \
@@ -308,7 +310,7 @@ void APIENTRY glPixelZoom(GLfloat xfactor, GLfloat yfactor)
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(PixelZoom, { xfactor, yfactor });
 	VALIDATE_NOT_BEGIN_MODE
-	gs->pixel_zoom = glm::vec2(xfactor, yfactor);
+	gs->pixel.zoom = glm::vec2(xfactor, yfactor);
 }
 
 template<typename T>
@@ -411,25 +413,25 @@ static void emit_stencil(gl_state& st, int x, int y, uint8_t index)
 	if (x < 0 || x >= fb.width || y < 0 || y >= fb.height)
 		return;
 
-	if (st.scissor_test)
+	if (st.scissor.test)
 	{
-		const glm::ivec4& s = st.scissor_rect;
+		const glm::ivec4& s = st.scissor.box;
 		if (x < s.x || x >= s.x + s.z || y < s.y || y >= s.y + s.w)
 			return;
 	}
 
 	int pi = (fb.width * y + x);
-	fb.stencil[pi] = (index & st.stencil_writemask) | (fb.stencil[pi] & ~st.stencil_writemask);
+	fb.stencil[pi] = (index & st.stencil.writemask) | (fb.stencil[pi] & ~st.stencil.writemask);
 }
 
 uint32_t gl_index_arithmetic(gl_state *gs, uint32_t index)
 {
-	if (gs->index_shift > 0)
-		index <<= gs->index_shift;
-	else if (gs->index_shift < 0)
-		index >>= -gs->index_shift;
+	if (gs->pixel.index_shift > 0)
+		index <<= gs->pixel.index_shift;
+	else if (gs->pixel.index_shift < 0)
+		index >>= -gs->pixel.index_shift;
 
-	index += gs->index_offset;
+	index += gs->pixel.index_offset;
 	return index;
 }
 
@@ -605,11 +607,11 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 			gl_set_error(GL_INVALID_OPERATION);
 			return;
 		}
-		if (!(gs->stencil_writemask & 0xFF))
+		if (!(gs->stencil.writemask & 0xFF))
 			return;
 	}
 
-	if (!gs->raster_pos.valid)
+	if (!gs->current.raster.valid)
 		return;
 
 	if (gs->render_mode == GL_SELECT)
@@ -617,7 +619,7 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 	else if (gs->render_mode == GL_FEEDBACK)
 	{
 		gl_feedback_write(*gs, GL_DRAW_PIXEL_TOKEN);
-		gl_feedback_write_vertex(*gs, gs->raster_pos.coords, gs->raster_pos.color, gs->raster_pos.tex_coord);
+		gl_feedback_write_vertex(*gs, gs->current.raster.position, gs->current.raster.color, gs->current.raster.tex_coord);
 		return;
 	}
 
@@ -630,10 +632,10 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 	pixels += pstore.skip_bytes;
 
 	gl_frag_data fdata;
-	fdata.color = gs->raster_pos.color;
-	fdata.tex_coord = gs->raster_pos.tex_coord;
-	fdata.z = gs->raster_pos.coords.z;
-	fdata.fog_z = gs->raster_pos.distance;
+	fdata.color = gs->current.raster.color;
+	fdata.tex_coord = gs->current.raster.tex_coord;
+	fdata.z = gs->current.raster.position.z;
+	fdata.fog_z = gs->current.raster.distance;
 	fdata.lod = 0;
 
 	if (type == GL_BITMAP)
@@ -658,27 +660,27 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 				else
 					b = !!((*group) & (0x80 >> pixel));
 
-				int x = (int)(gs->raster_pos.coords.x + gs->pixel_zoom.x * ix);
-				int y = (int)(gs->raster_pos.coords.y + gs->pixel_zoom.y * j);
+				int x = (int)(gs->current.raster.position.x + gs->pixel.zoom.x * ix);
+				int y = (int)(gs->current.raster.position.y + gs->pixel.zoom.y * j);
 				if (format == GL_STENCIL_INDEX)
 				{
 					uint8_t index = b ? 1 : 0;
-					if (gs->map_stencil)
+					if (gs->pixel.map_stencil)
 					{
 						int ti = index & (gs->pixel_map_index_table[1].size - 1);
 						index = gs->pixel_map_index_table[1].data[ti];
 					}
 
-					for (int sy = 0; sy < gs->pixel_zoom.y; sy++)
-						for (int sx = 0; sx < gs->pixel_zoom.x; sx++)
+					for (int sy = 0; sy < gs->pixel.zoom.y; sy++)
+						for (int sx = 0; sx < gs->pixel.zoom.x; sx++)
 							emit_stencil(*gs, x + sx, y + sy, index);
 				}
 				else
 				{
 					fdata.color = bitmap_colors[b];
 
-					for (int sy = 0; sy < gs->pixel_zoom.y; sy++)
-						for (int sx = 0; sx < gs->pixel_zoom.x; sx++)
+					for (int sy = 0; sy < gs->pixel.zoom.y; sy++)
+						for (int sx = 0; sx < gs->pixel.zoom.x; sx++)
 							gl_emit_fragment(*gs, x + sx, y + sy, fdata);
 				}
 
@@ -717,7 +719,7 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 						//only in rgba mode
 						pixel = index_to_rgba(index, gs->pixel_map_color_table);
 					}
-					else if (format == GL_STENCIL_INDEX && gs->map_stencil)
+					else if (format == GL_STENCIL_INDEX && gs->pixel.map_stencil)
 					{
 						int ti = index & (gs->pixel_map_index_table[1].size - 1);
 						index = gs->pixel_map_index_table[1].data[ti];
@@ -727,21 +729,21 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 				{
 					pixel = gl_unpack_color_pixel(format, type, group);
 					if (format == GL_DEPTH_COMPONENT)
-						pixel.r = pixel.r * gs->depth_scale + gs->depth_bias;
+						pixel.r = pixel.r * gs->pixel.depth_scale + gs->pixel.depth_bias;
 					else
 					{
-						pixel = pixel * gs->color_scale + gs->color_bias;
-						if (gs->map_color)
+						pixel = pixel * gs->pixel.color_scale + gs->pixel.color_bias;
+						if (gs->pixel.map_color)
 							pixel = remap_color(pixel, gs->pixel_map_color_table + 4);
 					}
 				}
 
-				int x = int(gs->raster_pos.coords.x + gs->pixel_zoom.x * i);
-				int y = int(gs->raster_pos.coords.y + gs->pixel_zoom.y * j);
+				int x = int(gs->current.raster.position.x + gs->pixel.zoom.x * i);
+				int y = int(gs->current.raster.position.y + gs->pixel.zoom.y * j);
 				if (format == GL_STENCIL_INDEX)
 				{
-					for (int sy = 0; sy < gs->pixel_zoom.y; sy++)
-						for (int sx = 0; sx < gs->pixel_zoom.x; sx++)
+					for (int sy = 0; sy < gs->pixel.zoom.y; sy++)
+						for (int sx = 0; sx < gs->pixel.zoom.x; sx++)
 							emit_stencil(*gs, x + sx, y + sy, index);
 				}
 				else
@@ -755,8 +757,8 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 						fdata.color = pixel;
 					}
 
-					for (int sy = 0; sy < gs->pixel_zoom.y; sy++)
-						for (int sx = 0; sx < gs->pixel_zoom.x; sx++)
+					for (int sy = 0; sy < gs->pixel.zoom.y; sy++)
+						for (int sx = 0; sx < gs->pixel.zoom.x; sx++)
 							gl_emit_fragment(*gs, x + sx, y + sy, fdata);
 				}
 
@@ -787,12 +789,12 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 	}
 	VALIDATE_NOT_BEGIN_MODE
 
-	if (!gs->raster_pos.valid)
+	if (!gs->current.raster.valid)
 		return;
 
 	if (!data)
 	{
-		gs->raster_pos.coords += glm::vec4(xmove, ymove, 0, 0);
+		gs->current.raster.position += glm::vec4(xmove, ymove, 0, 0);
 		return;
 	}
 
@@ -801,7 +803,7 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 	else if (gs->render_mode == GL_FEEDBACK)
 	{
 		gl_feedback_write(*gs, GL_BITMAP_TOKEN);
-		gl_feedback_write_vertex(*gs, gs->raster_pos.coords, gs->raster_pos.color, gs->raster_pos.tex_coord);
+		gl_feedback_write_vertex(*gs, gs->current.raster.position, gs->current.raster.color, gs->current.raster.tex_coord);
 		return;
 	}
 
@@ -811,14 +813,14 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 
 	data += pstore.skip_bytes;
 
-	int x = (int)floorf(gs->raster_pos.coords.x - xorig);
-	int y = (int)floorf(gs->raster_pos.coords.y - yorig);
+	int x = (int)floorf(gs->current.raster.position.x - xorig);
+	int y = (int)floorf(gs->current.raster.position.y - yorig);
 
 	gl_frag_data fdata;
-	fdata.color = gs->raster_pos.color;
-	fdata.tex_coord = gs->raster_pos.tex_coord;
-	fdata.z = gs->raster_pos.coords.z;
-	fdata.fog_z = gs->raster_pos.distance;
+	fdata.color = gs->current.raster.color;
+	fdata.tex_coord = gs->current.raster.tex_coord;
+	fdata.z = gs->current.raster.position.z;
+	fdata.fog_z = gs->current.raster.distance;
 	fdata.lod = 0;
 
 	for (int j = 0; j < height; j++)
@@ -850,9 +852,8 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 		data += pstore.stride;
 	}
 
-	gs->raster_pos.coords += glm::vec4(xmove, ymove, 0, 0);
+	gs->current.raster.position += glm::vec4(xmove, ymove, 0, 0);
 }
-
 
 void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum format, GLenum type, void* data)
 {
@@ -947,7 +948,7 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 			{
 				index = fb.stencil[fbi];
 				index = gl_index_arithmetic(gs, index);
-				if (gs->map_stencil)
+				if (gs->pixel.map_stencil)
 				{
 					int ti = index & (gs->pixel_map_index_table[1].size - 1);
 					index = gs->pixel_map_index_table[1].data[ti];
@@ -957,7 +958,7 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 			{
 				//TODO depth buffer assumed to be 16 bit
 				float depth = fb.depth[fbi] / (float)0xffff;
-				depth = depth * gs->depth_scale + gs->depth_bias;
+				depth = depth * gs->pixel.depth_scale + gs->pixel.depth_bias;
 				col.r = depth;
 			}
 			else
@@ -965,8 +966,8 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 				const int ci = fbi * 4;
 				glm::ivec4 icol(fb.color[ci + 2], fb.color[ci + 1], fb.color[ci + 0], fb.color[ci + 3]);//bgra
 				col = glm::vec4(icol) / (float)0xff;
-				col = col * gs->color_scale + gs->color_bias;
-				if (gs->map_color)
+				col = col * gs->pixel.color_scale + gs->pixel.color_bias;
+				if (gs->pixel.map_color)
 					col = remap_color(col, gs->pixel_map_color_table + 4);
 				col = gl_pixel_format_conversion(format, col);
 			}
@@ -1005,7 +1006,7 @@ void APIENTRY glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 		return;
 	}
 
-	if (!gs->raster_pos.valid)
+	if (!gs->current.raster.valid)
 		return;
 
 	if (gs->render_mode == GL_SELECT)
@@ -1013,55 +1014,40 @@ void APIENTRY glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 	else if (gs->render_mode == GL_FEEDBACK)
 	{
 		gl_feedback_write(*gs, GL_COPY_PIXEL_TOKEN);
-		gl_feedback_write_vertex(*gs, gs->raster_pos.coords, gs->raster_pos.color, gs->raster_pos.tex_coord);
+		gl_feedback_write_vertex(*gs, gs->current.raster.position, gs->current.raster.color, gs->current.raster.tex_coord);
 		return;
 	}
 
 	// may be optimized
 
-	// map_color, scale, bias and index arithmetic will be applied twise, first on Read and then on Draw.
+	// map_color, scale, bias and index arithmetic will be applied twice, first on Read and then on Draw.
 	// So disable them after Read and restore after Draw
 
 	if (type == GL_COLOR)
 	{
 		std::vector<uint8_t> pixels(width * height * 4);
 		glReadPixels(x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-		bool save_map_color = false;
-		glm::vec4 save_color_scale(1);
-		glm::vec4 save_color_bias(0);
-		std::swap(save_map_color, gs->map_color);
-		std::swap(save_color_scale, gs->color_scale);
-		std::swap(save_color_bias, gs->color_bias);
+		gl_state::pixel_t save_pixel{};
+		std::swap(save_pixel, gs->pixel);
 		glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-		gs->map_color = save_map_color;
-		gs->color_scale = save_color_scale;
-		gs->color_bias = save_color_bias;
+		gs->pixel = save_pixel;
 	}
 	else if (type == GL_DEPTH)
 	{
 		std::vector<uint16_t> pixels(width * height);
 		glReadPixels(x, y, width, height, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, pixels.data());
-		float save_depth_scale = 1;
-		float save_depth_bias = 0;
-		std::swap(save_depth_scale, gs->depth_scale);
-		std::swap(save_depth_bias, gs->depth_bias);
+		gl_state::pixel_t save_pixel{};
+		std::swap(save_pixel, gs->pixel);
 		glDrawPixels(width, height, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, pixels.data());
-		gs->depth_scale = save_depth_scale;
-		gs->depth_bias = save_depth_bias;
+		gs->pixel = save_pixel;
 	}
 	else if (type == GL_STENCIL)
 	{
 		std::vector<uint8_t> pixels(width * height);
 		glReadPixels(x, y, width, height, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, pixels.data());
-		bool save_map_stencil = false;
-		int save_index_shift = 0;
-		int save_index_offset = 0;
-		std::swap(save_map_stencil, gs->map_stencil);
-		std::swap(save_index_shift, gs->index_shift);
-		std::swap(save_index_offset, gs->index_offset);
+		gl_state::pixel_t save_pixel{};
+		std::swap(save_pixel, gs->pixel);
 		glDrawPixels(width, height, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, pixels.data());
-		gs->map_stencil = save_map_stencil;
-		gs->index_shift = save_index_shift;
-		gs->index_offset = save_index_offset;
+		gs->pixel = save_pixel;
 	}
 }

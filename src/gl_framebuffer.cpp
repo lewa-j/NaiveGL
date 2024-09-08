@@ -13,7 +13,7 @@ void APIENTRY glScissor(GLint x, GLint y, GLsizei width, GLsizei height)
 		gl_set_error(GL_INVALID_VALUE);
 		return;
 	}
-	gs->scissor_rect = glm::ivec4(x, y, width, height);
+	gs->scissor.box = glm::ivec4(x, y, width, height);
 }
 
 #define VALIDATE_TEST_FUNC(func) \
@@ -31,8 +31,8 @@ void APIENTRY glAlphaFunc(GLenum func, GLfloat ref)
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEST_FUNC(func);
 
-	gs->alpha_test_func = func;
-	gs->alpha_test_ref = glm::clamp(ref, 0.f, 1.f);
+	gs->color_buffer.alpha_test_func = func;
+	gs->color_buffer.alpha_test_ref = glm::clamp(ref, 0.f, 1.f);
 }
 
 void APIENTRY glStencilFunc(GLenum func, GLint ref, GLuint mask)
@@ -43,10 +43,10 @@ void APIENTRY glStencilFunc(GLenum func, GLint ref, GLuint mask)
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEST_FUNC(func);
 
-	gs->stencil_func = func;
-	//TODO clamp to actual max stencil buffer value
-	gs->stencil_test_ref = glm::clamp(ref, 0, 0xFF);
-	gs->stencil_test_mask = mask;
+	gs->stencil.func = func;
+	//TODO stencil buffer assumed to be 8 bit
+	gs->stencil.ref = glm::clamp(ref, 0, 0xFF);
+	gs->stencil.value_mask = mask;
 }
 
 #define VALIDATE_STENCIL_OP(op) \
@@ -66,9 +66,9 @@ void APIENTRY glStencilOp(GLenum sfail, GLenum dpfail, GLenum dppass)
 	VALIDATE_STENCIL_OP(dpfail);
 	VALIDATE_STENCIL_OP(dppass);
 
-	gs->stencil_op_sfail = sfail;
-	gs->stencil_op_dpfail = dpfail;
-	gs->stencil_op_dppass = dppass;
+	gs->stencil.fail = sfail;
+	gs->stencil.dpfail = dpfail;
+	gs->stencil.dppass = dppass;
 }
 
 void APIENTRY glDepthFunc(GLenum func)
@@ -79,7 +79,7 @@ void APIENTRY glDepthFunc(GLenum func)
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEST_FUNC(func);
 
-	gs->depth_func = func;
+	gs->depth.func = func;
 }
 
 void APIENTRY glBlendFunc(GLenum sfactor, GLenum dfactor)
@@ -99,8 +99,8 @@ void APIENTRY glBlendFunc(GLenum sfactor, GLenum dfactor)
 		return;
 	}
 
-	gs->blend_func_src = sfactor;
-	gs->blend_func_dst = dfactor;
+	gs->color_buffer.blend_func_src = sfactor;
+	gs->color_buffer.blend_func_dst = dfactor;
 }
 
 void APIENTRY glLogicOp(GLenum opcode)
@@ -115,7 +115,7 @@ void APIENTRY glLogicOp(GLenum opcode)
 		return;
 	}
 
-	gs->logic_op_mode = opcode;
+	gs->color_buffer.logic_op_mode = opcode;
 }
 
 #define VALIDATE_DR_BUFFER(buf) \
@@ -146,7 +146,7 @@ void APIENTRY glDrawBuffer(GLenum buf)
 		return;
 	}
 
-	gs->draw_buffer = buf;
+	gs->color_buffer.draw_buffer = buf;
 }
 
 void APIENTRY glReadBuffer(GLenum src)
@@ -184,7 +184,7 @@ void APIENTRY glReadBuffer(GLenum src)
 	else if (src == GL_RIGHT)
 		src = GL_FRONT_RIGHT;
 
-	gs->read_buffer = src;
+	gs->pixel.read_buffer = src;
 }
 
 void APIENTRY glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLboolean alpha)
@@ -193,7 +193,7 @@ void APIENTRY glColorMask(GLboolean red, GLboolean green, GLboolean blue, GLbool
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(ColorMask, {}, { red, green, blue, alpha });
 	VALIDATE_NOT_BEGIN_MODE;
-	gs->color_mask = glm::bvec4{ red, green, blue, alpha };
+	gs->color_buffer.color_writemask = glm::bvec4{ red, green, blue, alpha };
 }
 
 void APIENTRY glIndexMask(GLuint mask)
@@ -211,7 +211,7 @@ void APIENTRY glDepthMask(GLboolean flag)
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(DepthMask, {}, { flag });
 	VALIDATE_NOT_BEGIN_MODE;
-	gs->depth_mask = flag;
+	gs->depth.writemask = flag;
 }
 
 void APIENTRY glStencilMask(GLuint mask)
@@ -220,7 +220,7 @@ void APIENTRY glStencilMask(GLuint mask)
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(StencilMask, {}, { (int)mask });
 	VALIDATE_NOT_BEGIN_MODE;
-	gs->stencil_writemask = mask;
+	gs->stencil.writemask = mask;
 }
 
 uint32_t gl_color_to_framebuffer(const glm::vec4 &c)
@@ -246,24 +246,24 @@ void APIENTRY glClear(GLbitfield mask)
 
 	gl_framebuffer& fb = *gs->framebuffer;
 
-	glm::ivec4 s = gs->scissor_rect;
-	if (gs->scissor_test)
+	glm::ivec4 s = gs->scissor.box;
+	if (gs->scissor.test)
 	{
 		s.x = glm::max(0, s.x);
 		s.y = glm::max(0, s.y);
-		s.z = glm::min(s.z, fb.width - gs->scissor_rect.x);
-		s.w = glm::min(s.w, fb.height - gs->scissor_rect.y);
+		s.z = glm::min(s.z, fb.width - gs->scissor.box.x);
+		s.w = glm::min(s.w, fb.height - gs->scissor.box.y);
 	}
 
-	const glm::bvec4 &cm = gs->color_mask;
-	if (mask & GL_COLOR_BUFFER_BIT && (cm.r || cm.g || cm.b || cm.a) && gs->draw_buffer != GL_NONE)
+	const glm::bvec4 &cm = gs->color_buffer.color_writemask;
+	if (mask & GL_COLOR_BUFFER_BIT && (cm.r || cm.g || cm.b || cm.a) && gs->color_buffer.draw_buffer != GL_NONE)
 	{
 		uint32_t mask = (cm.r ? 0xFF0000 : 0) | (cm.g ? 0xFF00 : 0) | (cm.b ? 0xFF : 0) | (cm.a ? 0xFF0000 : 0);//bgra
-		uint32_t value = gl_color_to_framebuffer(gs->clear_color) & mask;
+		uint32_t value = gl_color_to_framebuffer(gs->color_buffer.color_clear_value) & mask;
 		uint32_t *dst = (uint32_t *)fb.color;
 
 		//TODO dither
-		if (!gs->scissor_test || (s.x == 0 && s.x + s.z == fb.width && s.y == 0 && s.y + s.w == fb.height))
+		if (!gs->scissor.test || (s.x == 0 && s.x + s.z == fb.width && s.y == 0 && s.y + s.w == fb.height))
 		{
 			int count = fb.width * fb.height;
 			if (mask == 0xFFFFFFFF)
@@ -305,13 +305,13 @@ void APIENTRY glClear(GLbitfield mask)
 		}
 	}
 
-	uint8_t stmask = (gs->stencil_writemask & 0xFF);
+	uint8_t stmask = (gs->stencil.writemask & 0xFF);
 	if (mask & GL_STENCIL_BUFFER_BIT && fb.stencil && stmask != 0)
 	{
-		uint8_t val = gs->clear_stencil & stmask;
+		uint8_t val = gs->stencil.clear_value & stmask;
 		uint8_t* dst = fb.stencil;
 
-		if (!gs->scissor_test || (s.x == 0 && s.x + s.z == fb.width && s.y == 0 && s.y + s.w == fb.height))
+		if (!gs->scissor.test || (s.x == 0 && s.x + s.z == fb.width && s.y == 0 && s.y + s.w == fb.height))
 		{
 			int count = fb.width * fb.height;
 			if (stmask == 0xFF)
@@ -353,12 +353,12 @@ void APIENTRY glClear(GLbitfield mask)
 		}
 	}
 
-	if (mask & GL_DEPTH_BUFFER_BIT && fb.depth && gs->depth_mask)
+	if (mask & GL_DEPTH_BUFFER_BIT && fb.depth && gs->depth.writemask)
 	{
-		uint16_t value = uint16_t(gs->clear_depth * 0xFFFF);
+		uint16_t value = uint16_t(gs->depth.clear_value * 0xFFFF);
 		uint16_t* dst = fb.depth;
-
-		if (!gs->scissor_test || (s.x == 0 && s.x + s.z == fb.width && s.y == 0 && s.y + s.w == fb.height))
+		
+		if (!gs->scissor.test || (s.x == 0 && s.x + s.z == fb.width && s.y == 0 && s.y + s.w == fb.height))
 		{
 			int count = fb.width * fb.height;
 			for (int i = 0; i < count; i++)
@@ -387,7 +387,7 @@ void APIENTRY glClearColor(GLfloat red, GLfloat green, GLfloat blue, GLfloat alp
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(ClearColor, { red,green,blue,alpha });
 	VALIDATE_NOT_BEGIN_MODE;
-	gs->clear_color = glm::clamp(glm::vec4(red, green, blue, alpha), 0.f, 1.f);
+	gs->color_buffer.color_clear_value = glm::clamp(glm::vec4(red, green, blue, alpha), 0.f, 1.f);
 }
 
 void APIENTRY glClearIndex(GLfloat c)
@@ -405,7 +405,7 @@ void APIENTRY glClearDepth(GLdouble depth)
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(ClearDepth, { (float)depth });
 	VALIDATE_NOT_BEGIN_MODE;
-	gs->clear_depth = glm::clamp((float)depth, 0.f, 1.f);
+	gs->depth.clear_value = glm::clamp((float)depth, 0.f, 1.f);
 }
 
 void APIENTRY glClearStencil(GLint s)
@@ -414,7 +414,7 @@ void APIENTRY glClearStencil(GLint s)
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(ClearStencil, {}, {s});
 	VALIDATE_NOT_BEGIN_MODE;
-	gs->clear_stencil = s;
+	gs->stencil.clear_value = s;
 }
 
 void APIENTRY glClearAccum(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
@@ -423,7 +423,7 @@ void APIENTRY glClearAccum(GLfloat red, GLfloat green, GLfloat blue, GLfloat alp
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(ClearAccum, { red,green,blue,alpha });
 	VALIDATE_NOT_BEGIN_MODE;
-	gs->clear_accum = glm::clamp(glm::vec4(red, green, blue, alpha), -1.f, 1.f);
+	gs->accum_clear_value = glm::clamp(glm::vec4(red, green, blue, alpha), -1.f, 1.f);
 }
 
 void APIENTRY glAccum(GLenum op, GLfloat value)
@@ -448,13 +448,13 @@ void APIENTRY glAccum(GLenum op, GLfloat value)
 	}
 
 	glm::ivec4 s{ 0, 0, fb.width, fb.height };
-	if (gs->scissor_test)
+	if (gs->scissor.test)
 	{
-		s = gs->scissor_rect;
+		s = gs->scissor.box;
 		s.x = glm::max(0, s.x);
 		s.y = glm::max(0, s.y);
-		s.z = glm::min(s.z, fb.width - gs->scissor_rect.x);
-		s.w = glm::min(s.w, fb.height - gs->scissor_rect.y);
+		s.z = glm::min(s.z, fb.width - gs->scissor.box.x);
+		s.w = glm::min(s.w, fb.height - gs->scissor.box.y);
 	}
 
 	uint8_t* src = fb.color + (fb.width * s.y + s.x) * 4;
@@ -486,7 +486,7 @@ void APIENTRY glAccum(GLenum op, GLfloat value)
 	}
 	else if (op == GL_RETURN)
 	{
-		if (gs->draw_buffer == GL_NONE)
+		if (gs->color_buffer.draw_buffer == GL_NONE)
 			return;
 
 		for (int iy = 0; iy < s.w; iy++)
@@ -497,17 +497,17 @@ void APIENTRY glAccum(GLenum op, GLfloat value)
 			{
 				glm::vec4 color = glm::clamp(*(row++) * value, 0.f, 1.f);
 
-				if (gs->dither)
+				if (gs->color_buffer.dither)
 					gl_dither(color, s.x + ix, s.y + iy);
 
 				//bgra
-				if (gs->color_mask.b)
+				if (gs->color_buffer.color_writemask.b)
 					src[0] = uint8_t(color.b * 0xFF);
-				if (gs->color_mask.g)
+				if (gs->color_buffer.color_writemask.g)
 					src[1] = uint8_t(color.g * 0xFF);
-				if (gs->color_mask.r)
+				if (gs->color_buffer.color_writemask.r)
 					src[2] = uint8_t(color.r * 0xFF);
-				if (gs->color_mask.a)
+				if (gs->color_buffer.color_writemask.a)
 					src[3] = uint8_t(color.a * 0xFF);
 
 				src += 4;

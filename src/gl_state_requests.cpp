@@ -63,7 +63,7 @@ void APIENTRY glPushAttrib(GLbitfield mask)
 		return;
 	}
 
-	gs->attrib_stack[gs->attrib_sp] = mask;
+	gs->attrib_stack[gs->attrib_sp].attrib_mask = mask;
 	gs->attrib_sp++;
 }
 

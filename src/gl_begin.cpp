@@ -7,7 +7,7 @@ glm::vec3 gl_state::get_eye_normal(const glm::vec3 &norm)
 	//TODO cache. May be used twice per vertex when spheremap and lighting are enabled
 	glm::vec3 eye_normal = norm * glm::mat3(get_inv_modelview());
 
-	if (normalize)
+	if (transform.normalize)
 		eye_normal = glm::normalize(eye_normal);
 	return eye_normal;
 }
@@ -37,7 +37,7 @@ void APIENTRY glVertex4f(GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 	WRITE_DISPLAY_LIST(Vertex, { x,y,z,w });
 
 	glm::vec4 v_object(x, y, z, w);
-	gl_emit_vertex(gs, v_object, gs->current_color, gs->current_tex_coord, gs->current_normal);
+	gl_emit_vertex(gs, v_object, gs->current.color, gs->current.tex_coord, gs->current.normal);
 }
 
 void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 tex, glm::vec3 norm)
@@ -51,7 +51,7 @@ void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 t
 	gl_full_vertex vertex;
 	vertex.position = gs->get_modelview() * v_object;
 	vertex.tex_coord = gs->get_vertex_texcoord(tex, norm, v_object, vertex.position);
-	if (!gs->light_model_two_side
+	if (!gs->lighting.light_model_two_side
 		|| gs->begin_primitive_mode == GL_POINTS
 		|| gs->begin_primitive_mode == GL_LINES
 		|| gs->begin_primitive_mode == GL_LINE_LOOP
@@ -67,7 +67,7 @@ void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 t
 	vertex.clip = gs->get_projection() * vertex.position;
 
 	if (gs->begin_primitive_mode == GL_TRIANGLES || gs->begin_primitive_mode == GL_QUADS || gs->begin_primitive_mode == GL_POLYGON)
-		vertex.edge = gs->edge_flag;
+		vertex.edge = gs->current.edge_flag;
 	else
 		vertex.edge = true;
 
@@ -141,7 +141,7 @@ void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 t
 			break;
 		}
 #endif
-		if (gs->shade_model_flat && gs->begin_vertex_count)
+		if (gs->lighting.shade_model_flat && gs->begin_vertex_count)
 			vertex.color = gs->last_vertices[1].color;
 
 		if (gs->begin_vertex_count >= 2)
@@ -153,7 +153,7 @@ void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 t
 			gl_emit_triangle(*gs, gs->last_vertices[1], gs->last_vertices[0], vertex);
 		if (gs->begin_primitive_mode == GL_POLYGON)
 		{
-			vertex.edge = gs->edge_flag;
+			vertex.edge = gs->current.edge_flag;
 			if (gs->begin_vertex_count == 2)
 				gs->last_vertices[1].edge = false;
 		}
@@ -167,9 +167,9 @@ void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 t
 			gs->last_vertices[j] = vertex;
 		else
 		{
-			if (gs->shade_model_flat)
+			if (gs->lighting.shade_model_flat)
 			{
-				if (gs->light_model_two_side)
+				if (gs->lighting.light_model_two_side)
 					gs->last_vertices[2].original_color = vertex.original_color;
 				else
 					gs->last_vertices[2].color = vertex.color;
@@ -237,9 +237,9 @@ void APIENTRY glEnd()
 		gl_emit_line(*gs, gs->last_vertices[0], gs->last_vertices[1]);// loop back from last to first
 	else if (gs->begin_primitive_mode == GL_POLYGON && gs->begin_vertex_count >= 3 && gs->last_vertices[0].edge)
 	{
-		if (gs->polygon_mode[gs->last_side] == GL_LINE)
+		if (gs->polygon.mode[gs->last_side] == GL_LINE)
 			gl_emit_line(*gs, gs->last_vertices[0], gs->last_vertices[1]);
-		else if (gs->polygon_mode[gs->last_side] == GL_POINT)
+		else if (gs->polygon.mode[gs->last_side] == GL_POINT)
 			gl_emit_point(*gs, gs->last_vertices[0]);
 	}
 
@@ -252,7 +252,7 @@ void APIENTRY glEdgeFlag(GLboolean flag)
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(EdgeFlag, {}, {flag});
 
-	gs->edge_flag = !!flag;
+	gs->current.edge_flag = !!flag;
 }
 void APIENTRY glEdgeFlagv(GLboolean *flag) { glEdgeFlag(*flag); }
 
@@ -293,7 +293,7 @@ void APIENTRY glTexCoord4f(GLfloat s, GLfloat t, GLfloat r, GLfloat q)
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(TexCoord, { s,t,r,q });
 
-	gs->current_tex_coord = glm::vec4(s, t, r, q);
+	gs->current.tex_coord = glm::vec4(s, t, r, q);
 }
 
 #define gtc4f(x,y,z,w) glTexCoord4f((GLfloat)(x), (GLfloat)(y), (GLfloat)(z), (GLfloat)(w))
@@ -342,7 +342,7 @@ void APIENTRY glNormal3f(GLfloat nx, GLfloat ny, GLfloat nz)
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(Normal, { nx, ny, nz });
 
-	gs->current_normal = glm::vec3(nx, ny, nz);
+	gs->current.normal = glm::vec3(nx, ny, nz);
 }
 
 void APIENTRY glNormal3b(GLbyte nx, GLbyte ny, GLbyte nz)			{ glNormal3f(GLtof(nx), GLtof(ny), GLtof(nz)); }
@@ -363,9 +363,9 @@ void APIENTRY glColor4f(GLfloat red, GLfloat green, GLfloat blue, GLfloat alpha)
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(Color, { red,green,blue,alpha });
 
-	gs->current_color = glm::vec4(red, green, blue, alpha);
+	gs->current.color = glm::vec4(red, green, blue, alpha);
 
-	if (gs->color_material)
+	if (gs->lighting.color_material)
 		gs->update_color_material();
 }
 

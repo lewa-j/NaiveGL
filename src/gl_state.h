@@ -73,13 +73,17 @@ struct gl_texture
 {
 	gl_texture_array arrays[gl_max_tex_level + 1];
 	int num_arrays = gl_max_tex_level + 1;
-	int min_filter = GL_NEAREST_MIPMAP_LINEAR;
-	int mag_filter = GL_LINEAR;
-	int wrap_s = GL_REPEAT;
-	int wrap_t = GL_REPEAT;
-	glm::vec4 border_color{ 0,0,0,0 };
 	bool is_complete = false;//cached
 	int max_lod = 0;
+
+	struct params_t
+	{
+		glm::vec4 border_color{ 0,0,0,0 };
+		int min_filter = GL_NEAREST_MIPMAP_LINEAR;
+		int mag_filter = GL_LINEAR;
+		int wrap_s = GL_REPEAT;
+		int wrap_t = GL_REPEAT;
+	} params;
 };
 
 struct gl_display_list_call
@@ -193,46 +197,78 @@ struct gl_display_list_call
 	int argsi[8];
 };
 
-struct gl_state_attrib
+struct gl_state
 {
+	gl_framebuffer *framebuffer;
+
+	int begin_primitive_mode = -1;
+	gl_full_vertex last_vertices[3];//for lines, triangles and quads
+	int begin_vertex_count = 0;
+	int line_stipple_counter = 0;
+
+	bool last_side = false;
+
 	struct current_t
 	{
-		bool edge_flag = true;
+		glm::vec4 color{ 1,1,1,1 };
+		//index 1
 		glm::vec4 tex_coord{ 0,0,0,1 };
 		glm::vec3 normal{ 0,0,1 };
-		glm::vec4 color{ 1,1,1,1 };
-
-		struct raster_t {
+		struct raster_t
+		{
 			glm::vec4 position{ 0,0,0,1 }; //window xyz, clip w
 			float distance = 0;
-			bool valid = true;
 			glm::vec4 color{ 1,1,1,1 };
+			//index 1
 			glm::vec4 tex_coord{ 0,0,0,1 };
+			bool valid = true;
 		} raster;
+		bool edge_flag = true;
 	} current;
-	//gl_state::viewport_t viewport;
+
+	struct viewport_t
+	{
+		int width;
+		int height;
+		int center_x;
+		int center_y;
+		float dfar = 0;
+		float dnear = 1;
+	} viewport;
+
+	glm::mat4 modelview_stack[gl_max_viewmodel_mtx];
+	int modelview_sp = 0;
+	glm::mat4 projection_stack[gl_max_projection_mtx];
+	int projection_sp = 0;
+	glm::mat4 texture_mtx_stack[gl_max_texture_mtx];
+	int texture_mtx_sp = 0;
+
 	struct transform_t
 	{
 		GLenum matrix_mode = GL_MODELVIEW;
 		bool normalize = false;
-		glm::vec4 clipplanes[gl_max_user_clip_planes];
-		uint32_t enabled_clipplanes = 0;
+		glm::vec4 clip_planes[gl_max_user_clip_planes];
+		uint32_t enabled_clip_planes = 0;
 	} transform;
 
 	struct fog_t
 	{
-		bool enabled = false;
-		int mode = GL_EXP;
+		glm::vec4 color{ 0,0,0,0 };
+		//index 0
 		float density = 1;
 		float start = 0;
 		float end = 1;
-		glm::vec4 color{ 0,0,0,0 };
+		int mode = GL_EXP;
+		bool enabled = false;
 	} fog;
 
 	struct lighting_t
 	{
+		bool shade_model_flat = false;//GL_SMOOTH
 		bool enabled = false;
-		bool shade_model_flat = false;
+		bool color_material = false;
+		int color_material_param = GL_AMBIENT_AND_DIFFUSE;
+		int color_material_face = GL_FRONT_AND_BACK;
 		struct material {
 			glm::vec4 ambient{ 0.2,0.2,0.2,1 };
 			glm::vec4 diffuse{ 0.8,0.8,0.8,1 };
@@ -240,23 +276,21 @@ struct gl_state_attrib
 			glm::vec4 emission{ 0,0,0,1 };
 			float shininess = 0.0f;
 		} materials[2]; // front and back
-		uint32_t enabled_lights = 0;
+		glm::vec4 light_model_ambient{ 0.2,0.2,0.2,1 };
+		bool light_model_local_viewer = false;
+		bool light_model_two_side = false;
 		struct light {
 			glm::vec4 ambient{ 0,0,0,1 };
 			glm::vec4 diffuse;
 			glm::vec4 specular;
 			glm::vec4 position{ 0,0,1,0 };
+			float attenuation[3]{ 1,0,0 };//const, linear, quad
 			glm::vec3 spot_direction{ 0,0,-1 };
 			float spot_exponent = 0.0f;
 			float spot_cutoff = 180.0f;
-			float attenuation[3]{ 1,0,0 };//const, linear, quad
 		} lights[gl_max_lights];
-		glm::vec4 light_model_ambient{ 0.2,0.2,0.2,1 };
-		bool light_model_local_viewer = false;
-		bool light_model_two_side = false;
-		bool color_material = false;
-		int color_material_face = GL_FRONT_AND_BACK;
-		int color_material_param = GL_AMBIENT_AND_DIFFUSE;
+		uint32_t enabled_lights = 0;
+		//color_indexes 0,1,1
 	} lighting;
 
 	struct point_t
@@ -269,9 +303,9 @@ struct gl_state_attrib
 	{
 		float width = 1.0f;
 		bool smooth = false;
-		bool stipple = false;
 		uint16_t stipple_pattern = 0xFFFF;
 		int stipple_repeat = 1;
+		bool stipple = false;
 	} line;
 
 	struct polygon_t
@@ -283,99 +317,73 @@ struct gl_state_attrib
 		GLenum mode[2]{ GL_FILL,GL_FILL };//front and back
 		bool stipple = false;
 	} polygon;
-
 	uint8_t polygon_stipple_mask[128];
-};
 
-struct gl_state
-{
-	gl_framebuffer *framebuffer;
+	bool texture_1d_enabled = false;
+	bool texture_2d_enabled = false;
+	gl_texture texture_1d;
+	gl_texture texture_2d;
 
-	uint32_t error_bits = 0;
-	int begin_primitive_mode = -1;
-	int begin_vertex_count = 0;
-	gl_full_vertex last_vertices[3];//for lines, triangles and quads
-	bool last_side = false;
+	struct texture_env_t
+	{
+		int mode = GL_MODULATE;
+		glm::vec4 color{ 0,0,0,0 };
+	} texture_env;
 
-	bool edge_flag = true;
-	glm::vec4 current_tex_coord;
-	glm::vec3 current_normal;
-	glm::vec4 current_color;
-	struct viewport_t {
-		int width;
-		int height;
-		int center_x;
-		int center_y;
-		float dfar = 0;
-		float dnear = 1;
-	} viewport;
-
-	GLenum matrix_mode = GL_MODELVIEW;
-	glm::mat4 modelview_stack[gl_max_viewmodel_mtx];
-	int modelview_sp = 0;
-	glm::mat4 projection_stack[gl_max_projection_mtx];
-	int projection_sp = 0;
-	glm::mat4 texture_mtx_stack[gl_max_texture_mtx];
-	int texture_mtx_sp = 0;
-
-	bool normalize = false;
-	struct texGen {
+	struct texture_gen_t
+	{
 		bool enabled = false;
+		glm::vec4 eye_plane = glm::vec4(0, 0, 0, 0);
+		glm::vec4 object_plane = glm::vec4(0, 0, 0, 0);
 		GLenum mode = GL_EYE_LINEAR;
-		glm::vec4 eye_plane;
-		glm::vec4 object_plane;
 	} texgen[4];
-	glm::vec4 clipplanes[gl_max_user_clip_planes];
-	uint32_t enabled_clipplanes = 0;
-	struct rasterPos {
-		glm::vec4 coords{ 0,0,0,1 }; //window xyz, clip w
-		float distance = 0;
-		bool valid = true;
-		glm::vec4 color{ 1,1,1,1 };
-		glm::vec4 tex_coord{ 0,0,0,1 };
-	} raster_pos;
-	bool lighting_enabled = false;
-	bool front_face_ccw = true;
-	struct material {
-		glm::vec4 ambient;
-		glm::vec4 diffuse;
-		glm::vec4 specular;
-		glm::vec4 emission;
-		float shininess = 0.0f;
-	} materials[2]; // front and back
-	uint32_t enabled_lights = 0;
-	struct light {
-		glm::vec4 ambient;
-		glm::vec4 diffuse;
-		glm::vec4 specular;
-		glm::vec4 position;
-		glm::vec3 spot_direction;
-		float spot_exponent = 0.0f;
-		float spot_cutoff = 180.0f;
-		float attenuation[3]{ 1,0,0 };//const, linear, quad
-	} lights[gl_max_lights];
-	glm::vec4 light_model_ambient;
-	bool light_model_local_viewer = false;
-	bool light_model_two_side = false;
-	bool color_material = false;
-	int color_material_face = GL_FRONT_AND_BACK;
-	int color_material_mode = GL_AMBIENT_AND_DIFFUSE;
-	bool shade_model_flat = false;
 
-	float point_size = 1.0f;
-	bool point_smooth = false;
-	float line_width = 1.0f;
-	bool line_smooth = false;
-	bool line_stipple = false;
-	int line_stipple_factor = 1;
-	uint16_t line_stipple_pattern = 0xFFFF;
-	int line_stipple_counter = 0;//-
-	bool polygon_smooth = false;
-	bool cull_face = false;
-	GLenum cull_face_mode = GL_BACK;
-	bool polygon_stipple = false;
-	uint8_t polygon_stipple_mask[128];
-	GLenum polygon_mode[2]{ GL_FILL,GL_FILL };//front and back
+	struct scissor_t
+	{
+		bool test = false;
+		glm::ivec4 box;
+	} scissor;
+
+	struct stencil_t
+	{
+		bool test = false;
+		GLenum func = GL_ALWAYS;
+		GLuint value_mask = 0xFFFFFFFF;
+		GLint ref = 0;
+		GLenum fail = GL_KEEP;
+		GLenum dpfail = GL_KEEP;
+		GLenum dppass = GL_KEEP;
+		uint32_t writemask = 0xFFFFFFFF;
+		int clear_value = 0;
+	} stencil;
+
+	struct color_t
+	{
+		bool alpha_test = false;
+		GLenum alpha_test_func = GL_ALWAYS;
+		GLfloat alpha_test_ref = 0;
+		bool blend = false;
+		GLenum blend_func_src = GL_ONE;
+		GLenum blend_func_dst = GL_ZERO;
+		bool logic_op = false;
+		GLenum logic_op_mode = GL_COPY;
+		bool dither = true;
+		int draw_buffer = GL_FRONT;
+		//index_writemask 0xFFFFFFFF
+		glm::bvec4 color_writemask{ true,true,true,true };
+		glm::vec4 color_clear_value{ 0,0,0,0 };
+		//index_clear_value 0
+	} color_buffer;
+
+	struct depth_t
+	{
+		bool test = false;
+		GLenum func = GL_LESS;
+		bool writemask = true;
+		float clear_value = 1;
+	} depth;
+
+	glm::vec4 accum_clear_value{ 0,0,0,0 };
 
 	struct pixelStore
 	{
@@ -386,14 +394,21 @@ struct gl_state
 		int skip_pixels = 0;
 		int alignment = 4;
 	} pixel_unpack, pixel_pack; //client state
-	bool map_color = false;
-	bool map_stencil = false;
-	int index_shift = 0;
-	int index_offset = 0;
-	glm::vec4 color_scale{ 1,1,1,1 };
-	glm::vec4 color_bias{ 0,0,0,0 };
-	float depth_scale = 1;
-	float depth_bias = 0;
+
+	struct pixel_t
+	{
+		bool map_color = false;
+		bool map_stencil = false;
+		int index_shift = 0;
+		int index_offset = 0;
+		glm::vec4 color_scale{ 1,1,1,1 };
+		glm::vec4 color_bias{ 0,0,0,0 };
+		float depth_scale = 1;
+		float depth_bias = 0;
+		glm::vec2 zoom{ 1, 1 };
+		int read_buffer = GL_FRONT;
+	} pixel;
+
 	struct pixelMapColor
 	{
 		int size = 1;
@@ -404,79 +419,91 @@ struct gl_state
 		int size = 1;
 		GLuint data[gl_max_pixel_map_table];
 	} pixel_map_index_table[2];//color, stencil
-	glm::vec2 pixel_zoom{ 1, 1 };
 
-	gl_texture texture_2d;
-	gl_texture texture_1d;
-	int texture_env_function = GL_MODULATE;
-	glm::vec4 texture_env_color{ 0,0,0,0 };
-	bool texture_2d_enabled = false;
-	bool texture_1d_enabled = false;
-
-	bool fog_enabled = false;
-	int fog_mode = GL_EXP;
-	float fog_density = 1;
-	float fog_start = 0;
-	float fog_end = 1;
-	glm::vec4 fog_color{ 0,0,0,0 };
-
-	bool scissor_test = false;
-	glm::ivec4 scissor_rect;
-	bool alpha_test = false;
-	GLenum alpha_test_func = GL_ALWAYS;
-	GLfloat alpha_test_ref = 0;
-	bool stencil_test = false;
-	GLenum stencil_func = GL_ALWAYS;
-	GLint stencil_test_ref = 0;
-	GLuint stencil_test_mask = 0xFFFFFFFF;
-	GLenum stencil_op_sfail = GL_KEEP;
-	GLenum stencil_op_dpfail = GL_KEEP;
-	GLenum stencil_op_dppass = GL_KEEP;
-	bool depth_test = false;
-	GLenum depth_func = GL_LESS;
-	bool blend = false;
-	GLenum blend_func_src = GL_ONE;
-	GLenum blend_func_dst = GL_ZERO;
-	bool dither = true;
-	bool logic_op = false;
-	GLenum logic_op_mode = GL_COPY;
-
-	int draw_buffer = GL_FRONT;
-	int read_buffer = GL_FRONT;
-	glm::bvec4 color_mask{ true,true,true,true };
-	bool depth_mask = true;
-	uint32_t stencil_writemask = 0xFFFFFFFF;
-	glm::vec4 clear_color{ 0,0,0,0 };
-	float clear_depth = 1;
-	int clear_stencil = 0;
-	glm::vec4 clear_accum{ 0,0,0,0 };
-
-	uint32_t enabled_eval_maps = 0;// bits 0-8 1D maps, bits 9-17 2D maps
 	struct mapSpec1D
 	{
-		int order_u = 1;
-		GLfloat domain_u[2]{ 0, 1 };
+		int order = 1;
+		GLfloat domain[2]{ 0, 1 };
 		std::vector<float> control_points;
 	} eval_maps_1d[9];
 	struct mapSpec2D
 	{
-		int order_u = 1;
-		GLfloat domain_u[2]{ 0, 1 };
-		int order_v = 1;
-		GLfloat domain_v[2]{ 0, 1 };
+		int order[2] = { 1,1 };
+		GLfloat domain[4]{ 0, 1, 0, 1 };
 		std::vector<float> control_points;
 	} eval_maps_2d[9];
-	bool eval_auto_normal = false;
-	GLint eval_1d_grid_segments = 1;
-	GLfloat eval_1d_grid_domain[2]{ 0, 1 };
-	GLint eval_2d_grid_segments[2]{ 1, 1 };
-	GLfloat eval_2d_grid_domain_u[2]{ 0, 1 };
-	GLfloat eval_2d_grid_domain_v[2]{ 0, 1 };
 
-	GLint render_mode = GL_RENDER;
+	struct eval_t
+	{
+		uint32_t enabled_maps = 0;// bits 0-8 1D maps, bits 9-17 2D maps
+		GLfloat map1d_grid_domain[2]{ 0, 1 };
+		GLfloat map2d_grid_domain[4]{ 0, 1, 0, 1 };
+		GLint map1d_grid_segments = 1;
+		GLint map2d_grid_segments[2]{ 1, 1 };
+		bool auto_normal = false;
+	} eval;
+
+	struct hint_t
+	{
+		GLenum perspective_correction = GL_DONT_CARE;
+		GLenum point_smooth = GL_DONT_CARE;
+		GLenum line_smooth = GL_DONT_CARE;
+		GLenum polygon_smooth = GL_DONT_CARE;
+		GLenum fog = GL_DONT_CARE;
+	} hint;
+
+	struct displayList
+	{
+		bool recorded = false;
+		std::vector<gl_display_list_call> calls;
+		std::vector<uint8_t> data;
+	};
+	std::map<int, displayList> display_list_indices;
+
+	GLuint display_list_base = 0;
+	int display_list_begun = 0;
+	bool display_list_execute = false;
+
+	struct gl_state_attribs
+	{
+		GLbitfield attrib_mask;
+		current_t current;
+		viewport_t viewport;
+		transform_t transform;
+		fog_t fog;
+		lighting_t lighting;
+		point_t point;
+		line_t line;
+		polygon_t polygon;
+		uint8_t polygon_stipple_mask[128];
+
+		bool texture_1d_enabled = false;
+		bool texture_2d_enabled = false;
+		gl_texture::params_t texture_1d;
+		gl_texture::params_t texture_2d;
+		texture_env_t texture_env;
+		texture_gen_t texgen[4];
+
+		scissor_t scissor;
+		stencil_t stencil;
+		color_t color_buffer;
+		depth_t depth;
+		glm::vec4 accum_clear_value;
+		pixel_t pixel;
+		eval_t eval;
+		hint_t hint;
+		GLuint display_list_base;
+	};
+
+	gl_state_attribs attrib_stack[gl_max_attrib_stack_depth];
+	int attrib_sp = 0;
+
 	GLint select_name_stack[gl_max_name_stack_depth];
 	int select_name_sp = 0;
-	GLuint select_min_depth = 0;
+
+	GLint render_mode = GL_RENDER;
+
+	GLuint select_min_depth = UINT_MAX;
 	GLuint select_max_depth = 0;
 	bool select_hit = false;
 	//client state
@@ -494,28 +521,7 @@ struct gl_state
 	GLfloat *feedback_array_pos = nullptr;
 	bool feedback_reset_line = true;
 
-	int display_list_begun = 0;
-	bool display_list_execute = false;
-	GLuint display_list_base = 0;
-	struct displayList
-	{
-		bool recorded = false;
-		std::vector<gl_display_list_call> calls;
-		std::vector<uint8_t> data;
-	};
-	std::map<int, displayList> display_list_indices;
-
-	struct hints_t
-	{
-		GLenum perspective_correction = GL_DONT_CARE;
-		GLenum point_smooth = GL_DONT_CARE;
-		GLenum line_smooth = GL_DONT_CARE;
-		GLenum polygon_smooth = GL_DONT_CARE;
-		GLenum fog = GL_DONT_CARE;
-	} hints;
-
-	GLbitfield attrib_stack[gl_max_attrib_stack_depth];
-	int attrib_sp = 0;
+	uint32_t error_bits = 0;
 
 	void init(int window_w, int window_h, bool doublebuffer);
 	void destroy();

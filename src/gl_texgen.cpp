@@ -6,7 +6,7 @@ glm::vec4 gl_state::get_vertex_texcoord(glm::vec4 tr, const glm::vec3 &norm, con
 {
 	for (int i = 0; i < 4; i++)
 	{
-		const gl_state::texGen &tg = texgen[i];
+		const gl_state::texture_gen_t &tg = texgen[i];
 		if (!tg.enabled || tg.mode == GL_SPHERE_MAP)
 			continue;
 
@@ -76,7 +76,7 @@ void APIENTRY glTexGeni(GLenum coord, GLenum pname, GLint param)
 		return;
 	}
 
-	gl_state::texGen &tg = gs->texgen[coord - GL_S];
+	gl_state::texture_gen_t &tg = gs->texgen[coord - GL_S];
 	tg.mode = param;
 }
 void APIENTRY glTexGenf(GLenum coord, GLenum pname, GLfloat param) { glTexGeni(coord, pname, (GLint)param); }
@@ -112,7 +112,7 @@ void APIENTRY gl_texGenv(GLenum coord, GLenum pname, const T *params)
 		return;
 	}
 
-	gl_state::texGen &tg = gs->texgen[coord - GL_S];
+	gl_state::texture_gen_t &tg = gs->texgen[coord - GL_S];
 
 	if (pname == GL_TEXTURE_GEN_MODE)
 		tg.mode = (GLenum)params[0];
@@ -134,7 +134,7 @@ void gl_getTexGenv(GLenum coord, GLenum pname, T *params)
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEXGEN_V;
 
-	gl_state::texGen &tg = gs->texgen[coord - GL_S];
+	gl_state::texture_gen_t &tg = gs->texgen[coord - GL_S];
 
 	if (pname == GL_TEXTURE_GEN_MODE)
 		*params = (T)tg.mode;

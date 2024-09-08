@@ -5,19 +5,19 @@
 
 glm::vec4 gl_state::get_vertex_color(const glm::vec4& vertex_view, const glm::vec4& color, glm::vec3 normal, bool front_face)
 {
-	if (!lighting_enabled)
+	if (!lighting.enabled)
 		return glm::clamp(color, glm::vec4(0), glm::vec4(1));
 
-	if (color_material && light_model_two_side)
-		set_material_color(color_material_face, color_material_mode, color, true);
+	if (lighting.color_material && lighting.light_model_two_side)
+		set_material_color(lighting.color_material_face, lighting.color_material_param, color, true);
 
 	int ms = front_face ? 0 : 1;//material side
-	const gl_state::material &m = materials[ms];
+	const gl_state::lighting_t::material &m = lighting.materials[ms];
 
 	glm::vec4 r = m.emission
-		+ m.ambient * light_model_ambient;
+		+ m.ambient * lighting.light_model_ambient;
 
-	if (!enabled_lights)
+	if (!lighting.enabled_lights)
 	{
 		r.a = m.diffuse.a;
 		r = glm::clamp(r, glm::vec4(0), glm::vec4(1));
@@ -30,9 +30,9 @@ glm::vec4 gl_state::get_vertex_color(const glm::vec4& vertex_view, const glm::ve
 
 	for (int i = 0; i < gl_max_lights; i++)
 	{
-		if (!(enabled_lights & (1 << i)))
+		if (!(lighting.enabled_lights & (1 << i)))
 			continue;
-		const gl_state::light &l = lights[i];
+		const gl_state::lighting_t::light &l = lighting.lights[i];
 
 		float att = 1.0f;
 		glm::vec3 VP = glm::vec3(l.position);
@@ -50,7 +50,7 @@ glm::vec4 gl_state::get_vertex_color(const glm::vec4& vertex_view, const glm::ve
 			float c = cosf(glm::radians(l.spot_cutoff));
 			spot = spot_dot < c ? 0.0f : pow(spot_dot, l.spot_exponent);
 		}
-		glm::vec3 h = glm::normalize(light_model_local_viewer ? (VP - glm::normalize(glm::vec3(vertex_view))) : (VP + glm::vec3(0, 0, 1)));
+		glm::vec3 h = glm::normalize(lighting.light_model_local_viewer ? (VP - glm::normalize(glm::vec3(vertex_view))) : (VP + glm::vec3(0, 0, 1)));
 		float NdotL = glm::max(0.0f, glm::dot(normal, VP));
 		float f = (NdotL != 0) ? 1.0f : 0.0f;
 		r += att * spot * (m.ambient * l.ambient
@@ -58,7 +58,7 @@ glm::vec4 gl_state::get_vertex_color(const glm::vec4& vertex_view, const glm::ve
 			+ f * glm::pow(glm::max(0.0f, glm::dot(normal, h)), m.shininess) * m.specular * l.specular);
 	}
 
-	r.a = materials[ms].diffuse.a;
+	r.a = lighting.materials[ms].diffuse.a;
 	r = glm::clamp(r, glm::vec4(0), glm::vec4(1));
 
 	return r;
@@ -72,17 +72,17 @@ static void set_material_shininess(gl_state *gs, GLenum face, GLfloat param)
 		return;
 	}
 	if (face != GL_BACK)
-		gs->materials[0].shininess = param;
+		gs->lighting.materials[0].shininess = param;
 	if (face != GL_FRONT)
-		gs->materials[1].shininess = param;
+		gs->lighting.materials[1].shininess = param;
 }
 
 void gl_state::set_material_color(GLenum face, GLenum pname, const glm::vec4 &param, bool force)
 {
-	if (!force && color_material
-		&& (pname == color_material_mode || (color_material_mode == GL_AMBIENT_AND_DIFFUSE && (pname == GL_AMBIENT || pname == GL_DIFFUSE))))
+	if (!force && lighting.color_material
+		&& (pname == lighting.color_material_param || (lighting.color_material_param == GL_AMBIENT_AND_DIFFUSE && (pname == GL_AMBIENT || pname == GL_DIFFUSE))))
 	{
-		if (face == color_material_face || color_material_face == GL_FRONT_AND_BACK)
+		if (face == lighting.color_material_face || lighting.color_material_face == GL_FRONT_AND_BACK)
 			return;
 	}
 
@@ -101,18 +101,18 @@ void gl_state::set_material_color(GLenum face, GLenum pname, const glm::vec4 &pa
 	}
 
 	if (pname == GL_AMBIENT)
-		materials[face == GL_FRONT ? 0 : 1].ambient = param;
+		lighting.materials[face == GL_FRONT ? 0 : 1].ambient = param;
 	else if (pname == GL_DIFFUSE)
-		materials[face == GL_FRONT ? 0 : 1].diffuse = param;
+		lighting.materials[face == GL_FRONT ? 0 : 1].diffuse = param;
 	else if (pname == GL_SPECULAR)
-		materials[face == GL_FRONT ? 0 : 1].specular = param;
+		lighting.materials[face == GL_FRONT ? 0 : 1].specular = param;
 	else if (pname == GL_EMISSION)
-		materials[face == GL_FRONT ? 0 : 1].emission = param;
+		lighting.materials[face == GL_FRONT ? 0 : 1].emission = param;
 }
 
 void gl_state::update_color_material()
 {
-	set_material_color(color_material_face, color_material_mode, current_color, true);
+	set_material_color(lighting.color_material_face, lighting.color_material_param, current.color, true);
 }
 
 void APIENTRY glFrontFace(GLenum mode)
@@ -128,7 +128,7 @@ void APIENTRY glFrontFace(GLenum mode)
 		return;
 	}
 
-	gs->front_face_ccw = (mode == GL_CCW);
+	gs->polygon.front_face_ccw = (mode == GL_CCW);
 }
 
 void APIENTRY glShadeModel(GLenum mode)
@@ -144,7 +144,7 @@ void APIENTRY glShadeModel(GLenum mode)
 		return;
 	}
 
-	gs->shade_model_flat = (mode == GL_FLAT);
+	gs->lighting.shade_model_flat = (mode == GL_FLAT);
 }
 
 #define VALIDATE_MAT_PNAME_V \
@@ -196,10 +196,10 @@ void APIENTRY glColorMaterial(GLenum face, GLenum mode)
 		return;
 	}
 
-	gs->color_material_face = face;
-	gs->color_material_mode = mode;
+	gs->lighting.color_material_face = face;
+	gs->lighting.color_material_param = mode;
 
-	if (gs->color_material)
+	if (gs->lighting.color_material)
 		gs->update_color_material();
 }
 
@@ -299,7 +299,7 @@ void gl_getMaterialv(GLenum face, GLenum pname, T *params)
 	if (pname == GL_COLOR_INDEXES)
 		return;
 
-	const gl_state::material &mat = gs->materials[face == GL_FRONT ? 0 : 1];
+	const gl_state::lighting_t::material &mat = gs->lighting.materials[face == GL_FRONT ? 0 : 1];
 
 	if (pname == GL_SHININESS)
 		copy_vals(params, &mat.shininess, 1);
@@ -323,7 +323,7 @@ void APIENTRY glGetMaterialfv(GLenum face, GLenum pname, GLfloat *params)
 	gl_getMaterialv(face, pname, params);
 }
 
-static void gl_light_scalar(const char *func, gl_state::light &l, GLenum pname, GLfloat param)
+static void gl_light_scalar(const char *func, gl_state::lighting_t::light &l, GLenum pname, GLfloat param)
 {
 	if (pname == GL_SPOT_EXPONENT)
 	{
@@ -363,13 +363,14 @@ void APIENTRY glLightf(GLenum light, GLenum pname, GLfloat param)
 	VALIDATE_LIGHT_NUM;
 	VALIDATE_LIGHT_PNAME;
 
-	gl_state::light &l = gs->lights[light - GL_LIGHT0];
+	gl_state::lighting_t::light &l = gs->lighting.lights[light - GL_LIGHT0];
 
 	gl_light_scalar(__FUNCTION__, l, pname, param);
 }
+
 void APIENTRY glLighti(GLenum light, GLenum pname, GLint param) { glLightf(light, pname, (GLfloat)param); }
 
-static void gl_light_color(gl_state::light &l, GLenum pname, glm::vec4 param)
+static void gl_light_color(gl_state::lighting_t::light &l, GLenum pname, glm::vec4 param)
 {
 	if (pname == GL_AMBIENT)
 		l.ambient = param;
@@ -397,7 +398,7 @@ void gl_lightv(gl_state *gs, GLenum light, GLenum pname, const T *params)
 	VALIDATE_LIGHT_NUM;
 	VALIDATE_LIGHT_PNAME_V;
 
-	gl_state::light &l = gs->lights[light - GL_LIGHT0];
+	gl_state::lighting_t::light &l = gs->lighting.lights[light - GL_LIGHT0];
 
 	if (pname >= GL_AMBIENT && pname <= GL_SPECULAR)
 		gl_light_color(l, pname, glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])));
@@ -436,7 +437,7 @@ static void gl_getLightv(GLenum light, GLenum pname, T *params)
 	VALIDATE_LIGHT_NUM;
 	VALIDATE_LIGHT_PNAME_V;
 
-	gl_state::light &l = gs->lights[light - GL_LIGHT0];
+	gl_state::lighting_t::light &l = gs->lighting.lights[light - GL_LIGHT0];
 
 	if (pname == GL_AMBIENT)
 		copy_color(params, &l.ambient.x);
@@ -479,10 +480,11 @@ void APIENTRY glLightModeli(GLenum pname, GLint param)
 	}
 
 	if (pname == GL_LIGHT_MODEL_LOCAL_VIEWER)
-		gs->light_model_local_viewer = (param != 0);
+		gs->lighting.light_model_local_viewer = (param != 0);
 	else if (pname == GL_LIGHT_MODEL_TWO_SIDE)
-		gs->light_model_two_side = (param != 0);
+		gs->lighting.light_model_two_side = (param != 0);
 }
+
 void APIENTRY glLightModelf(GLenum pname, GLfloat param) { glLightModeli(pname, (GLint)param); }
 
 static int gl_lightModelv_size(GLenum pname)
@@ -501,11 +503,11 @@ void APIENTRY gl_lightModelv(gl_state *gs, GLenum pname, const T *params)
 	VALIDATE_LIGHT_MODEL_PNAME_V;
 
 	if (pname == GL_LIGHT_MODEL_AMBIENT)
-		gs->light_model_ambient = glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3]));
+		gs->lighting.light_model_ambient = glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3]));
 	else if (pname == GL_LIGHT_MODEL_LOCAL_VIEWER)
-		gs->light_model_local_viewer = (params[0] != 0);
+		gs->lighting.light_model_local_viewer = (params[0] != 0);
 	else if (pname == GL_LIGHT_MODEL_TWO_SIDE)
-		gs->light_model_two_side = (params[0] != 0);
+		gs->lighting.light_model_two_side = (params[0] != 0);
 }
 
 void APIENTRY glLightModelfv(GLenum pname, const GLfloat *params)

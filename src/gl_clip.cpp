@@ -9,15 +9,15 @@ bool gl_state::clip_point(const glm::vec4 &v_eye, const glm::vec4 &v_clip)
 		v_clip.z < -v_clip.w || v_clip.z > v_clip.w)
 		return false;
 
-	if (!enabled_clipplanes)
+	if (!transform.enabled_clip_planes)
 		return true;
 
 	for (int i = 0; i < gl_max_user_clip_planes; i++)
 	{
-		if (!(enabled_clipplanes & (1 << i)))
+		if (!(transform.enabled_clip_planes & (1 << i)))
 			continue;
 
-		if (dot(clipplanes[i], v_eye) < 0)
+		if (dot(transform.clip_planes[i], v_eye) < 0)
 			return false;
 	}
 
@@ -36,7 +36,7 @@ void APIENTRY glClipPlane(GLenum plane, const GLdouble *equation)
 		return;
 	}
 
-	gs->clipplanes[plane - GL_CLIP_PLANE0] = glm::vec4(equation[0], equation[1], equation[2], equation[3]) * gs->get_inv_modelview();
+	gs->transform.clip_planes[plane - GL_CLIP_PLANE0] = glm::vec4(equation[0], equation[1], equation[2], equation[3]) * gs->get_inv_modelview();
 }
 
 void APIENTRY glGetClipPlane(GLenum plane, GLdouble *equation)
@@ -49,7 +49,7 @@ void APIENTRY glGetClipPlane(GLenum plane, GLdouble *equation)
 		gl_set_error_a(GL_INVALID_ENUM, plane);
 		return;
 	}
-	const glm::vec4 &p = gs->clipplanes[plane - GL_CLIP_PLANE0];
+	const glm::vec4 &p = gs->transform.clip_planes[plane - GL_CLIP_PLANE0];
 	for (int i = 0; i < 4; i++)
 		equation[0] = p[0];
 }
@@ -92,15 +92,15 @@ void gl_rasterize_clipped_line(gl_state& st, gl_processed_vertex v0, gl_processe
 	//
 #undef clip_coord
 
-	if (st.enabled_clipplanes)
+	if (st.transform.enabled_clip_planes)
 	{
 		for (int i = 0; i < gl_max_user_clip_planes; i++)
 		{
-			if (!(st.enabled_clipplanes & (1 << i)))
+			if (!(st.transform.enabled_clip_planes & (1 << i)))
 				continue;
 
-			float d0 = dot(st.clipplanes[i], v0.position);
-			float d1 = dot(st.clipplanes[i], v1.position);
+			float d0 = dot(st.transform.clip_planes[i], v0.position);
+			float d1 = dot(st.transform.clip_planes[i], v1.position);
 
 			v0_in = d0 >= 0;
 			v1_in = d1 >= 0;
@@ -216,17 +216,17 @@ static void clip_triangle(gl_state& st, gl_processed_vertex v0, gl_processed_ver
 #undef clip_coord
 
 #if 1
-	if (st.enabled_clipplanes)
+	if (st.transform.enabled_clip_planes)
 	{
 		for (int i = 0; i < gl_max_user_clip_planes; i++)
 		{
-			if (!(st.enabled_clipplanes & (1 << i)))
+			if (!(st.transform.enabled_clip_planes & (1 << i)))
 				continue;
 			if (step >= 7 + i)
 				continue;
 
 			step++;
-			r = clip3(st.clipplanes[i], v0, v1, v2, v3);
+			r = clip3(st.transform.clip_planes[i], v0, v1, v2, v3);
 			if (!r)
 				return;
 			if (r == 4)

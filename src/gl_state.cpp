@@ -5,20 +5,15 @@
 
 void gl_state::init(int window_w, int window_h, bool doublebuffer)
 {
-	error_bits = 0;
-
 	begin_primitive_mode = -1;
 	begin_vertex_count = 0;
-	edge_flag = true;
-	current_tex_coord = glm::vec4(0, 0, 0, 1);
-	current_normal = glm::vec3(0, 0, 1);
-	current_color = glm::vec4(1, 1, 1, 1);
+	line_stipple_counter = 0;
 
+	current = {};
+
+	viewport = {};
 	set_viewport(0, 0, window_w, window_h);
-	viewport.dnear = 0;
-	viewport.dfar = 1;
 
-	matrix_mode = GL_MODELVIEW;
 	modelview_sp = 0;
 	projection_sp = 0;
 	texture_mtx_sp = 0;
@@ -26,93 +21,46 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	projection_stack[0] = glm::mat4(1);
 	texture_mtx_stack[0] = glm::mat4(1);
 
-	normalize = false;
+	transform = {};
+	for (int i = 0; i < gl_max_user_clip_planes; i++)
+		transform.clip_planes[i] = glm::vec4(0);
+
+	fog = {};
+	lighting = {};
+	lighting.lights[0].diffuse = glm::vec4(1, 1, 1, 1);
+	lighting.lights[0].specular = glm::vec4(1, 1, 1, 1);
+
+	point = {};
+	line = {};
+	polygon = {};
+	memset(polygon_stipple_mask, 0xFFFFFFFF, sizeof(polygon_stipple_mask));
+
+	texture_2d_enabled = false;
+	texture_1d_enabled = false;
+	texture_1d = {};
+	texture_2d = {};
+	texture_env = {};
 
 	for (int i = 0; i < 4; i++)
-	{
-		texgen[i].enabled = false;
-		texgen[i].mode = GL_EYE_LINEAR;
-		texgen[i].eye_plane = glm::vec4(0, 0, 0, 0);
-		texgen[i].object_plane = glm::vec4(0, 0, 0, 0);
-	}
+		texgen[i] = {};
 	texgen[0].eye_plane = glm::vec4(1, 0, 0, 0);
-	texgen[1].eye_plane = glm::vec4(0, 1, 0, 0);
 	texgen[0].object_plane = glm::vec4(1, 0, 0, 0);
+	texgen[1].eye_plane = glm::vec4(0, 1, 0, 0);
 	texgen[1].object_plane = glm::vec4(0, 1, 0, 0);
 
-	enabled_clipplanes = 0;
-	for (int i = 0; i < gl_max_user_clip_planes; i++)
-		clipplanes[i] = glm::vec4(0);
+	scissor = {};
+	scissor.box = glm::ivec4{ 0, 0, window_w, window_h };
 
-	raster_pos.coords = glm::vec4{ 0,0,0,1 };
-	raster_pos.distance = 0;
-	raster_pos.valid = true;
-	raster_pos.color = glm::vec4{ 0,0,0,1 };
-	raster_pos.tex_coord = glm::vec4{ 1,1,1,1 };
-
-	lighting_enabled = false;
-	front_face_ccw = true;
-	for (int i = 0; i < 2; i++)
-	{
-		materials[i].ambient = glm::vec4(0.2f, 0.2f, 0.2f, 1);
-		materials[i].diffuse = glm::vec4(0.8f, 0.8f, 0.8f, 1);
-		materials[i].specular = glm::vec4(0, 0, 0, 1);
-		materials[i].emission = glm::vec4(0, 0, 0, 1);
-		materials[i].shininess = 0.0f;
-	}
-	enabled_lights = 0;
-	for (int i = 0; i < gl_max_lights; i++)
-	{
-		lights[i].ambient = glm::vec4(0, 0, 0, 1);
-		lights[i].diffuse = glm::vec4(0, 0, 0, 1);
-		lights[i].specular = glm::vec4(0, 0, 0, 1);
-		lights[i].position = glm::vec4(0, 0, 1, 0);
-		lights[i].spot_direction = glm::vec3(0, 0, -1);
-		lights[i].spot_exponent = 0.0f;
-		lights[i].spot_cutoff = 180.0f;
-		lights[i].attenuation[0] = 1.0f;//const
-		lights[i].attenuation[1] = 0.0f;//linear
-		lights[i].attenuation[2] = 0.0f;//quad
-	}
-	lights[0].diffuse = glm::vec4(1, 1, 1, 1);
-	lights[0].specular = glm::vec4(1, 1, 1, 1);
-
-	light_model_ambient = glm::vec4(0.2f, 0.2f, 0.2f, 1);
-	light_model_local_viewer = false;
-	light_model_two_side = false;
-
-	color_material = false;
-	color_material_face = GL_FRONT_AND_BACK;
-	color_material_mode = GL_AMBIENT_AND_DIFFUSE;
-
-	shade_model_flat = false;
-
-	point_size = 1.0f;
-	point_smooth = false;
-	line_width = 1.0f;
-	line_smooth = false;
-	line_stipple = false;
-	line_stipple_factor = 1;
-	line_stipple_pattern = 0xFFFF;
-	line_stipple_counter = 0;
-	polygon_smooth = false;
-	cull_face = false;
-	cull_face_mode = GL_BACK;
-	polygon_stipple = false;
-	memset(polygon_stipple_mask, 0xFFFFFFFF, sizeof(polygon_stipple_mask));
-	polygon_mode[0] = GL_FILL;
-	polygon_mode[1] = GL_FILL;
-
+	stencil = {};
+	color_buffer = {};
+	color_buffer.draw_buffer = doublebuffer ? GL_BACK : GL_FRONT;
+	depth = {};
+	accum_clear_value = glm::vec4{ 0, 0, 0, 0 };
 	pixel_unpack = {};
 	pixel_pack = {};
-	map_color = false;
-	map_stencil = false;
-	index_shift = 0;
-	index_offset = 0;
-	color_scale = glm::vec4{ 1,1,1,1 };
-	color_bias = glm::vec4{ 0,0,0,0 };
-	depth_scale = 1;
-	depth_bias = 0;
+	pixel = {};
+	pixel.read_buffer = doublebuffer ? GL_BACK : GL_FRONT;
+
 	for (int i = 0; i < 8; i++)
 	{
 		pixel_map_color_table[i].size = 1;
@@ -123,59 +71,13 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 		pixel_map_index_table[i].size = 1;
 		memset(pixel_map_index_table[i].data, 0, sizeof(pixel_map_index_table[i].data));
 	}
-	pixel_zoom = glm::vec2{ 1, 1 };
 
-	texture_1d = {};
-	texture_2d = {};
+	eval = {};
 
-	texture_env_function = GL_MODULATE;
-	texture_env_color = glm::vec4{ 0,0,0,0 };
-	texture_2d_enabled = false;
-	texture_1d_enabled = false;
-
-	fog_enabled = false;
-	fog_mode = GL_EXP;
-	fog_density = 1;
-	fog_start = 0;
-	fog_end = 1;
-	fog_color = glm::vec4{ 0,0,0,0 };
-
-	scissor_test = false;
-	scissor_rect = glm::ivec4{ 0, 0, window_w, window_h };
-	alpha_test = false;
-	alpha_test_func = GL_ALWAYS;
-	alpha_test_ref = 0;
-	stencil_test = false;
-	stencil_func = GL_ALWAYS;
-	stencil_test_ref = 0;
-	stencil_test_mask = 0xFFFFFFFF;
-	stencil_op_sfail = GL_KEEP;
-	stencil_op_dpfail = GL_KEEP;
-	stencil_op_dppass = GL_KEEP;
-	depth_test = false;
-	depth_func = GL_LESS;
-	blend = false;
-	blend_func_src = GL_ONE;
-	blend_func_dst = GL_ZERO;
-	dither = true;
-	logic_op = false;
-	logic_op_mode = GL_COPY;
-
-	draw_buffer = doublebuffer ? GL_BACK : GL_FRONT;
-	read_buffer = doublebuffer ? GL_BACK : GL_FRONT;
-	color_mask = glm::bvec4{ true,true,true,true };
-	depth_mask = true;
-	stencil_writemask = 0xFFFFFFFF;
-	clear_color = glm::vec4{ 0, 0, 0, 0 };
-	clear_depth = 1;
-	clear_stencil = 0;
-	clear_accum = glm::vec4{ 0, 0, 0, 0 };
-
-	enabled_eval_maps = 0;
 	for (int i = 0; i < 9; i++)
 	{
-		eval_maps_1d[i] = mapSpec1D{};
-		eval_maps_2d[i] = mapSpec2D{};
+		eval_maps_1d[i] = {};
+		eval_maps_2d[i] = {};
 	}
 	eval_maps_1d[0].control_points = { 1,1,1,1 };
 	eval_maps_1d[2].control_points = { 0,0,1 };
@@ -194,19 +96,18 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	eval_maps_2d[6].control_points = { 0,0,0,1 };
 	eval_maps_2d[7].control_points = { 0,0,0 };
 	eval_maps_2d[8].control_points = { 0,0,0,1 };
-	eval_auto_normal = false;
-	eval_1d_grid_segments = 1;
-	eval_1d_grid_domain[0] = 0;
-	eval_1d_grid_domain[1] = 1;
-	eval_2d_grid_segments[0] = 1;
-	eval_2d_grid_segments[1] = 1;
-	eval_2d_grid_domain_u[0] = 0;
-	eval_2d_grid_domain_u[1] = 1;
-	eval_2d_grid_domain_v[0] = 0;
-	eval_2d_grid_domain_v[1] = 1;
+	hint = {};
+
+	display_list_indices.clear();
+	display_list_base = 0;
+	display_list_begun = 0;
+	display_list_execute = false;
+
+	attrib_sp = 0;
+	select_name_sp = 0;
 
 	render_mode = GL_RENDER;
-	select_name_sp = 0;
+
 	select_min_depth = UINT_MAX;
 	select_max_depth = 0;
 	bool select_hit = false;
@@ -223,12 +124,7 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	feedback_array_pos = nullptr;
 	feedback_reset_line = true;
 
-	display_list_begun = 0;
-	display_list_execute = false;
-	display_list_base = 0;
-	display_list_indices.clear();
-
-	hints = {};
+	error_bits = 0;
 }
 
 void gl_state::destroy()
@@ -300,7 +196,7 @@ bool &gl_get_enabled_ref(gl_state *gs, GLenum cap, bool &fail)
 {
 	if (cap == GL_NORMALIZE)
 	{
-		return gs->normalize;
+		return gs->transform.normalize;
 	}
 	else if (cap >= GL_TEXTURE_GEN_S && cap <= GL_TEXTURE_GEN_Q)
 	{
@@ -308,35 +204,35 @@ bool &gl_get_enabled_ref(gl_state *gs, GLenum cap, bool &fail)
 	}
 	else if (cap == GL_LIGHTING)
 	{
-		return gs->lighting_enabled;
+		return gs->lighting.enabled;
 	}
 	else if (cap == GL_COLOR_MATERIAL)
 	{
-		return gs->color_material;
+		return gs->lighting.color_material;
 	}
 	else if (cap == GL_POINT_SMOOTH)
 	{
-		return gs->point_smooth;
+		return gs->point.smooth;
 	}
 	else if (cap == GL_LINE_SMOOTH)
 	{
-		return gs->line_smooth;
+		return gs->line.smooth;
 	}
 	else if (cap == GL_LINE_STIPPLE)
 	{
-		return gs->line_stipple;
+		return gs->line.stipple;
 	}
 	else if (cap == GL_POLYGON_SMOOTH)
 	{
-		return gs->polygon_smooth;
+		return gs->polygon.smooth;
 	}
 	else if (cap == GL_POLYGON_STIPPLE)
 	{
-		return gs->polygon_stipple;
+		return gs->polygon.stipple;
 	}
 	else if (cap == GL_CULL_FACE)
 	{
-		return gs->cull_face;
+		return gs->polygon.cull_face;
 	}
 	else if (cap == GL_TEXTURE_2D)
 	{
@@ -348,39 +244,39 @@ bool &gl_get_enabled_ref(gl_state *gs, GLenum cap, bool &fail)
 	}
 	else if (cap == GL_FOG)
 	{
-		return gs->fog_enabled;
+		return gs->fog.enabled;
 	}
 	else if (cap == GL_SCISSOR_TEST)
 	{
-		return gs->scissor_test;
+		return gs->scissor.test;
 	}
 	else if (cap == GL_ALPHA_TEST)
 	{
-		return gs->alpha_test;
+		return gs->color_buffer.alpha_test;
 	}
 	else if (cap == GL_STENCIL_TEST)
 	{
-		return gs->stencil_test;
+		return gs->stencil.test;
 	}
 	else if (cap == GL_DEPTH_TEST)
 	{
-		return gs->depth_test;
+		return gs->depth.test;
 	}
 	else if (cap == GL_BLEND)
 	{
-		return gs->blend;
+		return gs->color_buffer.blend;
 	}
 	else if (cap == GL_DITHER)
 	{
-		return gs->dither;
+		return gs->color_buffer.dither;
 	}
 	else if (cap == GL_LOGIC_OP)
 	{
-		return gs->logic_op;
+		return gs->color_buffer.logic_op;
 	}
 	else if (cap == GL_AUTO_NORMAL)
 	{
-		return gs->eval_auto_normal;
+		return gs->eval.auto_normal;
 	}
 	else
 	{
@@ -410,19 +306,19 @@ bool gl_setable(gl_state *gs, GLenum cap, bool val)
 	}
 	else if (cap >= GL_CLIP_PLANE0 && cap < (GL_CLIP_PLANE0 + gl_max_user_clip_planes))
 	{
-		set_bit(gs->enabled_clipplanes, cap - GL_CLIP_PLANE0, val);
+		set_bit(gs->transform.enabled_clip_planes, cap - GL_CLIP_PLANE0, val);
 	}
 	else if (cap >= GL_LIGHT0 && cap < (GL_LIGHT0 + gl_max_lights))
 	{
-		set_bit(gs->enabled_lights, cap - GL_LIGHT0, val);
+		set_bit(gs->lighting.enabled_lights, cap - GL_LIGHT0, val);
 	}
 	else if (cap >= GL_MAP1_COLOR_4 && cap <= GL_MAP1_VERTEX_4)
 	{
-		set_bit(gs->enabled_eval_maps, cap - GL_MAP1_COLOR_4, val);
+		set_bit(gs->eval.enabled_maps, cap - GL_MAP1_COLOR_4, val);
 	}
 	else if (cap >= GL_MAP2_COLOR_4 && cap <= GL_MAP2_VERTEX_4)
 	{
-		set_bit(gs->enabled_eval_maps, cap - GL_MAP2_COLOR_4 + 9, val);
+		set_bit(gs->eval.enabled_maps, cap - GL_MAP2_COLOR_4 + 9, val);
 	}
 	else
 	{
@@ -440,8 +336,8 @@ void APIENTRY glEnable(GLenum cap)
 
 	if (cap == GL_COLOR_MATERIAL)
 	{
-		bool old = gs->color_material;
-		gs->color_material = true;
+		bool old = gs->lighting.color_material;
+		gs->lighting.color_material = true;
 		if (!old)
 			gs->update_color_material();
 		return;
@@ -473,19 +369,19 @@ int gl_isEnabled(gl_state *gs, GLenum cap)
 	}
 	else if (cap >= GL_CLIP_PLANE0 && cap < (GL_CLIP_PLANE0 + gl_max_user_clip_planes))
 	{
-		return (gs->enabled_clipplanes & (1 << (cap - GL_CLIP_PLANE0))) ? 1 : 0;
+		return (gs->transform.enabled_clip_planes & (1 << (cap - GL_CLIP_PLANE0))) ? 1 : 0;
 	}
 	else if (cap >= GL_LIGHT0 && cap < (GL_LIGHT0 + gl_max_lights))
 	{
-		return (gs->enabled_lights & (1 << (cap - GL_LIGHT0))) ? 1 : 0;
+		return (gs->lighting.enabled_lights & (1 << (cap - GL_LIGHT0))) ? 1 : 0;
 	}
 	else if (cap >= GL_MAP1_COLOR_4 && cap <= GL_MAP1_VERTEX_4)
 	{
-		return (gs->enabled_eval_maps & (1 << (cap - GL_MAP1_COLOR_4))) ? 1 : 0;
+		return (gs->eval.enabled_maps & (1 << (cap - GL_MAP1_COLOR_4))) ? 1 : 0;
 	}
 	else if (cap >= GL_MAP2_COLOR_4 && cap <= GL_MAP2_VERTEX_4)
 	{
-		return (gs->enabled_eval_maps & (1 << (cap - GL_MAP2_COLOR_4 + 9))) ? 1 : 0;
+		return (gs->eval.enabled_maps & (1 << (cap - GL_MAP2_COLOR_4 + 9))) ? 1 : 0;
 	}
 
 	return -1;
@@ -525,15 +421,15 @@ void APIENTRY glHint(GLenum target, GLenum mode)
 	}
 
 	if (target == GL_PERSPECTIVE_CORRECTION_HINT)
-		gs->hints.perspective_correction = mode;
+		gs->hint.perspective_correction = mode;
 	else if (target == GL_POINT_SMOOTH_HINT)
-		gs->hints.point_smooth = mode;
+		gs->hint.point_smooth = mode;
 	else if (target == GL_LINE_SMOOTH_HINT)
-		gs->hints.line_smooth = mode;
+		gs->hint.line_smooth = mode;
 	else if (target == GL_POLYGON_SMOOTH_HINT)
-		gs->hints.polygon_smooth = mode;
+		gs->hint.polygon_smooth = mode;
 	else if (target == GL_FOG_HINT)
-		gs->hints.fog = mode;
+		gs->hint.fog = mode;
 }
 
 const char *APIENTRY glGetString(GLenum name)
