@@ -6,31 +6,31 @@
 
 const glm::mat4 &gl_state::get_modelview()
 {
-	return modelview_stack[modelview_sp];
+	return modelview_stack[modelview_stack_depth - 1];
 }
 
 glm::mat4 gl_state::get_inv_modelview()
 {
-	return glm::inverse(modelview_stack[modelview_sp]);
+	return glm::inverse(modelview_stack[modelview_stack_depth - 1]);
 }
 
 const glm::mat4 &gl_state::get_projection()
 {
-	return projection_stack[projection_sp];
+	return projection_stack[projection_stack_depth - 1];
 }
 
 const glm::mat4 &gl_state::get_mtx_texture()
 {
-	return texture_mtx_stack[texture_mtx_sp];
+	return texture_mtx_stack[texture_mtx_stack_depth - 1];
 }
 
-static int &get_current_mtx_sp(gl_state *gs)
+static int &get_current_mtx_stack_depth(gl_state *gs)
 {
 	if (gs->transform.matrix_mode == GL_MODELVIEW)
-		return gs->modelview_sp;
+		return gs->modelview_stack_depth;
 	if (gs->transform.matrix_mode == GL_PROJECTION)
-		return gs->projection_sp;
-	return gs->texture_mtx_sp;
+		return gs->projection_stack_depth;
+	return gs->texture_mtx_stack_depth;
 }
 
 static int get_current_mtx_max(gl_state *gs)
@@ -45,10 +45,10 @@ static int get_current_mtx_max(gl_state *gs)
 static glm::mat4 &get_current_mtx(gl_state *gs)
 {
 	if (gs->transform.matrix_mode == GL_MODELVIEW)
-		return gs->modelview_stack[gs->modelview_sp];
+		return gs->modelview_stack[gs->modelview_stack_depth - 1];
 	if (gs->transform.matrix_mode == GL_PROJECTION)
-		return gs->projection_stack[gs->projection_sp];
-	return gs->texture_mtx_stack[gs->texture_mtx_sp];
+		return gs->projection_stack[gs->projection_stack_depth - 1];
+	return gs->texture_mtx_stack[gs->texture_mtx_stack_depth - 1];
 }
 
 void APIENTRY glMatrixMode(GLenum mode)
@@ -205,16 +205,16 @@ void APIENTRY glPushMatrix()
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(PushMatrix);
 	VALIDATE_NOT_BEGIN_MODE;
-	int &sp = get_current_mtx_sp(gs);
+	int &depth = get_current_mtx_stack_depth(gs);
 	int max = get_current_mtx_max(gs);
-	if (sp + 1 >= max)
+	if (depth >= max)
 	{
 		gl_set_error(GL_STACK_OVERFLOW);
 		return;
 	}
 	float *m = &get_current_mtx(gs)[0][0];
 	memcpy(m + 16, m, 16 * sizeof(float));
-	sp++;
+	depth++;
 }
 
 void APIENTRY glPopMatrix()
@@ -223,11 +223,11 @@ void APIENTRY glPopMatrix()
 	if (!gs) return;
 	WRITE_DISPLAY_LIST(PopMatrix);
 	VALIDATE_NOT_BEGIN_MODE;
-	int &sp = get_current_mtx_sp(gs);
-	if (sp - 1 < 0)
+	int &depth = get_current_mtx_stack_depth(gs);
+	if (depth <= 1)
 	{
 		gl_set_error(GL_STACK_UNDERFLOW);
 		return;
 	}
-	sp--;
+	depth--;
 }

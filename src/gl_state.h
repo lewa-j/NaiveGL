@@ -237,11 +237,11 @@ struct gl_state
 	} viewport;
 
 	glm::mat4 modelview_stack[gl_max_viewmodel_mtx];
-	int modelview_sp = 0;
+	int modelview_stack_depth = 1;
 	glm::mat4 projection_stack[gl_max_projection_mtx];
-	int projection_sp = 0;
+	int projection_stack_depth = 1;
 	glm::mat4 texture_mtx_stack[gl_max_texture_mtx];
-	int texture_mtx_sp = 0;
+	int texture_mtx_stack_depth = 1;
 
 	struct transform_t
 	{

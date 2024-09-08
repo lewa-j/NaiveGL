@@ -14,9 +14,9 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	viewport = {};
 	set_viewport(0, 0, window_w, window_h);
 
-	modelview_sp = 0;
-	projection_sp = 0;
-	texture_mtx_sp = 0;
+	modelview_stack_depth = 1;
+	projection_stack_depth = 1;
+	texture_mtx_stack_depth = 1;
 	modelview_stack[0] = glm::mat4(1);
 	projection_stack[0] = glm::mat4(1);
 	texture_mtx_stack[0] = glm::mat4(1);
