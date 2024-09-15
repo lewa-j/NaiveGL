@@ -476,13 +476,6 @@ void gl_unpack_pixels(gl_state *gs, GLsizei width, GLsizei height, GLenum format
 
 		for (int j = 0; j < height; j++)
 		{
-			const uint8_t *row = src;
-			int pixel = pstore.skip_bits;
-
-			uint8_t *dst_row = dst;
-			int dst_pixel = 0;
-			uint8_t dst_byte = 0;
-
 			if (!ps.lsb_first && !pstore.skip_bits)
 			{
 				memcpy(dst, src, dst_stride);
@@ -490,6 +483,13 @@ void gl_unpack_pixels(gl_state *gs, GLsizei width, GLsizei height, GLenum format
 				dst += dst_stride;
 				continue;
 			}
+
+			const uint8_t *row = src;
+			int pixel = pstore.skip_bits;
+
+			uint8_t *dst_row = dst;
+			int dst_pixel = 0;
+			uint8_t dst_byte = 0;
 
 			for (int ix = 0; ix < width; ix++)
 			{

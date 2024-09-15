@@ -226,9 +226,14 @@ void gl_callList(gl_state *gs, GLuint list)
 			glCullFace(call.argsi[0]);
 			break;
 		case gl_display_list_call::tPolygonStipple:
+		{
+			gl_state::pixelStore save = gs->pixel_unpack;
+			gs->pixel_pack = {};
 			glPolygonStipple(data);
 			data += 4 * 32;
+			gs->pixel_unpack = save;
 			break;
+		}
 		case gl_display_list_call::tPolygonMode:
 			glPolygonMode(call.argsi[0], call.argsi[1]);
 			break;

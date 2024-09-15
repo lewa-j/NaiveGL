@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "gl_state.h"
 #include "gl_exports.h"
+#include "gl_pixels.h"
 #include <utility>
 
 void APIENTRY glPointSize(GLfloat size)
@@ -55,10 +56,90 @@ void APIENTRY glPolygonStipple(const GLubyte *mask)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-	WRITE_DISPLAY_LIST_BULK(PolygonStipple, mask, 4 * 32);
+	if (gs->display_list_begun)
+	{
+		auto &dl = gs->display_list_indices[0];
+		size_t old_size = dl.data.size();
+		dl.data.resize(old_size + (4 * 32));
+		gl_unpack_pixels(gs, 32, 32, GL_COLOR_INDEX, GL_BITMAP, mask, dl.data.data() + old_size);
+		dl.calls.push_back({ gl_display_list_call::tPolygonStipple });
+		if (!gs->display_list_execute)
+			return;
+	}
 	VALIDATE_NOT_BEGIN_MODE;
 
-	memcpy(gs->polygon_stipple_mask, mask, sizeof(gs->polygon_stipple_mask));
+	gl_unpack_pixels(gs, 32, 32, GL_COLOR_INDEX, GL_BITMAP, mask, gs->polygon_stipple_mask);
+}
+
+static void gl_pack_bits(const gl_state::pixelStore &ps, int width, int height, uint8_t *dst, const uint8_t *src)
+{
+	gl_PixelStoreSetup pstore;
+	pstore.init(ps, width, height, GL_COLOR_INDEX, GL_BITMAP);
+	dst += pstore.skip_bytes;
+
+	int src_stride = (int)glm::ceil(width / 8.f);
+	if (pstore.stride == src_stride && !ps.lsb_first && pstore.skip_bits == 0)
+	{
+		memcpy(dst, src, pstore.stride * height);
+		return;
+	}
+
+	if (!ps.lsb_first && !pstore.skip_bits)
+	{
+		for (int j = 0; j < height; j++)
+		{
+			memcpy(dst, src, pstore.stride);
+			src += src_stride;
+			dst += pstore.stride;
+		}
+		return;
+	}
+
+	for (int j = 0; j < height; j++)
+	{
+		const uint8_t *row = src;
+		uint8_t *dst_row = dst;
+		uint8_t dst_byte = *dst_row;
+
+		if (!ps.lsb_first)
+		{
+			for (int ix = 0; ix < src_stride; ix++)
+			{
+				dst_byte = (dst_byte & (0xFF00 >> pstore.skip_bits)) | (*row >> pstore.skip_bits);
+				*dst_row = dst_byte;
+				dst_byte = *row << (8 - pstore.skip_bits);
+				dst_row++;
+			}
+			continue;
+		}
+
+		int dst_pixel = pstore.skip_bits;
+		int pixel = 0;
+		dst_byte &= (0xFF >> (8 - pstore.skip_bits));
+		for (int ix = 0; ix < width; ix++)
+		{
+			if ((*row) & (0x80 >> pixel))
+				dst_byte |= (1 << dst_pixel);
+
+			pixel++;
+			dst_pixel++;
+			if (dst_pixel >= 8)
+			{
+				*dst_row = dst_byte;
+				dst_row++;
+				dst_byte = 0;
+				dst_pixel = dst_pixel & 7;
+			}
+
+			if (pixel >= 8)
+			{
+				pixel = pixel & 7;
+				row++;
+			}
+		}
+		src += src_stride;
+		dst += pstore.stride;
+	}
 }
 
 void APIENTRY glGetPolygonStipple(GLubyte *mask)
@@ -67,7 +148,8 @@ void APIENTRY glGetPolygonStipple(GLubyte *mask)
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
 
-	memcpy(mask, gs->polygon_stipple_mask, sizeof(gs->polygon_stipple_mask));
+	const gl_state::pixelStore &ps = gs->pixel_pack;
+	gl_pack_bits(ps, 32, 32, mask, gs->polygon_stipple_mask);
 }
 
 void APIENTRY glPolygonMode(GLenum face, GLenum mode)
