@@ -102,6 +102,7 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	display_list_base = 0;
 	display_list_begun = 0;
 	display_list_execute = false;
+	display_list_nesting = 0;
 
 	attrib_sp = 0;
 	select_name_sp = 0;

@@ -85,6 +85,11 @@ void gl_callList(gl_state *gs, GLuint list)
 	if (!it->second.recorded)
 		return;
 
+	if (gs->display_list_nesting >= gl_max_list_nesting)
+		return;
+
+	gs->display_list_nesting++;
+
 	const uint8_t *data = it->second.data.data();
 	for (size_t i = 0; i < it->second.calls.size(); i++)
 	{
@@ -434,6 +439,8 @@ void gl_callList(gl_state *gs, GLuint list)
 			break;
 		}
 	}
+
+	gs->display_list_nesting--;
 }
 
 void APIENTRY glCallList(GLuint list)
