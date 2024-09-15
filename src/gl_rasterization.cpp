@@ -346,9 +346,11 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 		int sv = fb.stencil[pi];
 		if (!gl_test_value(st.stencil.func, st.stencil.ref & st.stencil.value_mask, sv & st.stencil.value_mask))
 		{
-			gl_stencil_op(st.stencil.fail, st.stencil.ref, sv);
 			if (st.stencil.writemask)
+			{
+				gl_stencil_op(st.stencil.fail, st.stencil.ref, sv);
 				fb.stencil[pi] = (sv & 0xFF & st.stencil.writemask) | (fb.stencil[pi] & ~st.stencil.writemask);
+			}
 			return;
 		}
 	}
@@ -360,12 +362,11 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 		if (!gl_test_value(st.depth.func, dn, dv))
 		{
 			//depth fail
-			if (st.stencil.test && fb.stencil)
+			if (st.stencil.test && fb.stencil && st.stencil.writemask)
 			{
 				int sv = fb.stencil[pi];
 				gl_stencil_op(st.stencil.dpfail, st.stencil.ref, sv);
-				if (st.stencil.writemask)
-					fb.stencil[pi] = (sv & 0xFF & st.stencil.writemask) | (fb.stencil[pi] & ~st.stencil.writemask);
+				fb.stencil[pi] = (sv & 0xFF & st.stencil.writemask) | (fb.stencil[pi] & ~st.stencil.writemask);
 			}
 			return;
 		}
@@ -374,12 +375,11 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 	}
 
 	//depth pass
-	if (st.stencil.test && fb.stencil)
+	if (st.stencil.test && fb.stencil && st.stencil.writemask)
 	{
 		int sv = fb.stencil[pi];
 		gl_stencil_op(st.stencil.dppass, st.stencil.ref, sv);
-		if (st.stencil.writemask)
-			fb.stencil[pi] = (sv & 0xFF & st.stencil.writemask) | (fb.stencil[pi] & ~st.stencil.writemask);
+		fb.stencil[pi] = (sv & 0xFF & st.stencil.writemask) | (fb.stencil[pi] & ~st.stencil.writemask);
 	}
 
 	if (st.color_buffer.draw_buffer == GL_NONE)
