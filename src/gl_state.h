@@ -633,7 +633,7 @@ if (gs->display_list_begun) \
 
 #define WRITE_DISPLAY_LIST_FV(FUNC_NAME, ARR, COUNT, ...) WRITE_DISPLAY_LIST_V(FUNC_NAME, ARR, COUNT, (float), argsf, 0, __VA_ARGS__)
 
-#define WRITE_DISPLAY_LIST_IV(FUNC_NAME, ARR, COUNT, DST_OFF, ...) WRITE_DISPLAY_LIST_V(FUNC_NAME, ARR, COUNT, (int), argsi, DST_OFF, __VA_ARGS__)
+#define WRITE_DISPLAY_LIST_IV(FUNC_NAME, ARR, COUNT, DST_OFF, ...) WRITE_DISPLAY_LIST_V(FUNC_NAME, ARR, COUNT, to_int, argsi, DST_OFF, __VA_ARGS__)
 
 #define WRITE_DISPLAY_LIST_BULK(FUNC_NAME, SRC_DATA, SRC_SIZE, ...) \
 if (gs->display_list_begun) \

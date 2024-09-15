@@ -355,7 +355,7 @@ void APIENTRY glTexParameteri(GLenum target, GLenum pname, GLint param)
 }
 void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param)
 {
-	glTexParameteri(target, pname, (int)param);
+	glTexParameteri(target, pname, to_int(param));
 }
 
 static int gl_texParameterv_size(GLenum pname)
@@ -376,13 +376,13 @@ void gl_texParameterv(gl_state *gs, GLenum target, GLenum pname, const T* params
 	gl_texture& tex = target == GL_TEXTURE_2D ? gs->texture_2d : gs->texture_1d;
 
 	if (pname == GL_TEXTURE_MAG_FILTER)
-		tex.params.mag_filter = (int)params[0];
+		tex.params.mag_filter = to_int(params[0]);
 	else if (pname == GL_TEXTURE_MIN_FILTER)
-		tex.params.min_filter = (int)params[0];
+		tex.params.min_filter = to_int(params[0]);
 	else if (pname == GL_TEXTURE_WRAP_S)
-		tex.params.wrap_s = (int)params[0];
+		tex.params.wrap_s = to_int(params[0]);
 	else if (pname == GL_TEXTURE_WRAP_T)
-		tex.params.wrap_t = (int)params[0];
+		tex.params.wrap_t = to_int(params[0]);
 	else if (pname == GL_TEXTURE_BORDER_COLOR)
 		tex.params.border_color = glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3]));
 
@@ -518,7 +518,7 @@ void APIENTRY glTexEnvi(GLenum target, GLenum pname, GLint param)
 }
 void APIENTRY glTexEnvf(GLenum target, GLenum pname, GLfloat param)
 {
-	glTexEnvi(target, pname, (GLint)param);
+	glTexEnvi(target, pname, to_int(param));
 }
 
 static int gl_texEnvv_size(GLenum pname)
@@ -553,7 +553,7 @@ void APIENTRY glTexEnvfv(GLenum target, GLenum pname, const GLfloat* params)
 	VALIDATE_TEX_ENV_PARAM((GLenum)params[0]);
 
 	if (pname == GL_TEXTURE_ENV_MODE)
-		gs->texture_env.mode = (int)params[0];
+		gs->texture_env.mode = to_int(params[0]);
 	else if (pname == GL_TEXTURE_ENV_COLOR)
 		gs->texture_env.color = glm::vec4(params[0], params[1], params[2], params[3]);
 }

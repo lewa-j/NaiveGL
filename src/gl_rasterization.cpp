@@ -177,10 +177,14 @@ static void gl_fog_scalar(const char *func, gl_state *gs, GLenum pname, GLfloat 
 		gl_set_error_a_(GL_INVALID_ENUM, pname, func);
 		return;
 	}
-	if (pname == GL_FOG_MODE && param != GL_EXP && param != GL_EXP2 && param != GL_LINEAR)
+	if (pname == GL_FOG_MODE)
 	{
-		gl_set_error_a_(GL_INVALID_ENUM, (int)param, func);
-		return;
+		int p = to_int(param);
+		if (p != GL_EXP && p != GL_EXP2 && p != GL_LINEAR)
+		{
+			gl_set_error_a_(GL_INVALID_ENUM, (int)param, func);
+			return;
+		}
 	}
 	if ((pname == GL_FOG_DENSITY || pname == GL_FOG_START || pname == GL_FOG_END) && param < 0)
 	{
@@ -189,7 +193,7 @@ static void gl_fog_scalar(const char *func, gl_state *gs, GLenum pname, GLfloat 
 	}
 
 	if (pname == GL_FOG_MODE)
-		gs->fog.mode = (int)param;
+		gs->fog.mode = to_int(param);
 	else if (pname == GL_FOG_DENSITY)
 		gs->fog.density = param;
 	else if (pname == GL_FOG_START)

@@ -511,7 +511,7 @@ void APIENTRY glCallLists(GLsizei n, GLenum type, const void* lists)
 		break;
 	case GL_FLOAT:
 		for (int i = 0; i < n; i++)
-			gl_callList(gs, base + (GLuint)((float*)lists)[i]);
+			gl_callList(gs, base + (GLuint)((float*)lists)[i]);//truncated not rounded
 		break;
 	case GL_2_BYTES:
 	{

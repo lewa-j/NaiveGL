@@ -485,7 +485,7 @@ void APIENTRY glLightModeli(GLenum pname, GLint param)
 		gs->lighting.light_model_two_side = (param != 0);
 }
 
-void APIENTRY glLightModelf(GLenum pname, GLfloat param) { glLightModeli(pname, (GLint)param); }
+void APIENTRY glLightModelf(GLenum pname, GLfloat param) { glLightModeli(pname, to_int(param)); }
 
 static int gl_lightModelv_size(GLenum pname)
 {

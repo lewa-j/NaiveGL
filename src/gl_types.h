@@ -48,10 +48,25 @@ inline void copy_vals(GLint *dst, const GLint *src, int count)
 	memcpy(dst, src, sizeof(GLint) * count);
 }
 
+inline int to_int(int v)
+{
+	return v;
+}
+
+inline int to_int(float v)
+{
+	return (int)lroundf(v);
+}
+
+inline int to_int(double v)
+{
+	return (int)lround(v);
+}
+
 inline void copy_vals(GLint *dst, const GLfloat *src, int count)
 {
 	for (int i = 0; i < count; i++)
-		dst[i] = (int)lround(src[i]);
+		dst[i] = to_int(src[i]);
 }
 
 inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)

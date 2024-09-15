@@ -79,8 +79,8 @@ void APIENTRY glTexGeni(GLenum coord, GLenum pname, GLint param)
 	gl_state::texture_gen_t &tg = gs->texgen[coord - GL_S];
 	tg.mode = param;
 }
-void APIENTRY glTexGenf(GLenum coord, GLenum pname, GLfloat param) { glTexGeni(coord, pname, (GLint)param); }
-void APIENTRY glTexGend(GLenum coord, GLenum pname, GLdouble param) { glTexGeni(coord, pname, (GLint)param); }
+void APIENTRY glTexGenf(GLenum coord, GLenum pname, GLfloat param) { glTexGeni(coord, pname, to_int(param)); }
+void APIENTRY glTexGend(GLenum coord, GLenum pname, GLdouble param) { glTexGeni(coord, pname, to_int(param)); }
 
 static int gl_texGenv_size(GLenum pname)
 {
@@ -99,23 +99,25 @@ void APIENTRY gl_texGenv(GLenum coord, GLenum pname, const T *params)
 	WRITE_DISPLAY_LIST_FV(TexGenfv, params, gl_texGenv_size(pname), {}, { (int)coord, (int)pname });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEXGEN_V;
-	if (pname == GL_TEXTURE_GEN_MODE
-		&& (params[0] < GL_EYE_LINEAR || params[0] > GL_SPHERE_MAP))
+	if (pname == GL_TEXTURE_GEN_MODE)
 	{
-		gl_set_error_a(GL_INVALID_ENUM, (GLenum)params[0]);
-		return;
-	}
-	if (pname == GL_TEXTURE_GEN_MODE
-		&& params[0] == GL_SPHERE_MAP && (coord == GL_R || coord == GL_Q))
-	{
-		gl_set_error_a(GL_INVALID_ENUM, coord);
-		return;
+		int p = to_int(params[0]);
+		if (p < GL_EYE_LINEAR || p > GL_SPHERE_MAP)
+		{
+			gl_set_error_a(GL_INVALID_ENUM, p);
+			return;
+		}
+		if (p == GL_SPHERE_MAP && (coord == GL_R || coord == GL_Q))
+		{
+			gl_set_error_a(GL_INVALID_ENUM, coord);
+			return;
+		}
 	}
 
 	gl_state::texture_gen_t &tg = gs->texgen[coord - GL_S];
 
 	if (pname == GL_TEXTURE_GEN_MODE)
-		tg.mode = (GLenum)params[0];
+		tg.mode = (GLenum)to_int(params[0]);
 	else if (pname == GL_OBJECT_PLANE)
 		tg.object_plane = glm::vec4(params[0], params[1], params[2], params[3]);
 	else if (pname == GL_EYE_PLANE)

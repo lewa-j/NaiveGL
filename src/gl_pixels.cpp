@@ -97,7 +97,7 @@ void APIENTRY glPixelStorei(GLenum pname, GLint param)
 		ps.alignment = param;
 }
 
-void APIENTRY glPixelStoref(GLenum pname, GLfloat param) { glPixelStorei(pname, (GLint)param); }
+void APIENTRY glPixelStoref(GLenum pname, GLfloat param) { glPixelStorei(pname, to_int(param)); }
 
 void APIENTRY glPixelTransferf(GLenum pname, GLfloat param)
 {
@@ -117,9 +117,9 @@ void APIENTRY glPixelTransferf(GLenum pname, GLfloat param)
 	else if (pname == GL_MAP_STENCIL)
 		gs->pixel.map_stencil = !!param;
 	else if (pname == GL_INDEX_SHIFT)
-		gs->pixel.index_shift = (int)param;
+		gs->pixel.index_shift = to_int(param);
 	else if (pname == GL_INDEX_OFFSET)
-		gs->pixel.index_offset = (int)param;
+		gs->pixel.index_offset = to_int(param);
 	else if (pname == GL_RED_SCALE)
 		gs->pixel.color_scale.r = param;
 	else if (pname == GL_GREEN_SCALE)
@@ -236,7 +236,7 @@ void APIENTRY glPixelMapfv(GLenum map, GLsizei mapsize, const GLfloat* values)
 		gl_state::pixelMapIndex& m = gs->pixel_map_index_table[map - GL_PIXEL_MAP_I_TO_I];
 		m.size = mapsize;
 		for (int i = 0; i < mapsize; i++)
-			m.data[i] = (GLint)values[i];
+			m.data[i] = to_int(values[i]);
 	}
 	else if (map >= GL_PIXEL_MAP_I_TO_R && map <= GL_PIXEL_MAP_A_TO_A)
 	{
