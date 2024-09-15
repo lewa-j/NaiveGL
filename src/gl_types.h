@@ -35,7 +35,7 @@ inline void copy_color(GLfloat *dst, const GLfloat *src, int count = 4)
 inline void copy_color(GLint *dst, const GLfloat *src, int count = 4)
 {
 	for (int i = 0; i < count; i++)
-		dst[i] = (int)((0xFFFFFFFF * src[i] - 1) / 2);
+		dst[i] = (int)((0xFFFFFFFF * (double)src[i] - 1) / 2);
 }
 
 inline void copy_vals(GLfloat *dst, const GLfloat *src, int count)
