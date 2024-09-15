@@ -441,6 +441,82 @@ void APIENTRY glGetDoublev(GLenum pname, GLdouble *data)
 		gl_set_error_a(GL_INVALID_ENUM, pname);
 }
 
+template<typename DT, typename ST>
+static void gl_copyAttribs(DT &d, const ST &s, GLbitfield mask)
+{
+	if (mask & GL_CURRENT_BIT)
+		d.current = s.current;
+	if (mask & GL_VIEWPORT_BIT)
+		d.viewport = s.viewport;
+	if (mask & GL_TRANSFORM_BIT)
+		d.transform = s.transform;
+	if (mask & GL_FOG_BIT)
+		d.fog = s.fog;
+	if (mask & GL_LIGHTING_BIT)
+		d.lighting = s.lighting;
+	if (mask & GL_POINT_BIT)
+		d.point = s.point;
+	if (mask & GL_LINE_BIT)
+		d.line = s.line;
+	if (mask & GL_POLYGON_BIT)
+		d.polygon = s.polygon;
+	if (mask & GL_POLYGON_STIPPLE_BIT)
+		memcpy(d.polygon_stipple_mask, s.polygon_stipple_mask, sizeof(d.polygon_stipple_mask));
+	if (mask & GL_TEXTURE_BIT)
+	{
+		d.texture_1d_enabled = s.texture_1d_enabled;
+		d.texture_2d_enabled = s.texture_2d_enabled;
+		d.texture_env = s.texture_env;
+		memcpy(d.texgen, s.texgen, sizeof(d.texgen));
+	}
+	if (mask & GL_SCISSOR_BIT)
+		d.scissor = s.scissor;
+	if (mask & GL_STENCIL_BUFFER_BIT)
+		d.stencil = s.stencil;
+	if (mask & GL_COLOR_BUFFER_BIT)
+		d.color_buffer = s.color_buffer;
+	if (mask & GL_DEPTH_BUFFER_BIT)
+		d.depth = s.depth;
+	if (mask & GL_ACCUM_BUFFER_BIT)
+		d.accum_clear_value = s.accum_clear_value;
+	if (mask & GL_PIXEL_MODE_BIT)
+		d.pixel = s.pixel;
+	if (mask & GL_EVAL_BIT)
+		d.eval = s.eval;
+	if (mask & GL_HINT_BIT)
+		d.hint = s.hint;
+	if (mask & GL_LIST_BIT)
+		d.display_list_base = s.display_list_base;
+
+	if (!(mask & GL_ENABLE_BIT))
+		return;
+
+	d.transform.normalize = s.transform.normalize;
+	d.transform.enabled_clip_planes = s.transform.enabled_clip_planes;
+	d.fog.enabled = s.fog.enabled;
+	d.lighting.enabled = s.lighting.enabled;
+	d.lighting.color_material = s.lighting.color_material;
+	d.lighting.enabled_lights = s.lighting.enabled_lights;
+	d.point.smooth = s.point.smooth;
+	d.line.smooth = s.line.smooth;
+	d.line.stipple = s.line.stipple;
+	d.polygon.cull_face = s.polygon.cull_face;
+	d.polygon.smooth = s.polygon.smooth;
+	d.polygon.stipple = s.polygon.stipple;
+	d.texture_1d_enabled = s.texture_1d_enabled;
+	d.texture_2d_enabled = s.texture_2d_enabled;
+	for (int i = 0; i < 4; i++)
+		d.texgen[i].enabled = s.texgen[i].enabled;
+	d.scissor.test = s.scissor.test;
+	d.stencil.test = s.stencil.test;
+	d.color_buffer.alpha_test = s.color_buffer.alpha_test;
+	d.depth.test = s.depth.test;
+	d.color_buffer.blend = s.color_buffer.blend;
+	d.color_buffer.logic_op = s.color_buffer.logic_op;
+	d.color_buffer.dither = s.color_buffer.dither;
+	d.eval.enabled_maps = s.eval.enabled_maps;
+}
+
 void APIENTRY glPushAttrib(GLbitfield mask)
 {
 	gl_state *gs = gl_current_state();
@@ -453,7 +529,16 @@ void APIENTRY glPushAttrib(GLbitfield mask)
 		return;
 	}
 
-	gs->attrib_stack[gs->attrib_sp].attrib_mask = mask;
+	auto &d = gs->attrib_stack[gs->attrib_sp];
+	d.attrib_mask = mask;
+
+	gl_copyAttribs(d, *gs, mask);
+	if (mask & GL_TEXTURE_BIT)
+	{
+		d.texture_1d = gs->texture_1d.params;
+		d.texture_2d = gs->texture_2d.params;
+	}
+
 	gs->attrib_sp++;
 }
 
@@ -470,4 +555,12 @@ void APIENTRY glPopAttrib(void)
 	}
 
 	gs->attrib_sp--;
+	const auto &s = gs->attrib_stack[gs->attrib_sp];
+
+	gl_copyAttribs(*gs, s, s.attrib_mask);
+	if (s.attrib_mask & GL_TEXTURE_BIT)
+	{
+		gs->texture_1d.params = s.texture_1d;
+		gs->texture_2d.params = s.texture_2d;
+	}
 }
