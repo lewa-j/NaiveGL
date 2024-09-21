@@ -230,8 +230,8 @@ struct gl_state
 		int height;
 		int center_x;
 		int center_y;
-		float dfar = 0;
-		float dnear = 1;
+		float dnear = 0;
+		float dfar = 1;
 	} viewport;
 
 	glm::mat4 modelview_stack[gl_max_viewmodel_mtx];
