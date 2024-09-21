@@ -758,10 +758,19 @@ glm::vec4 gl_tex_nearest_tap(const gl_texture& tex, const gl_texture_array& a, g
 	return gl_tex_tap(a, uv);
 }
 
+glm::vec4 gl_texb_tap(const gl_texture &tex, const gl_texture_array &a, glm::ivec2 uv)
+{
+	if (!a.border && uv.x < 0 || uv.x >= a.width || uv.y < 0 || uv.y >= a.height)
+		return tex.params.border_color;
+	return gl_tex_tap(a, uv);
+}
+
 glm::vec4 gl_tex_linear_tap(const gl_texture &tex, const gl_texture_array& a, glm::vec2 c)
 {
-	//TODO border color
-
+	if (tex.params.wrap_s == GL_CLAMP)
+			c.x = glm::clamp(c.x, 0.f, 1.f);
+	if (tex.params.wrap_t == GL_CLAMP)
+			c.y = glm::clamp(c.y, 0.f, 1.f);
 	glm::vec2 uv{ c.x * a.width, c.y * a.height };
 
 	int i0 = (int)glm::floor(uv.x - 0.5f);
@@ -780,11 +789,32 @@ glm::vec4 gl_tex_linear_tap(const gl_texture &tex, const gl_texture_array& a, gl
 	}
 	float al = glm::fract(uv.x - 0.5f);
 	float be = glm::fract(uv.y - 0.5f);
-	return gl_tex_tap(a, { i0,j0 }) * (1 - al) * (1 - be)
-		+ gl_tex_tap(a, { i1,j0 }) * al * (1 - be)
-		+ gl_tex_tap(a, { i0,j1 }) * (1 - al) * be
-		+ gl_tex_tap(a, { i1,j1 }) * al * be;
+	return gl_texb_tap(tex, a, { i0,j0 }) * (1 - al) * (1 - be)
+		+ gl_texb_tap(tex, a, { i1,j0 }) * al * (1 - be)
+		+ gl_texb_tap(tex, a, { i0,j1 }) * (1 - al) * be
+		+ gl_texb_tap(tex, a, { i1,j1 }) * al * be;
 }
+
+#if 0
+glm::vec4 gl_tex_1d_linear_tap(const gl_texture &tex, const gl_texture_array &a, glm::vec2 c)
+{
+	if (tex.params.wrap_s == GL_CLAMP)
+		c.x = glm::clamp(c.x, 0.f, 1.f);
+	glm::vec2 uv{ c.x * a.width, 0.5};
+
+	int i0 = (int)glm::floor(uv.x - 0.5f);
+	int i1 = i0 + 1;
+	if (tex.params.wrap_s == GL_REPEAT)
+	{
+		i0 = glm::mod(i0, a.width);
+		i1 = glm::mod(i1, a.width);
+	}
+
+	float al = glm::fract(uv.x - 0.5f);
+	return gl_texb_tap(tex, a, { i0,0 }) * (1 - al)
+		+ gl_texb_tap(tex, a, { i1,0 }) * al;
+}
+#endif
 
 bool gl_state::need_tex_lod()
 {

@@ -250,7 +250,6 @@ void APIENTRY glFogfv(GLenum pname, const GLfloat* params)
 	gl_fogv(gs, pname, params);
 }
 
-
 static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &data)
 {
 	glm::vec4 tex_color(1);
