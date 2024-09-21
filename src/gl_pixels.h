@@ -98,6 +98,93 @@ inline glm::vec4 gl_pixel_format_conversion(GLenum format, const glm::vec4 &colo
 	return col;
 }
 
+inline glm::vec4 index_to_rgba(int index, gl_state::pixelMapColor *tables)
+{
+	glm::vec4 r{};
+	for (int k = 0; k < 4; k++)
+	{
+		int ti = index & (tables[k].size - 1);
+		r[k] = tables[k].data[ti];
+	}
+	return r;
+}
+
+inline uint32_t gl_index_arithmetic(gl_state *gs, uint32_t index)
+{
+	if (gs->pixel.index_shift > 0)
+		index <<= gs->pixel.index_shift;
+	else if (gs->pixel.index_shift < 0)
+		index >>= -gs->pixel.index_shift;
+
+	index += gs->pixel.index_offset;
+	return index;
+}
+
+inline uint32_t gl_unpack_index_pixel(GLenum type, const void *src)
+{
+	if (type == GL_BYTE)
+		return *(const GLbyte *)src;
+	if (type == GL_UNSIGNED_BYTE)
+		return *(const GLubyte *)src;
+	if (type == GL_SHORT)
+		return *(const GLshort *)src;
+	if (type == GL_UNSIGNED_SHORT)
+		return *(const GLushort *)src;
+	if (type == GL_INT)
+		return *(const GLint *)src;
+	if (type == GL_UNSIGNED_INT)
+		return *(const GLuint *)src;
+	if (type == GL_FLOAT)
+		return (uint32_t) * (const float *)src;
+	return 0;
+}
+
+template<typename T>
+inline glm::vec4 pixel_to_float(const T *data, GLenum format)
+{
+	if (format == GL_GREEN)
+		return glm::vec4(0, GLtof(data[0]), 0, 1);
+	if (format == GL_BLUE)
+		return glm::vec4(0, 0, GLtof(data[0]), 1);
+	if (format == GL_ALPHA)
+		return glm::vec4(0, 0, 0, GLtof(data[0]));
+	if (format == GL_RGB)
+		return glm::vec4(GLtof(data[0]), GLtof(data[1]), GLtof(data[2]), 1);
+	if (format == GL_RGBA)
+		return glm::vec4(GLtof(data[0]), GLtof(data[1]), GLtof(data[2]), GLtof(data[3]));
+	if (format == GL_LUMINANCE)
+	{
+		float l = GLtof(data[0]);
+		return glm::vec4(l, l, l, 1);
+	}
+	if (format == GL_LUMINANCE_ALPHA)
+	{
+		float l = GLtof(data[0]);
+		return glm::vec4(l, l, l, GLtof(data[1]));
+	}
+
+	return glm::vec4(GLtof(data[0]), 0, 0, 1);
+}
+
+inline glm::vec4 gl_unpack_color_pixel(GLenum format, GLenum type, const void *src)
+{
+	if (type == GL_BYTE)
+		return pixel_to_float((const GLbyte *)src, format);
+	if (type == GL_UNSIGNED_BYTE)
+		return pixel_to_float((const GLubyte *)src, format);
+	if (type == GL_SHORT)
+		return pixel_to_float((const GLshort *)src, format);
+	if (type == GL_UNSIGNED_SHORT)
+		return pixel_to_float((const GLushort *)src, format);
+	if (type == GL_INT)
+		return pixel_to_float((const GLint *)src, format);
+	if (type == GL_UNSIGNED_INT)
+		return pixel_to_float((const GLuint *)src, format);
+	if (type == GL_FLOAT)
+		return pixel_to_float((const float *)src, format);
+	return glm::vec4(0);
+}
+
 inline void gl_pack_color_pixel(int pixel_size, GLenum type, glm::vec4 color, void *dst)
 {
 	color = glm::clamp(color, 0.f, 1.f);

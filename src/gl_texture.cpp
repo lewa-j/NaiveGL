@@ -63,6 +63,22 @@ static bool gl_is_texture_complete(gl_texture &tex)
 	return true;
 }
 
+static void gl_tex_store_pixel(const glm::vec4 &col, int components, uint8_t *dst)
+{
+	if (components == 2)
+	{
+		dst[0] = (uint8_t)(0xFF * glm::clamp(col.r, 0.f, 1.f));
+		dst[1] = (uint8_t)(0xFF * glm::clamp(col.a, 0.f, 1.f));
+	}
+	else
+	{
+		for (int c = 0; c < components; c++)
+		{
+			dst[c] = (uint8_t)(0xFF * glm::clamp(col[c], 0.f, 1.f));
+		}
+	}
+}
+
 void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* data)
 {
 	gl_state* gs = gl_current_state();
@@ -147,6 +163,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 
 	uint8_t *dst = ta.data;
 
+	// fast path
 	if (type == GL_UNSIGNED_BYTE && border == 0 && format >= GL_RED && format <= GL_LUMINANCE_ALPHA &&
 		!gs->pixel.map_color && gs->pixel.color_scale == glm::vec4{ 1,1,1,1 } && gs->pixel.color_bias == glm::vec4{ 0,0,0,0 })
 	{
@@ -231,8 +248,85 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 		return;
 	}
 
-	//TODO
-	printf("glTexImage2D(%d,%d,%d,%d,%d,%X,%X) al=%d unhandled combination\n", level, components, width, height, border, format, type, ps.alignment);
+	if (border != 0)
+	{
+		printf("glTexImage2D(%d,%d,%d,%d,%d,%X,%X) al=%d unhandled combination\n", level, components, width, height, border, format, type, ps.alignment);
+		return;
+	}
+
+#ifndef NDEBUG
+	printf("glTexImage2D(%d,%d,%d,%d,%d,%X,%X) al=%d map %d slow path\n", level, components, width, height, border, format, type, ps.alignment, gs->pixel.map_color);
+#endif
+
+	if (type != GL_BITMAP)
+	{
+		for (int j = 0; j < height; j++)
+		{
+			const uint8_t *row = src;
+			for (int i = 0; i < width; i++)
+			{
+				uint8_t group[16];
+				memcpy(group, row, pstore.group_size);
+				if (ps.swap_bytes && pstore.element_size > 1)
+					gl_swap_bytes(pstore.element_size, pstore.components, group);
+
+				glm::vec4 pixel{};
+				if (format == GL_COLOR_INDEX)
+				{
+					uint32_t index = gl_unpack_index_pixel(type, group);
+					index = gl_index_arithmetic(gs, index);
+					pixel = index_to_rgba(index, gs->pixel_map_color_table);
+				}
+				else
+				{
+					pixel = gl_unpack_color_pixel(format, type, group);
+					pixel = pixel * gs->pixel.color_scale + gs->pixel.color_bias;
+					if (gs->pixel.map_color)
+						pixel = remap_color(pixel, gs->pixel_map_color_table + 4);
+				}
+
+				gl_tex_store_pixel(pixel, components, dst);
+
+				dst += components;
+				row += pstore.group_size;
+			}
+			src += pstore.stride;
+		}
+	}
+	else //GL_BITMAP
+	{
+		uint8_t bitmap_colors[2][4];
+		gl_tex_store_pixel(index_to_rgba(0, gs->pixel_map_color_table), components, bitmap_colors[0]);
+		gl_tex_store_pixel(index_to_rgba(1, gs->pixel_map_color_table), components, bitmap_colors[1]);
+
+		for (int j = 0; j < height; j++)
+		{
+			const uint8_t *group = src;
+
+			int pixel = pstore.skip_bits;
+			for (int ix = 0; ix < width; ix++)
+			{
+				bool b = 0;
+				if (ps.lsb_first)
+					b = !!((*group) & (1 << pixel));
+				else
+					b = !!((*group) & (0x80 >> pixel));
+
+				memcpy(dst, bitmap_colors[b], components);
+				dst += components;
+				pixel++;
+
+				if (pixel >= 8)
+				{
+					pixel = pixel & 7;
+					group++;
+				}
+			}
+			src += pstore.stride;
+		}
+	}
+
+	tex.is_complete = gl_is_texture_complete(tex);
 }
 
 void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei width, GLint border, GLenum format, GLenum type, const void* data)
