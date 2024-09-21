@@ -79,55 +79,8 @@ static void gl_tex_store_pixel(const glm::vec4 &col, int components, uint8_t *ds
 	}
 }
 
-void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* data)
+static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const uint8_t *src)
 {
-	gl_state* gs = gl_current_state();
-	if (!gs) return;
-	if (gs->display_list_begun)
-	{
-		auto &dl = gs->display_list_indices[0];
-		size_t old_size = dl.data.size();
-		int pix_size = gl_pixels_size(width, height, format, type);
-		if (pix_size)
-		{
-			dl.data.resize(old_size + pix_size);
-			gl_unpack_pixels(gs, width, height, format, type, data, dl.data.data() + old_size);
-		}
-		dl.calls.push_back({ gl_display_list_call::tTexImage2D, {(float)target}, {level, components, width, height, border, (int)format, (int)type, pix_size} });
-		if (!gs->display_list_execute)
-			return;
-	}
-	VALIDATE_NOT_BEGIN_MODE
-
-	if (target != GL_TEXTURE_2D)
-	{
-		gl_set_error_a(GL_INVALID_ENUM, target);
-		return;
-	}
-	VALIDATE_TEX_IMAGE
-
-	int borderless_width = width - border * 2;
-	int borderless_height = height - border * 2;
-	if (borderless_width < 0 || borderless_width > gl_max_texture_size || !is_pow(borderless_width) ||
-		borderless_height < 0 || borderless_height > gl_max_texture_size || !is_pow(borderless_height))
-	{
-		gl_set_error(GL_INVALID_VALUE);
-		return;
-	}
-
-	gl_texture& tex = gs->texture_2d;
-	gl_texture_array& ta = tex.arrays[level];
-
-	if (width == 0 || height == 0)
-	{
-		if (ta.data)
-			delete[] ta.data;
-		ta.data = nullptr;
-		ta.width = 0;
-		ta.height = 0;
-		return;
-	}
-
 	size_t size = width * height * components;
 
 	if (ta.width * ta.height * ta.components != size)
@@ -142,20 +95,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 	ta.components = components;
 	ta.border = border;
 
-	if (level == 0)
-	{
-		tex.max_lod = 1 + (int)log2(glm::max(borderless_width, borderless_height));
-	}
-
-	if (!data)
-	{
-		tex.is_complete = gl_is_texture_complete(tex);
-		return;
-	}
-
-	const uint8_t *src = (const uint8_t *)data;
-
-	const gl_state::pixelStore& ps = gs->pixel_unpack;
+	const gl_state::pixelStore &ps = gs->pixel_unpack;
 	gl_PixelStoreSetup pstore;
 	pstore.init(ps, width, height, format, type);
 
@@ -164,7 +104,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 	uint8_t *dst = ta.data;
 
 	// fast path
-	if (type == GL_UNSIGNED_BYTE && border == 0 && format >= GL_RED && format <= GL_LUMINANCE_ALPHA &&
+	if (type == GL_UNSIGNED_BYTE && format >= GL_RED && format <= GL_LUMINANCE_ALPHA &&
 		!gs->pixel.map_color && gs->pixel.color_scale == glm::vec4{ 1,1,1,1 } && gs->pixel.color_bias == glm::vec4{ 0,0,0,0 })
 	{
 		if (format >= GL_RGB && format <= GL_LUMINANCE_ALPHA)
@@ -173,19 +113,17 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 			{
 				if (pstore.stride == width * components)
 				{
-					memcpy(dst, data, size);
-					tex.is_complete = gl_is_texture_complete(tex);
+					memcpy(dst, src, size);
 					return;
 				}
 
 				for (int j = 0; j < height; j++)
 				{
 					const uint8_t *row = src;
-					memcpy(dst, data, width * components);
+					memcpy(dst, src, width * components);
 					dst += width * components;
 					src += pstore.stride;
 				}
-				tex.is_complete = gl_is_texture_complete(tex);
 				return;
 			}
 
@@ -197,7 +135,6 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 					dst += components;
 					src += pstore.components;
 				}
-				tex.is_complete = gl_is_texture_complete(tex);
 				return;
 			}
 		}
@@ -244,18 +181,11 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 			src += pstore.stride;
 		}
 
-		tex.is_complete = gl_is_texture_complete(tex);
-		return;
-	}
-
-	if (border != 0)
-	{
-		printf("glTexImage2D(%d,%d,%d,%d,%d,%X,%X) al=%d unhandled combination\n", level, components, width, height, border, format, type, ps.alignment);
 		return;
 	}
 
 #ifndef NDEBUG
-	printf("glTexImage2D(%d,%d,%d,%d,%d,%X,%X) al=%d map %d slow path\n", level, components, width, height, border, format, type, ps.alignment, gs->pixel.map_color);
+	printf("glTexImage(c %d,%dx%d,b %d,f %X,t %X) al=%d map %d slow path\n", components, width, height, border, format, type, ps.alignment, gs->pixel.map_color);
 #endif
 
 	if (type != GL_BITMAP)
@@ -325,13 +255,75 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 			src += pstore.stride;
 		}
 	}
+}
 
+void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* data)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	if (gs->display_list_begun)
+	{
+		auto &dl = gs->display_list_indices[0];
+		size_t old_size = dl.data.size();
+		int pix_size = gl_pixels_size(width, height, format, type);
+		if (pix_size)
+		{
+			dl.data.resize(old_size + pix_size);
+			gl_unpack_pixels(gs, width, height, format, type, data, dl.data.data() + old_size);
+		}
+		dl.calls.push_back({ gl_display_list_call::tTexImage2D, {(float)target}, {level, components, width, height, border, (int)format, (int)type, pix_size} });
+		if (!gs->display_list_execute)
+			return;
+	}
+	VALIDATE_NOT_BEGIN_MODE
+
+	if (target != GL_TEXTURE_2D)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, target);
+		return;
+	}
+	VALIDATE_TEX_IMAGE
+
+	int borderless_width = width - border * 2;
+	int borderless_height = height - border * 2;
+	if (borderless_width < 0 || borderless_width > gl_max_texture_size || !is_pow(borderless_width) ||
+		borderless_height < 0 || borderless_height > gl_max_texture_size || !is_pow(borderless_height))
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
+	gl_texture& tex = gs->texture_2d;
+	gl_texture_array& ta = tex.arrays[level];
+
+	if (width == 0 || height == 0 || !data)
+	{
+		if (ta.data)
+			delete[] ta.data;
+		ta.data = nullptr;
+		ta.width = 0;
+		ta.height = 0;
+		tex.is_complete = gl_is_texture_complete(tex);
+		return;
+	}
+
+	if (level == 0)
+		tex.max_lod = 1 + (int)log2(glm::max(borderless_width, borderless_height));
+
+	if (border != 0)
+	{
+		printf("glTexImage2D(%d,%d,%d,%d,%d,%X,%X) unhandled combination\n", level, components, width, height, border, format, type);
+		tex.is_complete = false;
+		return;
+	}
+
+	gl_texImage(gs, ta, components, width, height, border, format, type, (const uint8_t *)data);
 	tex.is_complete = gl_is_texture_complete(tex);
 }
 
-void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei width, GLint border, GLenum format, GLenum type, const void* data)
+void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei width, GLint border, GLenum format, GLenum type, const void *data)
 {
-	gl_state* gs = gl_current_state();
+	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	if (gs->display_list_begun)
 	{
@@ -363,7 +355,32 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei
 		return;
 	}
 
-	//TODO
+	gl_texture &tex = gs->texture_1d;
+	gl_texture_array &ta = tex.arrays[level];
+
+	if (width == 0 || !data)
+	{
+		if (ta.data)
+			delete[] ta.data;
+		ta.data = nullptr;
+		ta.width = 0;
+		ta.height = 0;
+		tex.is_complete = gl_is_texture_complete(tex);
+		return;
+	}
+
+	if (level == 0)
+		tex.max_lod = 1 + (int)log2(borderless_width);
+
+	if (border != 0)
+	{
+		printf("glTexImage1D(%d,%d,%d,%d,%X,%X) unhandled combination\n", level, components, width, border, format, type);
+		tex.is_complete = false;
+		return;
+	}
+
+	gl_texImage(gs, ta, components, width, 1, border, format, type, (const uint8_t *)data);
+	tex.is_complete = gl_is_texture_complete(tex);
 }
 
 void APIENTRY glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void *pixels)
