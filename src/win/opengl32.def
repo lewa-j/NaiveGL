@@ -312,10 +312,6 @@ EXPORTS
 	glPushAttrib
 	glPopAttrib
 
-;1.1
-	glBindTexture
-	glTexSubImage2D
-
 	wglCreateContext
 	wglDeleteContext
 	wglGetCurrentContext

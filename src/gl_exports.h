@@ -344,11 +344,6 @@ EXPORT const char *APIENTRY glGetString(GLenum name);
 EXPORT void APIENTRY glPushAttrib(GLbitfield mask);
 EXPORT void APIENTRY glPopAttrib(void);
 
-///!!!!!!!!!! gl 1.1
-EXPORT void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
-EXPORT void APIENTRY glBindTexture(GLenum target, GLuint texture);
-//!!!!!!!!!!!!!!!!!!
-
 #ifdef __cplusplus
 }
 #endif
