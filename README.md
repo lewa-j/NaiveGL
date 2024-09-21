@@ -2,9 +2,7 @@
 
 Naive implementation of OpenGL 1.0 in C++
 
-Work in progress towards 1.0 conformance
-
-## TODO
+Almost complete 1.0 feature set, except
 
 * Wide lines
 * Antiaiasing
