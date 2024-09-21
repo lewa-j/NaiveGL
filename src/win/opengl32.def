@@ -296,6 +296,7 @@ EXPORTS
 	glGetTexEnvfv
 	glGetTexGeniv
 	glGetTexGenfv
+	glGetTexGendv
 	glGetTexParameteriv
 	glGetTexParameterfv
 	glGetTexLevelParameteriv

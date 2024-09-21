@@ -155,3 +155,8 @@ void APIENTRY glGetTexGenfv(GLenum coord, GLenum pname, GLfloat *params)
 {
 	gl_getTexGenv(coord, pname, params);
 }
+
+void APIENTRY glGetTexGendv(GLenum coord, GLenum pname, GLdouble *params)
+{
+	gl_getTexGenv(coord, pname, params);
+}

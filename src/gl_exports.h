@@ -328,6 +328,7 @@ EXPORT void APIENTRY glGetTexEnviv(GLenum target, GLenum pname, GLint *params);
 EXPORT void APIENTRY glGetTexEnvfv(GLenum target, GLenum pname, GLfloat *params);
 EXPORT void APIENTRY glGetTexGeniv(GLenum coord, GLenum pname, GLint *params);
 EXPORT void APIENTRY glGetTexGenfv(GLenum coord, GLenum pname, GLfloat *params);
+EXPORT void APIENTRY glGetTexGendv(GLenum coord, GLenum pname, GLdouble *params);
 EXPORT void APIENTRY glGetTexParameteriv(GLenum target, GLenum pname, GLint *params);
 EXPORT void APIENTRY glGetTexParameterfv(GLenum target, GLenum pname, GLfloat *params);
 EXPORT void APIENTRY glGetTexLevelParameteriv(GLenum target, GLint level, GLenum pname, GLint *params);
