@@ -145,45 +145,90 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 
 	src += pstore.skip_bytes;
 
-	if (type == GL_UNSIGNED_BYTE && border == 0 &&
+	uint8_t *dst = ta.data;
+
+	if (type == GL_UNSIGNED_BYTE && border == 0 && format >= GL_RED && format <= GL_LUMINANCE_ALPHA &&
 		!gs->pixel.map_color && gs->pixel.color_scale == glm::vec4{ 1,1,1,1 } && gs->pixel.color_bias == glm::vec4{ 0,0,0,0 })
 	{
-		if (pstore.stride == width * components)
+		if (format >= GL_RGB && format <= GL_LUMINANCE_ALPHA)
 		{
-			memcpy(ta.data, data, size);
-			tex.is_complete = gl_is_texture_complete(tex);
-			return;
-		}
-
-		if (format == GL_LUMINANCE && components == 1 || format == GL_LUMINANCE_ALPHA && components == 2 || format == GL_RGB && components == 3 || format == GL_RGBA && components == 4)
-		{
-			uint8_t *dst = ta.data;
-			for (int j = 0; j < height; j++)
+			if (components == pstore.components)
 			{
-				const uint8_t *row = src;
-				memcpy(dst, data, size);
-				dst += width * components;
-				src += pstore.stride;
+				if (pstore.stride == width * components)
+				{
+					memcpy(dst, data, size);
+					tex.is_complete = gl_is_texture_complete(tex);
+					return;
+				}
+
+				for (int j = 0; j < height; j++)
+				{
+					const uint8_t *row = src;
+					memcpy(dst, data, width * components);
+					dst += width * components;
+					src += pstore.stride;
+				}
+				tex.is_complete = gl_is_texture_complete(tex);
+				return;
 			}
 
-			tex.is_complete = gl_is_texture_complete(tex);
-			return;
-		}
-		else
-		{
-			if (pstore.stride == width * pstore.components && format == GL_RGBA && components == 3)
+			if (pstore.stride == width * pstore.components && components < pstore.components && components != 2)
 			{
-				for (size_t i = 0; i < size; i += 3)
+				for (size_t i = 0; i < size; i += components)
 				{
-					ta.data[i] = src[0];
-					ta.data[i + 1] = src[1];
-					ta.data[i + 2] = src[2];
-					src += 4;
+					memcpy(dst, src, components);
+					dst += components;
+					src += pstore.components;
 				}
 				tex.is_complete = gl_is_texture_complete(tex);
 				return;
 			}
 		}
+
+		for (int j = 0; j < height; j++)
+		{
+			const uint8_t *row = src;
+			for (int i = 0; i < width; i++)
+			{
+				uint8_t pixel[4]{ 0,0,0,0xff };
+				switch (format)
+				{
+				case GL_RED:
+					pixel[0] = row[0]; break;
+				case GL_GREEN:
+					pixel[1] = row[0]; break;
+				case GL_BLUE:
+					pixel[2] = row[0]; break;
+				case GL_ALPHA:
+					pixel[3] = row[0]; break;
+				case GL_RGB:
+					memcpy(pixel, row, 3); break;
+				case GL_RGBA:
+					memcpy(pixel, row, 4); break;
+				case GL_LUMINANCE:
+					pixel[0] = pixel[1] = pixel[2] = row[0]; break;
+				case GL_LUMINANCE_ALPHA:
+					pixel[0] = pixel[1] = pixel[2] = row[0];
+					pixel[3] = row[1];
+					break;
+				}
+
+				if (components == 2)
+				{
+					dst[0] = pixel[0];
+					dst[1] = pixel[3];
+				}
+				else
+					memcpy(dst, pixel, components);
+
+				dst += components;
+				row += pstore.components;
+			}
+			src += pstore.stride;
+		}
+
+		tex.is_complete = gl_is_texture_complete(tex);
+		return;
 	}
 
 	//TODO
