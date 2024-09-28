@@ -361,6 +361,10 @@ EXPORT void APIENTRY glGetPolygonStipple(GLubyte *mask);
 EXPORT const char *APIENTRY glGetString(GLenum name);
 EXPORT void APIENTRY glPushAttrib(GLbitfield mask);
 EXPORT void APIENTRY glPopAttrib(void);
+#if NGL_VERISON >= 110
+EXPORT void APIENTRY glPushClientAttrib(GLbitfield mask);
+EXPORT void APIENTRY glPopClientAttrib(void);
+#endif
 
 #ifdef __cplusplus
 }

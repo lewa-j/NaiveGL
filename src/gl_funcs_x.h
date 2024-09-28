@@ -329,4 +329,7 @@ X(glArrayElement)
 X(glDrawArrays)
 X(glDrawElements)
 X(glInterleavedArrays)
+
+X(glPushClientAttrib)
+X(glPopClientAttrib)
 #endif

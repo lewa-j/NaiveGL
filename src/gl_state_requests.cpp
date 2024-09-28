@@ -573,3 +573,55 @@ void APIENTRY glPopAttrib(void)
 		gs->texture_2d.params = s.texture_2d;
 	}
 }
+
+#if NGL_VERISON >= 110
+template<typename DT, typename ST>
+static void gl_copyClientAttribs(DT &d, const ST &s, GLbitfield mask)
+{
+	if (mask & GL_CLIENT_PIXEL_STORE_BIT)
+	{
+		d.pixel_unpack = s.pixel_unpack;
+		d.pixel_pack = s.pixel_pack;
+	}
+	if (mask & GL_CLIENT_VERTEX_ARRAY_BIT)
+		d.va = s.va;
+}
+
+void APIENTRY glPushClientAttrib(GLbitfield mask)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (gs->client_attrib_sp >= gl_max_client_attrib_stack_depth)
+	{
+		gl_set_error(GL_STACK_OVERFLOW);
+		return;
+	}
+
+	auto &d = gs->client_attrib_stack[gs->client_attrib_sp];
+	d.attrib_mask = mask;
+
+	gl_copyClientAttribs(d, *gs, mask);
+
+	gs->client_attrib_sp++;
+}
+
+void APIENTRY glPopClientAttrib(void)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (gs->client_attrib_sp == 0)
+	{
+		gl_set_error(GL_STACK_UNDERFLOW);
+		return;
+	}
+
+	gs->client_attrib_sp--;
+	const auto &s = gs->client_attrib_stack[gs->client_attrib_sp];
+
+	gl_copyClientAttribs(*gs, s, s.attrib_mask);
+}
+#endif

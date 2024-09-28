@@ -341,3 +341,7 @@ EXPORTS
 	glDrawArrays
 	glDrawElements
 	glInterleavedArrays
+
+
+	glPushClientAttrib
+	glPopClientAttrib
