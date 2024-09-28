@@ -313,3 +313,8 @@ X(glGetPolygonStipple)
 X(glGetString)
 X(glPushAttrib)
 X(glPopAttrib)
+
+#if NGL_VERISON >= 110
+X(glIndexub)
+X(glIndexubv)
+#endif

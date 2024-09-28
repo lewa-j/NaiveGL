@@ -100,5 +100,8 @@
     <None Include="win\opengl32.def">
       <Filter>Source Files</Filter>
     </None>
+    <None Include="win\opengl32_110.def">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

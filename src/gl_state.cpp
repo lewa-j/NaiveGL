@@ -446,7 +446,11 @@ const char *APIENTRY glGetString(GLenum name)
 	case GL_RENDERER:
 		return "NaiveGL";
 	case GL_VERSION:
+#if NGL_VERISON < 110
 		return "1.0.0";
+#else
+		return "1.1.0";
+#endif
 	case GL_EXTENSIONS:
 		return "";
 	default:

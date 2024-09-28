@@ -410,6 +410,10 @@ void APIENTRY glIndexf(GLfloat c) {}
 void APIENTRY glIndexfv(const GLfloat *c) {}
 void APIENTRY glIndexd(GLdouble c) {}
 void APIENTRY glIndexdv(const GLdouble *c) {}
+#if NGL_VERISON >= 100
+void APIENTRY glIndexub(GLubyte c) {}
+void APIENTRY glIndexubv(const GLubyte *c) {}
+#endif
 
 void APIENTRY glRectf(GLfloat x1, GLfloat y1, GLfloat x2, GLfloat y2)
 {

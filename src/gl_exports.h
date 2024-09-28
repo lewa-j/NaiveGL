@@ -134,6 +134,10 @@ EXPORT void APIENTRY glIndexf(GLfloat c);
 EXPORT void APIENTRY glIndexfv(const GLfloat *c);
 EXPORT void APIENTRY glIndexd(GLdouble c);
 EXPORT void APIENTRY glIndexdv(const GLdouble *c);
+#if NGL_VERISON >= 110
+EXPORT void APIENTRY glIndexub(GLubyte c);
+EXPORT void APIENTRY glIndexubv(const GLubyte *c);
+#endif
 
 EXPORT void APIENTRY glRects(GLshort x1, GLshort y1, GLshort x2, GLshort y2);
 EXPORT void APIENTRY glRecti(GLint x1, GLint y1, GLint x2, GLint y2);
