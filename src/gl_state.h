@@ -234,13 +234,13 @@ struct gl_state
 			int size = 4;
 			GLenum type = GL_FLOAT;
 			int stride = 0;
-			void *pointer;
+			const void *pointer;
 		};
 		array_t vertex;
 		array_t normal;
 		array_t color;
 		array_t index;
-		array_t texture_coord;
+		array_t tex_coord;
 		array_t edge_flag;
 	} va;
 #endif

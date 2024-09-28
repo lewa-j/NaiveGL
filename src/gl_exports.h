@@ -22,7 +22,7 @@ EXPORT void APIENTRY glBegin(GLenum mode);
 EXPORT void APIENTRY glEnd();
 
 EXPORT void APIENTRY glEdgeFlag(GLboolean flag);
-EXPORT void APIENTRY glEdgeFlagv(GLboolean *flag);
+EXPORT void APIENTRY glEdgeFlagv(const GLboolean *flag);
 
 EXPORT void APIENTRY glVertex2s(GLshort x, GLshort y);
 EXPORT void APIENTRY glVertex2sv(const GLshort *v);

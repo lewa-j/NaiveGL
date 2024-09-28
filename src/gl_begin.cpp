@@ -254,7 +254,7 @@ void APIENTRY glEdgeFlag(GLboolean flag)
 
 	gs->current.edge_flag = !!flag;
 }
-void APIENTRY glEdgeFlagv(GLboolean *flag) { glEdgeFlag(*flag); }
+void APIENTRY glEdgeFlagv(const GLboolean *flag) { glEdgeFlag(*flag); }
 
 #define gv4f(x,y,z,w) glVertex4f((GLfloat)(x), (GLfloat)(y), (GLfloat)(z), (GLfloat)(w))
 

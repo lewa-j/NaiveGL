@@ -25,7 +25,10 @@ inline int gl_pixel_type_size(GLenum type)
 		return 2;
 	if (type == GL_INT || type == GL_UNSIGNED_INT || type == GL_FLOAT)
 		return 4;
-
+#if NGL_VERISON >= 110
+	if (type == GL_DOUBLE)
+		return 8;
+#endif
 	return 1;
 }
 
