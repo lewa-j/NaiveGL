@@ -26,9 +26,9 @@ EXPORT void APIENTRY glFeedbackBuffer(GLsizei size, GLenum type, GLfloat *buffer
 		return;
 	}
 
-	gs->feedback_type = type;
-	gs->feedback_array = buffer;
-	gs->feedback_array_max_size = size;
+	gs->feedback.buffer_type = type;
+	gs->feedback.buffer = buffer;
+	gs->feedback.buffer_size = size;
 }
 
 EXPORT void APIENTRY glPassThrough(GLfloat token)
@@ -47,7 +47,7 @@ EXPORT void APIENTRY glPassThrough(GLfloat token)
 
 void gl_feedback_write(gl_state &st, float f)
 {
-	if (!st.feedback_array)
+	if (!st.feedback.buffer)
 		return;
 
 	if (st.feedback_overflow)
@@ -56,19 +56,19 @@ void gl_feedback_write(gl_state &st, float f)
 	*st.feedback_array_pos = f;
 	st.feedback_array_pos++;
 
-	st.feedback_overflow = st.feedback_array_pos == st.feedback_array + st.feedback_array_max_size;
+	st.feedback_overflow = st.feedback_array_pos == st.feedback.buffer + st.feedback.buffer_size;
 }
 
 void gl_feedback_write_vertex(gl_state &st, glm::vec4 pos, glm::vec4 color, glm::vec4 tex_coord)
 {
 	gl_feedback_write(st, pos.x);
 	gl_feedback_write(st, pos.y);
-	if (st.feedback_type == GL_2D)
+	if (st.feedback.buffer_type == GL_2D)
 		return;
 	gl_feedback_write(st, pos.z);
-	if (st.feedback_type == GL_3D)
+	if (st.feedback.buffer_type == GL_3D)
 		return;
-	if (st.feedback_type == GL_4D_COLOR_TEXTURE)
+	if (st.feedback.buffer_type == GL_4D_COLOR_TEXTURE)
 		gl_feedback_write(st, pos.w);
 
 	// index color mode
@@ -79,7 +79,7 @@ void gl_feedback_write_vertex(gl_state &st, glm::vec4 pos, glm::vec4 color, glm:
 	gl_feedback_write(st, color.g);
 	gl_feedback_write(st, color.b);
 	gl_feedback_write(st, color.a);
-	if (st.feedback_type == GL_3D_COLOR)
+	if (st.feedback.buffer_type == GL_3D_COLOR)
 		return;
 	
 	gl_feedback_write(st, tex_coord.s);

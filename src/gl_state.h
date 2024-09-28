@@ -30,6 +30,7 @@ constexpr int gl_max_eval_order = 8;
 constexpr int gl_max_name_stack_depth = 64;
 constexpr int gl_max_list_nesting = 64;
 constexpr int gl_max_attrib_stack_depth = 16;
+constexpr int gl_max_client_attrib_stack_depth = 16;
 constexpr int gl_subpixel_bits = 8;
 
 struct gl_framebuffer
@@ -517,6 +518,17 @@ struct gl_state
 	gl_state_attribs attrib_stack[gl_max_attrib_stack_depth];
 	int attrib_sp = 0;
 
+#if NGL_VERISON >= 110
+	struct gl_client_state_attribs
+	{
+		GLbitfield attrib_mask;
+		vertex_array_t va;
+		pixelStore pixel_unpack, pixel_pack;
+	};
+
+	gl_client_state_attribs client_attrib_stack[gl_max_client_attrib_stack_depth];
+	int client_attrib_sp = 0;
+#endif
 	GLint select_name_stack[gl_max_name_stack_depth];
 	int select_name_sp = 0;
 
@@ -526,16 +538,21 @@ struct gl_state
 	GLuint select_max_depth = 0;
 	bool select_hit = false;
 	//client state
-	GLuint *selection_array = nullptr;
-	GLsizei selection_array_max_size = 0;
+	struct select_t
+	{
+		GLuint *buffer = nullptr;
+		GLsizei buffer_size = 0;
+	} select;
 	bool select_overflow = false;
 	GLuint *selection_array_pos = nullptr;
 	int select_hit_records = 0;
 
-	//client state
-	GLsizei feedback_array_max_size = 0;
-	GLenum feedback_type = 0;
-	GLfloat *feedback_array = nullptr;
+	struct feedback_t
+	{
+		GLfloat *buffer = nullptr;
+		GLsizei buffer_size = 0;
+		GLenum buffer_type = 0;
+	} feedback;
 	bool feedback_overflow = false;
 	GLfloat *feedback_array_pos = nullptr;
 	bool feedback_reset_line = true;

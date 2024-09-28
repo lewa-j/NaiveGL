@@ -99,8 +99,8 @@ void APIENTRY glSelectBuffer(GLsizei size, GLuint *buffer)
 		return;
 	}
 
-	gs->selection_array = buffer;
-	gs->selection_array_max_size = size;
+	gs->select.buffer = buffer;
+	gs->select.buffer_size = size;
 }
 
 void gl_add_selection_depth(gl_state &st, float z)
@@ -112,7 +112,7 @@ void gl_add_selection_depth(gl_state &st, float z)
 
 void gl_sel_write(gl_state &st, GLuint val)
 {
-	if (st.selection_array_pos >= st.selection_array + st.selection_array_max_size)
+	if (st.selection_array_pos >= st.select.buffer + st.select.buffer_size)
 	{
 		st.select_overflow = true;
 		return;
@@ -124,7 +124,7 @@ void gl_sel_write(gl_state &st, GLuint val)
 
 void gl_flush_selection_hit_record(gl_state &st)
 {
-	if (!st.selection_array)
+	if (!st.select.buffer)
 		return;
 
 	gl_sel_write(st, st.select_name_sp);

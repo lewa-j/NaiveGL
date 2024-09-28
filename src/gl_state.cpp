@@ -10,6 +10,9 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	line_stipple_counter = 0;
 
 	current = {};
+#if NGL_VERISON >= 110
+	va = {};
+#endif
 
 	viewport = {};
 	set_viewport(0, 0, window_w, window_h);
@@ -105,6 +108,9 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	display_list_nesting = 0;
 
 	attrib_sp = 0;
+#if NGL_VERISON >= 110
+	client_attrib_sp = 0;
+#endif
 	select_name_sp = 0;
 
 	render_mode = GL_RENDER;
@@ -112,15 +118,12 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	select_min_depth = UINT_MAX;
 	select_max_depth = 0;
 	bool select_hit = false;
-	selection_array = nullptr;
+	select = {};
 	selection_array_pos = nullptr;
-	selection_array_max_size = 0;
 	select_overflow = false;
 	select_hit_records = 0;
 
-	feedback_array_max_size = 0;
-	feedback_type = 0;
-	feedback_array = nullptr;
+	feedback = {};
 	feedback_overflow = false;
 	feedback_array_pos = nullptr;
 	feedback_reset_line = true;
@@ -156,22 +159,22 @@ GLint APIENTRY glRenderMode(GLenum mode)
 		gs->select_overflow = false;
 		gs->select_hit_records = 0;
 		gs->select_name_sp = 0;
-		gs->selection_array_pos = gs->selection_array;
+		gs->selection_array_pos = gs->select.buffer;
 	}
 	else if (gs->render_mode == GL_FEEDBACK)
 	{
-		ret = gs->feedback_overflow ? -1 : (int)(gs->feedback_array_pos - gs->feedback_array);
+		ret = gs->feedback_overflow ? -1 : (int)(gs->feedback_array_pos - gs->feedback.buffer);
 		gs->feedback_overflow = false;
-		gs->feedback_array_pos = gs->feedback_array;
+		gs->feedback_array_pos = gs->feedback.buffer;
 	}
 
-	if (mode == GL_SELECT && !gs->selection_array)
+	if (mode == GL_SELECT && !gs->select.buffer)
 	{
 		gl_set_error(GL_INVALID_OPERATION);
 		return ret;
 	}
 
-	if (mode == GL_FEEDBACK && !gs->feedback_array)
+	if (mode == GL_FEEDBACK && !gs->feedback.buffer)
 	{
 		gl_set_error(GL_INVALID_OPERATION);
 		return ret;
@@ -181,12 +184,12 @@ GLint APIENTRY glRenderMode(GLenum mode)
 	{
 		gs->select_hit = false;
 		gs->select_overflow = false;
-		gs->selection_array_pos = gs->selection_array;
+		gs->selection_array_pos = gs->select.buffer;
 	}
 	else if (mode == GL_FEEDBACK)
 	{
 		gs->feedback_overflow = false;
-		gs->feedback_array_pos = gs->feedback_array;
+		gs->feedback_array_pos = gs->feedback.buffer;
 	}
 
 	gs->render_mode = mode;

@@ -341,6 +341,10 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 		copy_vals(data, gl_max_viewport_dims, 2);
 	else if (pname == GL_MAX_ATTRIB_STACK_DEPTH)
 		copy_vals(data, &gl_max_attrib_stack_depth, 1);
+#if NGL_VERISON >= 110
+	else if (pname == GL_MAX_CLIENT_ATTRIB_STACK_DEPTH)
+		copy_vals(data, &gl_max_client_attrib_stack_depth, 1);
+#endif
 	else if (pname == GL_AUX_BUFFERS)
 		copy_vals(data, &gl_max_aux_buffers, 1);
 	else if (pname == GL_RGBA_MODE)
