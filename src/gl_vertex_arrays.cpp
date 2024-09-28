@@ -397,7 +397,65 @@ void APIENTRY glDrawElements(GLenum mode, GLsizei count, GLenum type, const void
 	glEnd();
 }
 
+const int sf = sizeof(float);
+const int sc = sizeof(uint8_t[4]);
+static int intr_table[][11]
+{// et c n st c v  tc				 pc		pn		pv			s
+	{0,0,0, 0,0,2, 0,				 0,		0,		0,			2 * sf},
+	{0,0,0, 0,0,3, 0,				 0,		0,		0,			3 * sf},
+	{0,1,0, 0,4,2, GL_UNSIGNED_BYTE, 0,		0,		sc,			sc + 2 * sf},
+	{0,1,0, 0,4,3, GL_UNSIGNED_BYTE, 0,		0,		sc,			sc + 2 * sf},
+	{0,1,0, 0,3,3, GL_FLOAT,		 0,		0,		3 * sf,		6 * sf},
+	{0,0,1, 0,0,3, 0,				 0,		0,		3 * sf,		6 * sf},
+	{0,1,1, 0,4,3, GL_FLOAT,		 0,		4 * sf,	7 * sf,		10 * sf},
+	{1,0,0, 2,0,3, 0,				 0,		0,		2 * sf,		5 * sf},
+	{1,1,0, 4,0,4, 0,				 0,		0,		4 * sf,		8 * sf},
+	{1,1,0, 2,4,3, GL_UNSIGNED_BYTE, 2 * sf,0,		sc + 2*sf,	sc + 5 * sf},
+	{1,0,1, 2,3,3, GL_FLOAT,		 2 * sf,0,		5 * sf,		8 * sf},
+	{1,0,0, 2,0,3, 0,				 0,		2 * sf,	5 * sf,		8 * sf},
+	{1,1,1, 2,4,3, GL_FLOAT,		 2 * sf,6 * sf,	9 * sf,		12 * sf},
+	{1,1,1, 4,4,4, GL_FLOAT,		 4 * sf,8 * sf,	11 * sf,	15 * sf},
+};
+
 void APIENTRY glInterleavedArrays(GLenum format, GLsizei stride, const void *pointer)
 {
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
 
+	if (format < GL_V2F || format > GL_T4F_C4F_N3F_V4F)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, format);
+		return;
+	}
+	if (stride < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
+	const uint8_t *data = (const uint8_t *)pointer;
+	int *intr = intr_table[format - GL_V2F];
+	if (stride == 0)
+		stride = intr[10];
+
+	gs->va.enabled = 0;// disable all arrays
+
+	if (intr[0])
+	{
+		glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+		glTexCoordPointer(intr[3], GL_FLOAT, stride, data);
+	}
+	if (intr[1])
+	{
+		glEnableClientState(GL_COLOR_ARRAY);
+		glColorPointer(intr[4], intr[6], stride, data + intr[7]);
+	}
+	if (intr[2])
+	{
+		glEnableClientState(GL_NORMAL_ARRAY);
+		glNormalPointer(GL_FLOAT, stride, data + intr[8]);
+	}
+	glEnableClientState(GL_VERTEX_ARRAY);
+	glVertexPointer(intr[5], GL_FLOAT, stride, data + intr[9]);
 }
