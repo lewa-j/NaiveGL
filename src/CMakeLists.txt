@@ -32,6 +32,7 @@ add_library (opengl32 SHARED
 
 if(${NGL_VERISON} GREATER_EQUAL 110)
 	target_sources(opengl32 PUBLIC
+		gl_vertex_arrays.cpp
 		win/opengl32_110.def)
 else()
 	target_sources(opengl32 PUBLIC

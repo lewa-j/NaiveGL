@@ -137,6 +137,19 @@ EXPORT void APIENTRY glIndexdv(const GLdouble *c);
 #if NGL_VERISON >= 110
 EXPORT void APIENTRY glIndexub(GLubyte c);
 EXPORT void APIENTRY glIndexubv(const GLubyte *c);
+
+EXPORT void APIENTRY glEdgeFlagPointer(GLsizei stride, const void *pointer);
+EXPORT void APIENTRY glTexCoordPointer(GLint size, GLenum type, GLsizei stride, const void *pointer);
+EXPORT void APIENTRY glColorPointer(GLint size, GLenum type, GLsizei stride, const void *pointer);
+EXPORT void APIENTRY glIndexPointer(GLenum type, GLsizei stride, const void *pointer);
+EXPORT void APIENTRY glNormalPointer(GLenum type, GLsizei stride, const void *pointer);
+EXPORT void APIENTRY glVertexPointer(GLint size, GLenum type, GLsizei stride, const void *pointer);
+EXPORT void APIENTRY glEnableClientState(GLenum array);
+EXPORT void APIENTRY glDisableClientState(GLenum array);
+EXPORT void APIENTRY glArrayElement(GLint i);
+EXPORT void APIENTRY glDrawArrays(GLenum mode, GLint first, GLsizei count);
+EXPORT void APIENTRY glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *indices);
+EXPORT void APIENTRY glInterleavedArrays(GLenum format, GLsizei stride, const void *pointer);
 #endif
 
 EXPORT void APIENTRY glRects(GLshort x1, GLshort y1, GLshort x2, GLshort y2);

@@ -329,3 +329,15 @@ EXPORTS
 ;1.1
 	glIndexub
 	glIndexubv
+	glEdgeFlagPointer
+	glTexCoordPointer
+	glColorPointer
+	glIndexPointer
+	glNormalPointer
+	glVertexPointer
+	glEnableClientState
+	glDisableClientState
+	glArrayElement
+	glDrawArrays
+	glDrawElements
+	glInterleavedArrays
