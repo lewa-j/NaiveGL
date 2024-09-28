@@ -350,6 +350,9 @@ static void emit_stencil(gl_state& st, int x, int y, uint8_t index)
 
 int gl_pixels_size(GLsizei width, GLsizei height, GLenum format, GLenum type)
 {
+	if (width < 0 || height < 0)
+		return 0;
+
 	if (type == GL_BITMAP)
 	{
 		if (format != GL_COLOR_INDEX && format != GL_STENCIL_INDEX)
@@ -486,8 +489,13 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 		if (!gs->display_list_execute)
 			return;
 	}
-	VALIDATE_NOT_BEGIN_MODE
+	VALIDATE_NOT_BEGIN_MODE;
 
+	if (width < 0 || height < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
 	if (format < GL_COLOR_INDEX || format > GL_LUMINANCE_ALPHA)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, format);
@@ -774,6 +782,11 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
 
+	if (width < 0 || height < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
 	if (format < GL_COLOR_INDEX || format > GL_LUMINANCE_ALPHA)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, format);
@@ -782,12 +795,6 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 	if (type != GL_BITMAP && (type < GL_BYTE || type > GL_FLOAT))
 	{
 		gl_set_error_a(GL_INVALID_ENUM, type);
-		return;
-	}
-
-	if (width < 0 || height < 0)
-	{
-		gl_set_error(GL_INVALID_VALUE);
 		return;
 	}
 
@@ -908,15 +915,14 @@ void APIENTRY glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 	WRITE_DISPLAY_LIST(CopyPixels, {}, { x, y, width, height, (int)type });
 	VALIDATE_NOT_BEGIN_MODE;
 
-	if (type < GL_COLOR || type > GL_STENCIL)
-	{
-		gl_set_error_a(GL_INVALID_ENUM, type);
-		return;
-	}
-
 	if (width < 0 || height < 0)
 	{
 		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+	if (type < GL_COLOR || type > GL_STENCIL)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, type);
 		return;
 	}
 

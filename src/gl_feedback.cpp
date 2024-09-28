@@ -14,7 +14,7 @@ EXPORT void APIENTRY glFeedbackBuffer(GLsizei size, GLenum type, GLfloat *buffer
 		return;
 	}
 
-	if (size <= 0)
+	if (size < 0)
 	{
 		gl_set_error(GL_INVALID_VALUE);
 		return;

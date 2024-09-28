@@ -282,7 +282,12 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 		gl_set_error_a(GL_INVALID_ENUM, target);
 		return;
 	}
-	VALIDATE_TEX_IMAGE
+	VALIDATE_TEX_IMAGE;
+	if (width < 0 || height < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
 
 	int borderless_width = width - border * 2;
 	int borderless_height = height - border * 2;
@@ -346,7 +351,12 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei
 		gl_set_error_a(GL_INVALID_ENUM, target);
 		return;
 	}
-	VALIDATE_TEX_IMAGE
+	VALIDATE_TEX_IMAGE;
+	if (width < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
 
 	int borderless_width = width - border * 2;
 	if (borderless_width < 0 || borderless_width > gl_max_texture_size || !is_pow(borderless_width))
