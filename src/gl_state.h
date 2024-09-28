@@ -224,6 +224,26 @@ struct gl_state
 		bool edge_flag = true;
 	} current;
 
+#if NGL_VERISON >= 110
+	struct vertex_array_t
+	{
+		uint8_t enabled;
+		struct array_t
+		{
+			int size = 4;
+			GLenum type = GL_FLOAT;
+			int stride = 0;
+			void *pointer;
+		};
+		array_t vertex;
+		array_t normal;
+		array_t color;
+		array_t index;
+		array_t texture_coord;
+		array_t edge_flag;
+	} va;
+#endif
+
 	struct viewport_t
 	{
 		int width;
