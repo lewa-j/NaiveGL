@@ -335,12 +335,66 @@ void APIENTRY glArrayElement(GLint i)
 
 void APIENTRY glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
 
+	if (mode < GL_POINTS || mode > GL_POLYGON)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, mode);
+		return;
+	}
+	if (count < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
+	glBegin(mode);
+	for (int i = 0; i < count; i++)
+		glArrayElement(i);
+	glEnd();
 }
 
 void APIENTRY glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *indices)
 {
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
 
+	if (mode < GL_POINTS || mode > GL_POLYGON)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, mode);
+		return;
+	}
+	if (count < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+	if (type != GL_UNSIGNED_BYTE && type != GL_UNSIGNED_SHORT && type != GL_UNSIGNED_INT)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, type);
+		return;
+	}
+
+	glBegin(mode);
+	if (type == GL_UNSIGNED_BYTE)
+	{
+		for (int i = 0; i < count; i++)
+			glArrayElement(((const GLubyte*)indices)[i]);
+	}
+	else if (type == GL_UNSIGNED_SHORT)
+	{
+		for (int i = 0; i < count; i++)
+			glArrayElement(((const GLshort *)indices)[i]);
+	}
+	else if (type == GL_UNSIGNED_INT)
+	{
+		for (int i = 0; i < count; i++)
+			glArrayElement(((const GLint *)indices)[i]);
+	}
+	glEnd();
 }
 
 void APIENTRY glInterleavedArrays(GLenum format, GLsizei stride, const void *pointer)
