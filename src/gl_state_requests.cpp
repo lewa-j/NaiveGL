@@ -374,9 +374,14 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 		copy_vals(data, &bits, 1);
 	}
 	else if (pname == GL_INDEX_BITS) {}
+	else if (pname == GL_DEPTH_BITS)
+	{
+		int depth_bits = gs.framebuffer->depth ? 16 : 0;
+		copy_vals(data, &depth_bits, 1);
+	}
 	else if (pname == GL_STENCIL_BITS)
 	{
-		int stencil_bits = 8;
+		int stencil_bits = gs.framebuffer->stencil ? 8 : 0;
 		copy_vals(data, &stencil_bits, 1);
 	}
 	else if (pname >= GL_ACCUM_RED_BITS && pname <= GL_ACCUM_ALPHA_BITS)
