@@ -67,14 +67,14 @@ static void gl_tex_store_pixel(const glm::vec4 &col, int components, uint8_t *ds
 {
 	if (components == 2)
 	{
-		dst[0] = (uint8_t)(0xFF * glm::clamp(col.r, 0.f, 1.f));
-		dst[1] = (uint8_t)(0xFF * glm::clamp(col.a, 0.f, 1.f));
+		dst[0] = (uint8_t)lroundf(0xFF * glm::clamp(col.r, 0.f, 1.f));
+		dst[1] = (uint8_t)lroundf(0xFF * glm::clamp(col.a, 0.f, 1.f));
 	}
 	else
 	{
 		for (int c = 0; c < components; c++)
 		{
-			dst[c] = (uint8_t)(0xFF * glm::clamp(col[c], 0.f, 1.f));
+			dst[c] = (uint8_t)lroundf(0xFF * glm::clamp(col[c], 0.f, 1.f));
 		}
 	}
 }
