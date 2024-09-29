@@ -612,6 +612,10 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_T2F_C4F_N3F_V3F 0x2A2C
 #define GL_T4F_C4F_N3F_V4F 0x2A2D
 
+#define GL_POLYGON_OFFSET_POINT 0x2A01
+#define GL_POLYGON_OFFSET_LINE 0x2A02
+#define GL_POLYGON_OFFSET_FILL 0x8037
+
 
 #define GL_CLIENT_PIXEL_STORE_BIT 0x00000001
 #define GL_CLIENT_VERTEX_ARRAY_BIT 0x00000002
@@ -644,3 +648,6 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_TEXTURE_COORD_ARRAY_POINTER 0x8092
 #define GL_EDGE_FLAG_ARRAY_POINTER 0x8093
 
+
+#define GL_POLYGON_OFFSET_FACTOR 0x8038
+#define GL_POLYGON_OFFSET_UNITS 0x2A00

@@ -290,7 +290,8 @@ bool &gl_get_enabled_ref(gl_state &gs, GLenum cap, bool &fail)
 	return _;
 }
 
-static void set_bit(uint32_t &set, int bit, bool val)
+template <typename T> 
+static void set_bit(T &set, int bit, bool val)
 {
 	if (val)
 		set |= (1 << bit);
@@ -324,6 +325,16 @@ bool gl_setable(gl_state &gs, GLenum cap, bool val)
 	{
 		set_bit(gs.eval.enabled_maps, cap - GL_MAP2_COLOR_4 + 9, val);
 	}
+#if NGL_VERISON >= 110
+	else if (cap == GL_POLYGON_OFFSET_POINT || cap == GL_POLYGON_OFFSET_LINE)
+	{
+		set_bit(gs.polygon.offset_enabled, cap - GL_POLYGON_OFFSET_POINT, val);
+	}
+	else if (cap == GL_POLYGON_OFFSET_FILL)
+	{
+		set_bit(gs.polygon.offset_enabled, 2, val);
+	}
+#endif
 	else
 	{
 		return false;
@@ -387,6 +398,16 @@ int gl_isEnabled(gl_state &gs, GLenum cap)
 	{
 		return (gs.eval.enabled_maps & (1 << (cap - GL_MAP2_COLOR_4 + 9))) ? 1 : 0;
 	}
+#if NGL_VERISON >= 110
+	else if (cap == GL_POLYGON_OFFSET_POINT || cap == GL_POLYGON_OFFSET_LINE)
+	{
+		return (gs.polygon.offset_enabled & (1 << (cap - GL_POLYGON_OFFSET_POINT))) ? 1 : 0;
+	}
+	else if (cap == GL_POLYGON_OFFSET_FILL)
+	{
+		return (gs.polygon.offset_enabled & 0x4) ? 1 : 0;
+	}
+#endif
 
 	return -1;
 }

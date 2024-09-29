@@ -182,6 +182,12 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 
 	if (pname == GL_POLYGON_MODE)
 		copy_vals(data, gs.polygon.mode, 2);
+#if NGL_VERISON >= 110
+	else if (pname == GL_POLYGON_OFFSET_FACTOR)
+		copy_vals(data, &gs.polygon.offset_factor, 1);
+	else if (pname == GL_POLYGON_OFFSET_UNITS)
+		copy_vals(data, &gs.polygon.offset_units, 1);
+#endif
 	else if (pname == GL_SCISSOR_BOX)
 		copy_vals(data, &gs.scissor.box.x, 4);
 	else if (pname == GL_STENCIL_FUNC)
@@ -511,6 +517,9 @@ static void gl_copyAttribs(DT &d, const ST &s, GLbitfield mask)
 	d.line.stipple = s.line.stipple;
 	d.polygon.cull_face = s.polygon.cull_face;
 	d.polygon.smooth = s.polygon.smooth;
+#if NGL_VERISON >= 110
+	d.polygon.offset_enabled = s.polygon.offset_enabled;
+#endif
 	d.polygon.stipple = s.polygon.stipple;
 	d.texture_1d_enabled = s.texture_1d_enabled;
 	d.texture_2d_enabled = s.texture_2d_enabled;

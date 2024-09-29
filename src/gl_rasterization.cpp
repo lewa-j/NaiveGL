@@ -170,6 +170,18 @@ void APIENTRY glPolygonMode(GLenum face, GLenum mode)
 		gs->polygon.mode[1] = mode;
 }
 
+#if NGL_VERISON >= 110
+void APIENTRY glPolygonOffset(GLfloat factor, GLfloat units)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	gs->polygon.offset_factor = factor;
+	gs->polygon.offset_units = units;
+}
+#endif
+
 static void gl_fog_scalar(const char *func, gl_state *gs, GLenum pname, GLfloat param)
 {
 	if (pname != GL_FOG_MODE && pname != GL_FOG_DENSITY && pname != GL_FOG_START && pname != GL_FOG_END && pname != GL_FOG_INDEX)\

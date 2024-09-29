@@ -341,7 +341,7 @@ EXPORTS
 	glDrawArrays
 	glDrawElements
 	glInterleavedArrays
-
+	glPolygonOffset
 
 	glPushClientAttrib
 	glPopClientAttrib

@@ -329,6 +329,7 @@ X(glArrayElement)
 X(glDrawArrays)
 X(glDrawElements)
 X(glInterleavedArrays)
+X(glPolygonOffset)
 
 X(glPushClientAttrib)
 X(glPopClientAttrib)

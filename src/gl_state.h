@@ -334,6 +334,9 @@ struct gl_state
 		bool front_face_ccw = true;
 		bool smooth = false;
 		GLenum mode[2]{ GL_FILL,GL_FILL };//front and back
+		float offset_factor = 0;
+		float offset_units = 0;
+		uint8_t offset_enabled = 0;//point, line, fill
 		bool stipple = false;
 	} polygon;
 	uint8_t polygon_stipple_mask[128];
