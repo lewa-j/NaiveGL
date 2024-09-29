@@ -609,11 +609,11 @@ struct gl_frag_data
 
 void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 tex, glm::vec3 norm);
 void gl_emit_fragment(gl_state& st, int x, int y, gl_frag_data& data);
-void gl_emit_point(gl_state &st, const gl_processed_vertex &vertex);
+void gl_emit_point(gl_state &st, const gl_processed_vertex &vertex, float depth_offset = 0);
 void gl_emit_line(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1);
 void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_full_vertex&v2);
 
-void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1);
+void gl_rasterize_line(gl_state &st, const gl_processed_vertex &v0, const gl_processed_vertex &v1, float depth_offset = 0);
 void gl_rasterize_clipped_line(gl_state& st, gl_processed_vertex v0, gl_processed_vertex v1);
 void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vertex& v1, gl_processed_vertex& v2);
 void gl_rasterize_clipped_triangle(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1, const gl_processed_vertex& v2);

@@ -513,7 +513,7 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 		fb.color[ci + 3] = uint8_t(color.a * 0xFF);
 }
 
-void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
+void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex, float depth_offset)
 {
 	if (!st.clip_point(vertex.position, vertex.clip))
 		return;
@@ -539,6 +539,8 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 	data.tex_coord = vertex.tex_coord;
 #if NGL_VERISON >= 110
 	data.tex_coord /= data.tex_coord.q;
+	// GL_POLYGON_OFFSET_POINT
+	win_c.z += depth_offset;
 #endif
 	data.z = win_c.z;
 	data.fog_z = abs(vertex.position.z);
@@ -592,7 +594,7 @@ static bool line_stipple(gl_state &st)
 	return (st.line.stipple_pattern >> b) & 1;
 }
 
-void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1)
+void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1, float depth_offset)
 {
 	if (st.render_mode == GL_FEEDBACK)
 	{
@@ -616,6 +618,12 @@ void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_pro
 		st.select_hit = true;
 		return;
 	}
+
+#if NGL_VERISON >= 110
+	// GL_POLYGON_OFFSET_FILL
+	win_c0.z += depth_offset;
+	win_c1.z += depth_offset;
+#endif
 
 	glm::ivec2 ic0(floor(win_c0));
 	glm::ivec2 ic1(floor(win_c1));
@@ -775,12 +783,20 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 		return;
 	}
 
-	if (st.polygon.mode[st.last_side] == GL_LINE)
+	const GLenum pmode = st.polygon.mode[st.last_side];
+
+	if (pmode == GL_LINE)
 	{
-		if (v0.edge) gl_rasterize_line(st, v0, v1);
-		if (v1.edge) gl_rasterize_line(st, v1, v2);
-		if (v2.edge) gl_rasterize_line(st, v2, v0);
-		return;
+#if NGL_VERISON >= 110
+		if (st.render_mode == GL_FEEDBACK ||
+			!(st.depth.test && st.framebuffer->depth && (st.polygon.offset_enabled & 2))) // GL_POLYGON_OFFSET_LINE
+#endif
+		{
+			if (v0.edge) gl_rasterize_line(st, v0, v1);
+			if (v1.edge) gl_rasterize_line(st, v1, v2);
+			if (v2.edge) gl_rasterize_line(st, v2, v0);
+			return;
+		}
 	}
 
 	if (st.render_mode == GL_FEEDBACK)
@@ -802,8 +818,8 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 		rect.w = glm::min(st.scissor.box.w, st.framebuffer->height - st.scissor.box.y);
 	}
 
-	glm::ivec2 bbmin(rect.x + rect.z, rect.y + rect.w);
-	glm::ivec2 bbmax(rect.x, rect.y);
+	glm::ivec3 bbmin(rect.x + rect.z, rect.y + rect.w, 0xFFFF);
+	glm::ivec3 bbmax(rect.x, rect.y, 0);
 
 	glm::vec3 device_c[3]{
 		glm::vec3(v0.clip) / v0.clip.w,
@@ -821,7 +837,41 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 			bbmin[j] = glm::clamp(ic[j], rect[j], bbmin[j]);
 			bbmax[j] = glm::clamp(ic[j], bbmax[j], rect[j] + rect[j + 2]);
 		}
+#if NGL_VERISON >= 110
+		int z = (int)lroundf(win_c[i].z * 0xFFFF);
+		bbmin.z = glm::clamp(z, 0, bbmin.z);
+		bbmax.z = glm::clamp(z, bbmax.z, 0xFFFF);
+#endif
 	}
+
+	float o = 0;
+#if NGL_VERISON >= 110
+	if (st.depth.test && st.framebuffer->depth &&
+		(  ((st.polygon.offset_enabled & 4) && pmode == GL_FILL) // GL_POLYGON_OFFSET_FILL
+		|| ((st.polygon.offset_enabled & 2) && pmode == GL_LINE) // GL_POLYGON_OFFSET_LINE
+		|| ((st.polygon.offset_enabled & 1) && pmode == GL_POINT))) // GL_POLYGON_OFFSET_POINT
+	{
+		const float r = 1.0f / 0xFFFF;
+		glm::vec2 dz = glm::vec2((bbmax.z - bbmin.z) * r) / glm::vec2(bbmax - bbmin);
+		float m = glm::sqrt(dz.x * dz.x + dz.y * dz.y);
+		o = m * st.polygon.offset_factor + r * st.polygon.offset_units;
+
+		if (st.polygon.mode[st.last_side] == GL_LINE)
+		{
+			if (v0.edge) gl_rasterize_line(st, v0, v1, o);
+			if (v1.edge) gl_rasterize_line(st, v1, v2, o);
+			if (v2.edge) gl_rasterize_line(st, v2, v0, o);
+			return;
+		}
+		else if (st.polygon.mode[st.last_side] == GL_POINT)
+		{
+			if (v0.edge) gl_emit_point(st, v0, o);
+			if (v1.edge) gl_emit_point(st, v1, o);
+			if (v2.edge) gl_emit_point(st, v2, o);
+			return;
+		}
+	}
+#endif
 
 	gl_frag_data data;
 
@@ -872,7 +922,7 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 				data.fog_z = abs(bc_screen.x * v0.position.z + bc_screen.y * v1.position.z + bc_screen.z * v2.position.z);
 
 			if (st.depth.test && st.framebuffer->depth)
-				data.z = abs(bc_screen.x * win_c[0].z + bc_screen.y * win_c[1].z + bc_screen.z * win_c[2].z);
+				data.z = abs(bc_screen.x * win_c[0].z + bc_screen.y * win_c[1].z + bc_screen.z * win_c[2].z) + o;
 
 			gl_emit_fragment(st, P.x, P.y, data);
 		}
@@ -914,9 +964,19 @@ void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_fu
 
 	if (st.polygon.mode[st.last_side] == GL_POINT)
 	{
-		if (v0.edge) gl_emit_point(st, v0);
-		if (v1.edge) gl_emit_point(st, v1);
-		if (v2.edge) gl_emit_point(st, v2);
+#if NGL_VERISON >= 110
+		if (st.render_mode != GL_FEEDBACK &&
+			(st.depth.test && st.framebuffer->depth && (st.polygon.offset_enabled & 1))) // GL_POLYGON_OFFSET_POINT
+		{
+			gl_rasterize_triangle(st, v0, v1, v2);
+		}
+		else
+#endif
+		{
+			if (v0.edge) gl_emit_point(st, v0);
+			if (v1.edge) gl_emit_point(st, v1);
+			if (v2.edge) gl_emit_point(st, v2);
+		}
 	}
 	else
 	{
