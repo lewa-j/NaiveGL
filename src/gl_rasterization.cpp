@@ -525,6 +525,9 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex)
 	gl_frag_data data;
 	data.color = vertex.color;
 	data.tex_coord = vertex.tex_coord;
+#if NGL_VERISON >= 110
+	data.tex_coord /= data.tex_coord.q;
+#endif
 	data.z = win_c.z;
 	data.fog_z = abs(vertex.position.z);
 	data.lod = 0;
@@ -833,6 +836,7 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 			//	/ (bc_screen.x * v0.tex_coord.w / v0.clip.w + bc_screen.y * v1.tex_coord.w / v1.clip.w + bc_screen.z * v2.tex_coord.w / v2.clip.w);
 			glm::vec3 bc_clip{ bc_screen.x / v0.clip.w, bc_screen.y / v1.clip.w, bc_screen.z / v2.clip.w };
 			bc_clip = bc_clip / (bc_clip.x + bc_clip.y + bc_clip.z);
+			//TODO tex_coord.q not used
 			data.tex_coord = bc_clip.x * v0.tex_coord + bc_clip.y * v1.tex_coord + bc_clip.z * v2.tex_coord;
 
 			data.lod = 0;
