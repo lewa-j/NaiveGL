@@ -95,6 +95,9 @@ static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GL
 	ta.components = components;
 	ta.border = border;
 
+	if (!src)
+		return;
+
 	const gl_state::pixelStore &ps = gs->pixel_unpack;
 	gl_PixelStoreSetup pstore;
 	pstore.init(ps, width, height, format, type);
@@ -256,8 +259,79 @@ static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GL
 		}
 	}
 }
+#if NGL_VERISON >= 110
+static bool gl_derive_format(int internalformat, GLenum &baseformat, int &components)
+{
+	switch (internalformat)
+	{
+	case GL_ALPHA:
+	case GL_ALPHA4:
+	case GL_ALPHA8:
+	case GL_ALPHA12:
+	case GL_ALPHA16:
+		components = 1;
+		baseformat = GL_ALPHA;
+		break;
+	case 1:
+	case GL_LUMINANCE:
+	case GL_LUMINANCE4:
+	case GL_LUMINANCE8:
+	case GL_LUMINANCE12:
+	case GL_LUMINANCE16:
+		components = 1;
+		baseformat = GL_LUMINANCE;
+		break;
+	case 2:
+	case GL_LUMINANCE_ALPHA:
+	case GL_LUMINANCE4_ALPHA4:
+	case GL_LUMINANCE6_ALPHA2:
+	case GL_LUMINANCE8_ALPHA8:
+	case GL_LUMINANCE12_ALPHA4:
+	case GL_LUMINANCE12_ALPHA12:
+	case GL_LUMINANCE16_ALPHA16:
+		components = 2;
+		baseformat = GL_LUMINANCE_ALPHA;
+		break;
+	case GL_INTENSITY:
+	case GL_INTENSITY4:
+	case GL_INTENSITY8:
+	case GL_INTENSITY12:
+	case GL_INTENSITY16:
+		components = 1;
+		baseformat = GL_INTENSITY;
+		break;
+	case 3:
+	case GL_RGB:
+	case GL_R3_G3_B2:
+	case GL_RGB4:
+	case GL_RGB5:
+	case GL_RGB8:
+	case GL_RGB10:
+	case GL_RGB12:
+	case GL_RGB16:
+		components = 3;
+		baseformat = GL_RGB;
+		break;
+	case 4:
+	case GL_RGBA:
+	case GL_RGBA2:
+	case GL_RGBA4:
+	case GL_RGB5_A1:
+	case GL_RGBA8:
+	case GL_RGB10_A2:
+	case GL_RGBA12:
+	case GL_RGBA16:
+		components = 4;
+		baseformat = GL_RGBA;
+		break;
+	default:
+		return false;
+	}
+	return true;
+}
+#endif
 
-void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* data)
+void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void* data)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
@@ -271,17 +345,30 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 			dl.data.resize(old_size + pix_size);
 			gl_unpack_pixels(gs, width, height, format, type, data, dl.data.data() + old_size);
 		}
-		dl.calls.push_back({ gl_display_list_call::tTexImage2D, {(float)target}, {level, components, width, height, border, (int)format, (int)type, pix_size} });
+		dl.calls.push_back({ gl_display_list_call::tTexImage2D, {(float)target}, {level, internalformat, width, height, border, (int)format, (int)type, pix_size} });
 		if (!gs->display_list_execute)
 			return;
 	}
 	VALIDATE_NOT_BEGIN_MODE
 
-	if (target != GL_TEXTURE_2D)
+	if (target != GL_TEXTURE_2D
+#if NGL_VERISON >= 110
+		&& target != GL_PROXY_TEXTURE_2D
+#endif
+		)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, target);
 		return;
 	}
+	GLint components = internalformat;
+#if NGL_VERISON >= 110
+	GLenum baseformat = 0;
+	if (!gl_derive_format(internalformat, baseformat, components))
+	{
+		gl_set_error_a(GL_INVALID_VALUE, internalformat);
+		return;
+	}
+#endif
 	VALIDATE_TEX_IMAGE;
 	if (width < 0 || height < 0)
 	{
@@ -301,7 +388,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 	gl_texture& tex = gs->texture_2d;
 	gl_texture_array& ta = tex.arrays[level];
 
-	if (width == 0 || height == 0 || !data)
+	if (width == 0 || height == 0)
 	{
 		if (ta.data)
 			delete[] ta.data;
@@ -326,7 +413,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei
 	tex.is_complete = gl_is_texture_complete(tex);
 }
 
-void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei width, GLint border, GLenum format, GLenum type, const void *data)
+void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const void *data)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
@@ -340,17 +427,30 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei
 			dl.data.resize(old_size + pix_size);
 			gl_unpack_pixels(gs, width, 1, format, type, data, dl.data.data() + old_size);
 		}
-		dl.calls.push_back({ gl_display_list_call::tTexImage1D, {}, {(int)target, level, components, width, border, (int)format, (int)type, pix_size} });
+		dl.calls.push_back({ gl_display_list_call::tTexImage1D, {}, {(int)target, level, internalformat, width, border, (int)format, (int)type, pix_size} });
 		if (!gs->display_list_execute)
 			return;
 	}
 	VALIDATE_NOT_BEGIN_MODE
 
-	if (target != GL_TEXTURE_1D)
+	if (target != GL_TEXTURE_1D
+#if NGL_VERISON >= 110
+		&& target != GL_PROXY_TEXTURE_1D
+#endif
+		)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, target);
 		return;
 	}
+	GLint components = internalformat;
+#if NGL_VERISON >= 110
+	GLenum baseformat = 0;
+	if (!gl_derive_format(internalformat, baseformat, components))
+	{
+		gl_set_error_a(GL_INVALID_VALUE, internalformat);
+		return;
+	}
+#endif
 	VALIDATE_TEX_IMAGE;
 	if (width < 0)
 	{
@@ -368,7 +468,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei
 	gl_texture &tex = gs->texture_1d;
 	gl_texture_array &ta = tex.arrays[level];
 
-	if (width == 0 || !data)
+	if (width == 0)
 	{
 		if (ta.data)
 			delete[] ta.data;
