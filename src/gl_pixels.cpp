@@ -841,27 +841,9 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 	const gl_state::pixelStore& ps = gs->pixel_pack;
 	gl_PixelStoreSetup pstore;
 	pstore.init(ps, width, height, format, type);
+	pstore.framebufferClamp(fb, x, y, width, height);
 
 	pixels += pstore.skip_bytes;
-
-	if (y < 0)
-	{
-		pixels += -y * pstore.stride;
-		height += y;
-		y = 0;
-	}
-	if (x < 0)
-	{
-		pixels += -x * pstore.group_size;
-		width += x;
-		x = 0;
-	}
-
-	if (x + width > fb.width)
-		width = fb.width - x;
-
-	if (y + height > fb.height)
-		height = fb.height - y;
 
 	for (int iy = 0; iy < height; iy++)
 	{

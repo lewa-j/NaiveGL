@@ -342,6 +342,12 @@ EXPORTS
 	glDrawElements
 	glInterleavedArrays
 	glPolygonOffset
+	glCopyTexImage2D
+	glCopyTexImage1D
+	glTexSubImage2D
+	glTexSubImage1D
+	glCopyTexSubImage2D
+	glCopyTexSubImage1D
 
 	glPushClientAttrib
 	glPopClientAttrib

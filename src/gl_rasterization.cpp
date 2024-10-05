@@ -620,7 +620,7 @@ void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_pro
 	}
 
 #if NGL_VERISON >= 110
-	// GL_POLYGON_OFFSET_FILL
+	// GL_POLYGON_OFFSET_LINE
 	win_c0.z += depth_offset;
 	win_c1.z += depth_offset;
 #endif

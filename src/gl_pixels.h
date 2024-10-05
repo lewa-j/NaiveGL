@@ -69,6 +69,28 @@ struct gl_PixelStoreSetup
 			skip_bytes = (ps.skip_pixels * group_size + ps.skip_rows * stride);
 		}
 	}
+
+	void framebufferClamp(const gl_framebuffer &fb, int &x, int &y, int &width, int &height)
+	{
+		if (y < 0)
+		{
+			skip_bytes += -y * stride;
+			height += y;
+			y = 0;
+		}
+		if (x < 0)
+		{
+			skip_bytes += -x * group_size;
+			width += x;
+			x = 0;
+		}
+
+		if (x + width > fb.width)
+			width = fb.width - x;
+
+		if (y + height > fb.height)
+			height = fb.height - y;
+	}
 };
 
 inline glm::vec4 remap_color(const glm::vec4 &c, gl_state::pixelMapColor *tables)

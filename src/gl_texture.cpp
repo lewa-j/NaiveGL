@@ -5,22 +5,44 @@
 #include "gl_exports.h"
 #include <glm/gtx/integer.hpp>
 
-#define VALIDATE_TEX_IMAGE \
+#define VALIDATE_TEX_IMAGE_(FUNC,W,H,BLW,BLH) \
 if (level < 0 || level > gl_max_tex_level) \
 { \
-	gl_set_error_a(GL_INVALID_VALUE, level); \
-	return; \
-} \
-if (components < 1 || components > 4) \
-{ \
-	gl_set_error_a(GL_INVALID_VALUE, components); \
+	gl_set_error_a_(GL_INVALID_VALUE, level, FUNC); \
 	return; \
 } \
 if (border != 0 && border != 1) \
 { \
-	gl_set_error_a(GL_INVALID_VALUE, border); \
+	gl_set_error_a_(GL_INVALID_VALUE, border, FUNC); \
 	return; \
 } \
+if ((W) < 0 || (H) < 0) \
+{ \
+	gl_set_error_(GL_INVALID_VALUE, FUNC); \
+	return; \
+} \
+if ((BLW) < 0 || (BLW) > gl_max_texture_size || !is_pow(BLW)) \
+{ \
+	gl_set_error_a_(GL_INVALID_VALUE, (W), FUNC); \
+	return; \
+} \
+if ((BLH) < 0 || (BLH) > gl_max_texture_size || !is_pow(BLH)) \
+{ \
+	gl_set_error_a_(GL_INVALID_VALUE, (H), FUNC); \
+	return; \
+}
+
+#define VALIDATE_TEX_IMAGE(W,H,BLW,BLH) \
+VALIDATE_TEX_IMAGE_(__FUNCTION__,W,H,BLW,BLH)
+
+#define VALIDATE_TEX_IMAGE_COMPONENTS \
+if (components < 1 || components > 4) \
+{ \
+	gl_set_error_a(GL_INVALID_VALUE, components); \
+	return; \
+}
+
+#define VALIDATE_TEX_IMAGE_FORMAT \
 if (format != GL_COLOR_INDEX && (format < GL_RED || format > GL_LUMINANCE_ALPHA)) \
 /*STENCIL_INDEX and DEPTH_COMPONENT are not allowed*/ \
 { \
@@ -360,6 +382,11 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 		gl_set_error_a(GL_INVALID_ENUM, target);
 		return;
 	}
+	int borderless_width = width - border * 2;
+	int borderless_height = height - border * 2;
+	VALIDATE_TEX_IMAGE(width, height, borderless_width, borderless_height);
+	VALIDATE_TEX_IMAGE_FORMAT;
+
 	GLint components = internalformat;
 #if NGL_VERISON >= 110
 	GLenum baseformat = 0;
@@ -369,21 +396,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 		return;
 	}
 #endif
-	VALIDATE_TEX_IMAGE;
-	if (width < 0 || height < 0)
-	{
-		gl_set_error(GL_INVALID_VALUE);
-		return;
-	}
-
-	int borderless_width = width - border * 2;
-	int borderless_height = height - border * 2;
-	if (borderless_width < 0 || borderless_width > gl_max_texture_size || !is_pow(borderless_width) ||
-		borderless_height < 0 || borderless_height > gl_max_texture_size || !is_pow(borderless_height))
-	{
-		gl_set_error(GL_INVALID_VALUE);
-		return;
-	}
+	VALIDATE_TEX_IMAGE_COMPONENTS;
 
 	gl_texture& tex = gs->texture_2d;
 	gl_texture_array& ta = tex.arrays[level];
@@ -442,6 +455,11 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 		gl_set_error_a(GL_INVALID_ENUM, target);
 		return;
 	}
+
+	int borderless_width = width - border * 2;
+	VALIDATE_TEX_IMAGE(width, 1, borderless_width, 1);
+	VALIDATE_TEX_IMAGE_FORMAT;
+
 	GLint components = internalformat;
 #if NGL_VERISON >= 110
 	GLenum baseformat = 0;
@@ -451,19 +469,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 		return;
 	}
 #endif
-	VALIDATE_TEX_IMAGE;
-	if (width < 0)
-	{
-		gl_set_error(GL_INVALID_VALUE);
-		return;
-	}
-
-	int borderless_width = width - border * 2;
-	if (borderless_width < 0 || borderless_width > gl_max_texture_size || !is_pow(borderless_width))
-	{
-		gl_set_error_a(GL_INVALID_VALUE, width);
-		return;
-	}
+	VALIDATE_TEX_IMAGE_COMPONENTS;
 
 	gl_texture &tex = gs->texture_1d;
 	gl_texture_array &ta = tex.arrays[level];
@@ -492,6 +498,69 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 	gl_texImage(gs, ta, components, width, 1, border, format, type, (const uint8_t *)data);
 	tex.is_complete = gl_is_texture_complete(tex);
 }
+
+#if NGL_VERISON >= 110
+static void gl_copyTexImage(const char *func, GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	if (gs->begin_primitive_mode != -1)
+	{
+		gl_set_error_(GL_INVALID_OPERATION, func);
+		return;
+	}
+	if (target != GL_TEXTURE_2D && target != GL_TEXTURE_1D)
+	{
+		gl_set_error_a_(GL_INVALID_ENUM, target, func);
+		return;
+	}
+	int borderless_width = width - border * 2;
+	int borderless_height = (target == GL_TEXTURE_1D) ? 1 : (height - border * 2);
+	VALIDATE_TEX_IMAGE_(func, width, height, borderless_width, borderless_height);
+
+	GLint components = 0;
+	GLenum baseformat = 0;
+	if ((internalformat >= 1 && internalformat <= 4) || !gl_derive_format(internalformat, baseformat, components))
+	{
+		gl_set_error_a_(GL_INVALID_ENUM, internalformat, func);
+		return;
+	}
+
+	// may be optimized
+
+	gl_state::pixelStore save_pack{};
+	gl_state::pixelStore save_unpack{};
+	std::swap(save_pack, gs->pixel_pack);
+	std::swap(save_unpack, gs->pixel_unpack);
+	gl_state::pixel_t save_pixel{};
+	std::swap(save_pixel, gs->pixel);
+	std::vector<uint8_t> pixels(width * height * 4);
+	glReadPixels(x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+	gs->pixel = save_pixel;
+	if(target == GL_TEXTURE_2D)
+		glTexImage2D(target, level, internalformat, width, height, border, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+	else
+		glTexImage1D(target, level, internalformat, width, border, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+	gs->pixel_pack = save_pack;
+	gs->pixel_unpack = save_unpack;
+}
+
+void APIENTRY glCopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
+{
+	gl_copyTexImage(__FUNCTION__, target, level, internalformat, x, y, width, height, border);
+}
+
+void APIENTRY glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border)
+{
+	gl_copyTexImage(__FUNCTION__, target, level, internalformat, x, y, width, 1, border);
+}
+
+void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels) {}
+void APIENTRY glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const void *pixels) {}
+void APIENTRY glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height) {}
+void APIENTRY glCopyTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width) {}
+#endif
 
 void APIENTRY glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void *pixels)
 {
