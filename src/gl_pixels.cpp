@@ -938,10 +938,14 @@ void APIENTRY glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 		return;
 	}
 
+	// prevent glDrawPixels from writing into display list
+	int save_dl = gs->display_list_begun;
+	gs->display_list_begun = 0;
+
 	// may be optimized
 
 	// map_color, scale, bias and index arithmetic will be applied twice, first on Read and then on Draw.
-	// So disable them after Read and restore after Draw
+	// So reset pixel_t after Read and restore after Draw
 
 	if (type == GL_COLOR)
 	{
@@ -970,4 +974,6 @@ void APIENTRY glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 		glDrawPixels(width, height, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, pixels.data());
 		gs->pixel = save_pixel;
 	}
+
+	gs->display_list_begun = save_dl;
 }
