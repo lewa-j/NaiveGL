@@ -5,12 +5,15 @@
 #include "gl_exports.h"
 #include <glm/gtx/integer.hpp>
 
-#define VALIDATE_TEX_IMAGE_(FUNC,W,H,BLW,BLH) \
+#define VALIDATE_TEX_LEVEL_(FUNC) \
 if (level < 0 || level > gl_max_tex_level) \
 { \
 	gl_set_error_a_(GL_INVALID_VALUE, level, FUNC); \
 	return; \
-} \
+}
+
+#define VALIDATE_TEX_IMAGE_(FUNC,W,H,BLW,BLH) \
+VALIDATE_TEX_LEVEL_(FUNC) \
 if (border != 0 && border != 1) \
 { \
 	gl_set_error_a_(GL_INVALID_VALUE, border, FUNC); \
@@ -101,24 +104,15 @@ static void gl_tex_store_pixel(const glm::vec4 &col, int components, uint8_t *ds
 	}
 }
 
-static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const uint8_t *src)
+static void gl_texSubImage(gl_state *gs, gl_texture_array &ta, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const uint8_t *src)
 {
-	size_t size = width * height * components;
-
-	if (ta.width * ta.height * ta.components != size)
-	{
-		if (ta.data)
-			delete[] ta.data;
-
-		ta.data = new uint8_t[size];
-	}
-	ta.width = width;
-	ta.height = height;
-	ta.components = components;
-	ta.border = border;
-
 	if (!src)
 		return;
+	if (!ta.data)
+		return;
+
+	int components = ta.components;
+	size_t size = width * height * components;
 
 	const gl_state::pixelStore &ps = gs->pixel_unpack;
 	gl_PixelStoreSetup pstore;
@@ -126,7 +120,11 @@ static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GL
 
 	src += pstore.skip_bytes;
 
+	int dst_stride = ta.width * components;
+	int dst_sub_stride = width * components;
+
 	uint8_t *dst = ta.data;
+	dst += yoffset * dst_stride + xoffset * components;
 
 	// fast path
 	if (type == GL_UNSIGNED_BYTE && format >= GL_RED && format <= GL_LUMINANCE_ALPHA &&
@@ -136,7 +134,7 @@ static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GL
 		{
 			if (components == pstore.components)
 			{
-				if (pstore.stride == width * components)
+				if (pstore.stride == dst_stride && dst_stride == dst_sub_stride)
 				{
 					memcpy(dst, src, size);
 					return;
@@ -144,29 +142,46 @@ static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GL
 
 				for (int j = 0; j < height; j++)
 				{
-					const uint8_t *row = src;
-					memcpy(dst, src, width * components);
-					dst += width * components;
+					memcpy(dst, src, dst_sub_stride);
 					src += pstore.stride;
+					dst += dst_stride;
 				}
 				return;
 			}
 
-			if (pstore.stride == width * pstore.components && components < pstore.components && components != 2)
+			if (components < pstore.components && components != 2)
 			{
-				for (size_t i = 0; i < size; i += components)
+				if (width == ta.width && pstore.stride == width * pstore.components)
 				{
-					memcpy(dst, src, components);
-					dst += components;
-					src += pstore.components;
+					for (size_t i = 0; i < size; i += components)
+					{
+						memcpy(dst, src, components);
+						src += pstore.components;
+						dst += components;
+					}
+					return;
 				}
-				return;
+
+				for (int j = 0; j < height; j++)
+				{
+					const uint8_t *row = src;
+					uint8_t *dst_row = dst;
+					for (size_t i = 0; i < width; i ++)
+					{
+						memcpy(dst_row, row, components);
+						row += pstore.components;
+						dst_row += components;
+					}
+					src += pstore.stride;
+					dst += dst_stride;
+				}
 			}
 		}
 
 		for (int j = 0; j < height; j++)
 		{
 			const uint8_t *row = src;
+			uint8_t *dst_row = dst;
 			for (int i = 0; i < width; i++)
 			{
 				uint8_t pixel[4]{ 0,0,0,0xff };
@@ -194,23 +209,24 @@ static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GL
 
 				if (components == 2)
 				{
-					dst[0] = pixel[0];
-					dst[1] = pixel[3];
+					dst_row[0] = pixel[0];
+					dst_row[1] = pixel[3];
 				}
 				else
-					memcpy(dst, pixel, components);
+					memcpy(dst_row, pixel, components);
 
-				dst += components;
 				row += pstore.components;
+				dst_row += components;
 			}
 			src += pstore.stride;
+			dst += dst_stride;
 		}
 
 		return;
 	}
 
 #ifndef NDEBUG
-	printf("glTexImage(c %d,%dx%d,b %d,f %X,t %X) al=%d map %d slow path\n", components, width, height, border, format, type, ps.alignment, gs->pixel.map_color);
+	printf("glTexImage(c %d,%dx%d,b %d,f %X,t %X) al=%d map %d slow path\n", components, width, height, ta.border, format, type, ps.alignment, gs->pixel.map_color);
 #endif
 
 	if (type != GL_BITMAP)
@@ -218,6 +234,7 @@ static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GL
 		for (int j = 0; j < height; j++)
 		{
 			const uint8_t *row = src;
+			uint8_t *dst_row = dst;
 			for (int i = 0; i < width; i++)
 			{
 				uint8_t group[16];
@@ -240,12 +257,13 @@ static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GL
 						pixel = remap_color(pixel, gs->pixel_map_color_table + 4);
 				}
 
-				gl_tex_store_pixel(pixel, components, dst);
+				gl_tex_store_pixel(pixel, components, dst_row);
 
-				dst += components;
+				dst_row += components;
 				row += pstore.group_size;
 			}
 			src += pstore.stride;
+			dst += dst_stride;
 		}
 	}
 	else //GL_BITMAP
@@ -257,6 +275,7 @@ static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GL
 		for (int j = 0; j < height; j++)
 		{
 			const uint8_t *group = src;
+			uint8_t *dst_row = dst;
 
 			int pixel = pstore.skip_bits;
 			for (int ix = 0; ix < width; ix++)
@@ -267,8 +286,8 @@ static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GL
 				else
 					b = !!((*group) & (0x80 >> pixel));
 
-				memcpy(dst, bitmap_colors[b], components);
-				dst += components;
+				memcpy(dst_row, bitmap_colors[b], components);
+				dst_row += components;
 				pixel++;
 
 				if (pixel >= 8)
@@ -278,9 +297,30 @@ static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GL
 				}
 			}
 			src += pstore.stride;
+			dst += dst_stride;
 		}
 	}
 }
+
+static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const uint8_t *src)
+{
+	size_t size = width * height * components;
+
+	if (ta.width * ta.height * ta.components != size)
+	{
+		if (ta.data)
+			delete[] ta.data;
+
+		ta.data = new uint8_t[size];
+	}
+	ta.width = width;
+	ta.height = height;
+	ta.components = components;
+	ta.border = border;
+
+	gl_texSubImage(gs, ta, 0, 0, width, height, format, type, src);
+}
+
 #if NGL_VERISON >= 110
 static bool gl_derive_format(int internalformat, GLenum &baseformat, int &components)
 {
@@ -537,7 +577,7 @@ static void gl_copyTexImage(const char *func, GLenum target, GLint level, GLenum
 	std::vector<uint8_t> pixels(width * height * 4);
 	glReadPixels(x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 	gs->pixel = save_pixel;
-	if(target == GL_TEXTURE_2D)
+	if (target == GL_TEXTURE_2D)
 		glTexImage2D(target, level, internalformat, width, height, border, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
 	else
 		glTexImage1D(target, level, internalformat, width, border, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
@@ -556,10 +596,130 @@ void APIENTRY glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat
 	gl_copyTexImage(__FUNCTION__, target, level, internalformat, x, y, width, 1, border);
 }
 
-void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels) {}
-void APIENTRY glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const void *pixels) {}
-void APIENTRY glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height) {}
-void APIENTRY glCopyTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width) {}
+#define VALIDATE_TEX_SUB_IMAGE(FUNC, TARGET, W, H) \
+if (target != TARGET) \
+{ \
+	gl_set_error_a_(GL_INVALID_ENUM, target, FUNC); \
+	return; \
+} \
+VALIDATE_TEX_LEVEL_(FUNC) \
+if ((W) < 0 || (H) < 0) \
+{ \
+	gl_set_error_(GL_INVALID_VALUE, FUNC); \
+	return; \
+}
+
+void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_2D, width, height);
+	VALIDATE_TEX_IMAGE_FORMAT;
+
+	gl_texture &tex = gs->texture_2d;
+	gl_texture_array &ta = tex.arrays[level];
+
+	if (xoffset < -ta.border
+		|| xoffset + width > ta.width - ta.border
+		|| yoffset < -ta.border
+		|| yoffset + height > ta.height - ta.border)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
+	gl_texSubImage(gs, ta, xoffset, yoffset, width, height, format, type, (const uint8_t*)pixels);
+}
+
+void APIENTRY glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const void *pixels)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_1D, width, 1);
+	VALIDATE_TEX_IMAGE_FORMAT;
+
+	gl_texture &tex = gs->texture_1d;
+	gl_texture_array &ta = tex.arrays[level];
+
+	if (xoffset < -ta.border
+		|| xoffset + width > ta.width - ta.border)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
+	gl_texSubImage(gs, ta, xoffset, 0, width, 1, format, type, (const uint8_t *)pixels);
+}
+
+void APIENTRY glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_2D, width, height);
+
+	gl_texture &tex = gs->texture_2d;
+	gl_texture_array &ta = tex.arrays[level];
+
+	if (xoffset < -ta.border
+		|| xoffset + width > ta.width - ta.border
+		|| yoffset < -ta.border
+		|| yoffset + height > ta.height - ta.border)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
+	gl_state::pixelStore save_pack{};
+	gl_state::pixelStore save_unpack{};
+	std::swap(save_pack, gs->pixel_pack);
+	std::swap(save_unpack, gs->pixel_unpack);
+	gl_state::pixel_t save_pixel{};
+	std::swap(save_pixel, gs->pixel);
+
+	std::vector<uint8_t> pixels(width * height * 4);
+	glReadPixels(x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+	gs->pixel = save_pixel;
+	gl_texSubImage(gs, ta, xoffset, yoffset, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+	gs->pixel_pack = save_pack;
+	gs->pixel_unpack = save_unpack;
+}
+
+void APIENTRY glCopyTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_1D, width, 1);
+
+	gl_texture &tex = gs->texture_1d;
+	gl_texture_array &ta = tex.arrays[level];
+
+	if (xoffset < -ta.border
+		|| xoffset + width > ta.width - ta.border)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
+	gl_state::pixelStore save_pack{};
+	gl_state::pixelStore save_unpack{};
+	std::swap(save_pack, gs->pixel_pack);
+	std::swap(save_unpack, gs->pixel_unpack);
+	gl_state::pixel_t save_pixel{};
+	std::swap(save_pixel, gs->pixel);
+
+	std::vector<uint8_t> pixels(width * 4);
+	glReadPixels(x, y, width, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+	gs->pixel = save_pixel;
+	gl_texSubImage(gs, ta, xoffset, 0, width, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+
+	gs->pixel_pack = save_pack;
+	gs->pixel_unpack = save_unpack;
+}
 #endif
 
 void APIENTRY glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void *pixels)
