@@ -944,36 +944,42 @@ void APIENTRY glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 
 	// may be optimized
 
+	// ignore pixel store
+	gl_state::pixelStore save_pack{};
+	gl_state::pixelStore save_unpack{};
+	std::swap(save_pack, gs->pixel_pack);
+	std::swap(save_unpack, gs->pixel_unpack);
+
 	// map_color, scale, bias and index arithmetic will be applied twice, first on Read and then on Draw.
 	// So reset pixel_t after Read and restore after Draw
+
+	gl_state::pixel_t save_pixel{};
 
 	if (type == GL_COLOR)
 	{
 		std::vector<uint8_t> pixels(width * height * 4);
 		glReadPixels(x, y, width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-		gl_state::pixel_t save_pixel{};
 		std::swap(save_pixel, gs->pixel);
 		glDrawPixels(width, height, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
-		gs->pixel = save_pixel;
 	}
 	else if (type == GL_DEPTH)
 	{
 		std::vector<uint16_t> pixels(width * height);
 		glReadPixels(x, y, width, height, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, pixels.data());
-		gl_state::pixel_t save_pixel{};
 		std::swap(save_pixel, gs->pixel);
 		glDrawPixels(width, height, GL_DEPTH_COMPONENT, GL_UNSIGNED_SHORT, pixels.data());
-		gs->pixel = save_pixel;
 	}
 	else if (type == GL_STENCIL)
 	{
 		std::vector<uint8_t> pixels(width * height);
 		glReadPixels(x, y, width, height, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, pixels.data());
-		gl_state::pixel_t save_pixel{};
 		std::swap(save_pixel, gs->pixel);
 		glDrawPixels(width, height, GL_STENCIL_INDEX, GL_UNSIGNED_BYTE, pixels.data());
-		gs->pixel = save_pixel;
+		
 	}
+	gs->pixel = save_pixel;
+	gs->pixel_pack = save_pack;
+	gs->pixel_unpack = save_unpack;
 
 	gs->display_list_begun = save_dl;
 }
