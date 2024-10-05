@@ -11,7 +11,7 @@ if (level < 0 || level > gl_max_tex_level) \
 	gl_set_error_a(GL_INVALID_VALUE, level); \
 	return; \
 } \
-if (components < 0 || components > 4) \
+if (components < 1 || components > 4) \
 { \
 	gl_set_error_a(GL_INVALID_VALUE, components); \
 	return; \
