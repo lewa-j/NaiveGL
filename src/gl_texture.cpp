@@ -5,15 +5,15 @@
 #include "gl_exports.h"
 #include <glm/gtx/integer.hpp>
 
-#define VALIDATE_TEX_LEVEL_(FUNC) \
-if (level < 0 || level > gl_max_tex_level) \
+#define VALIDATE_TEX_LEVEL_(FUNC,LEVEL) \
+if (LEVEL < 0 || LEVEL > gl_max_tex_level) \
 { \
-	gl_set_error_a_(GL_INVALID_VALUE, level, FUNC); \
+	gl_set_error_a_(GL_INVALID_VALUE, LEVEL, FUNC); \
 	return; \
 }
 
-#define VALIDATE_TEX_IMAGE_(FUNC,W,H,BLW,BLH) \
-VALIDATE_TEX_LEVEL_(FUNC) \
+#define VALIDATE_TEX_IMAGE_(FUNC,LEVEL,W,H,BLW,BLH) \
+VALIDATE_TEX_LEVEL_(FUNC,LEVEL) \
 if (border != 0 && border != 1) \
 { \
 	gl_set_error_a_(GL_INVALID_VALUE, border, FUNC); \
@@ -35,8 +35,8 @@ if ((BLH) < 0 || (BLH) > gl_max_texture_size || !is_pow(BLH)) \
 	return; \
 }
 
-#define VALIDATE_TEX_IMAGE(W,H,BLW,BLH) \
-VALIDATE_TEX_IMAGE_(__FUNCTION__,W,H,BLW,BLH)
+#define VALIDATE_TEX_IMAGE(LEVEL,W,H,BLW,BLH) \
+VALIDATE_TEX_IMAGE_(__FUNCTION__,LEVEL,W,H,BLW,BLH)
 
 #define VALIDATE_TEX_IMAGE_COMPONENTS \
 if (components < 1 || components > 4) \
@@ -424,7 +424,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 	}
 	int borderless_width = width - border * 2;
 	int borderless_height = height - border * 2;
-	VALIDATE_TEX_IMAGE(width, height, borderless_width, borderless_height);
+	VALIDATE_TEX_IMAGE(level, width, height, borderless_width, borderless_height);
 	VALIDATE_TEX_IMAGE_FORMAT;
 
 	GLint components = internalformat;
@@ -497,7 +497,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 	}
 
 	int borderless_width = width - border * 2;
-	VALIDATE_TEX_IMAGE(width, 1, borderless_width, 1);
+	VALIDATE_TEX_IMAGE(level, width, 1, borderless_width, 1);
 	VALIDATE_TEX_IMAGE_FORMAT;
 
 	GLint components = internalformat;
@@ -556,7 +556,7 @@ static void gl_copyTexImage(const char *func, GLenum target, GLint level, GLenum
 	}
 	int borderless_width = width - border * 2;
 	int borderless_height = (target == GL_TEXTURE_1D) ? 1 : (height - border * 2);
-	VALIDATE_TEX_IMAGE_(func, width, height, borderless_width, borderless_height);
+	VALIDATE_TEX_IMAGE_(func, level, width, height, borderless_width, borderless_height);
 
 	GLint components = 0;
 	GLenum baseformat = 0;
@@ -596,13 +596,13 @@ void APIENTRY glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat
 	gl_copyTexImage(__FUNCTION__, target, level, internalformat, x, y, width, 1, border);
 }
 
-#define VALIDATE_TEX_SUB_IMAGE(FUNC, TARGET, W, H) \
+#define VALIDATE_TEX_SUB_IMAGE(FUNC,TARGET,LEVEL,W,H) \
 if (target != TARGET) \
 { \
 	gl_set_error_a_(GL_INVALID_ENUM, target, FUNC); \
 	return; \
 } \
-VALIDATE_TEX_LEVEL_(FUNC) \
+VALIDATE_TEX_LEVEL_(FUNC,LEVEL) \
 if ((W) < 0 || (H) < 0) \
 { \
 	gl_set_error_(GL_INVALID_VALUE, FUNC); \
@@ -614,7 +614,7 @@ void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint y
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
-	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_2D, width, height);
+	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_2D, level, width, height);
 	VALIDATE_TEX_IMAGE_FORMAT;
 
 	gl_texture &tex = gs->texture_2d;
@@ -637,7 +637,7 @@ void APIENTRY glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
-	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_1D, width, 1);
+	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_1D, level, width, 1);
 	VALIDATE_TEX_IMAGE_FORMAT;
 
 	gl_texture &tex = gs->texture_1d;
@@ -658,7 +658,7 @@ void APIENTRY glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLi
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
-	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_2D, width, height);
+	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_2D, level, width, height);
 
 	gl_texture &tex = gs->texture_2d;
 	gl_texture_array &ta = tex.arrays[level];
@@ -693,7 +693,7 @@ void APIENTRY glCopyTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLi
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
-	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_1D, width, 1);
+	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_1D, level, width, 1);
 
 	gl_texture &tex = gs->texture_1d;
 	gl_texture_array &ta = tex.arrays[level];
