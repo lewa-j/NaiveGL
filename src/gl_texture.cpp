@@ -12,11 +12,11 @@ if (LEVEL < 0 || LEVEL > gl_max_tex_level) \
 	return; \
 }
 
-#define VALIDATE_TEX_IMAGE_(FUNC,LEVEL,W,H,BLW,BLH) \
+#define VALIDATE_TEX_IMAGE_(FUNC,LEVEL,W,H,BORDER,BLW,BLH) \
 VALIDATE_TEX_LEVEL_(FUNC,LEVEL) \
-if (border != 0 && border != 1) \
+if (BORDER < 0 || BORDER > 1) \
 { \
-	gl_set_error_a_(GL_INVALID_VALUE, border, FUNC); \
+	gl_set_error_a_(GL_INVALID_VALUE, BORDER, FUNC); \
 	return; \
 } \
 if ((W) < 0 || (H) < 0) \
@@ -35,8 +35,8 @@ if ((BLH) < 0 || (BLH) > gl_max_texture_size || !is_pow(BLH)) \
 	return; \
 }
 
-#define VALIDATE_TEX_IMAGE(LEVEL,W,H,BLW,BLH) \
-VALIDATE_TEX_IMAGE_(__FUNCTION__,LEVEL,W,H,BLW,BLH)
+#define VALIDATE_TEX_IMAGE(LEVEL,W,H,BORDER,BLW,BLH) \
+VALIDATE_TEX_IMAGE_(__FUNCTION__,LEVEL,W,H,BORDER,BLW,BLH)
 
 #define VALIDATE_TEX_IMAGE_COMPONENTS \
 if (components < 1 || components > 4) \
@@ -166,7 +166,7 @@ static void gl_texSubImage(gl_state *gs, gl_texture_array &ta, GLint xoffset, GL
 				{
 					const uint8_t *row = src;
 					uint8_t *dst_row = dst;
-					for (size_t i = 0; i < width; i ++)
+					for (int i = 0; i < width; i ++)
 					{
 						memcpy(dst_row, row, components);
 						row += pstore.components;
@@ -424,7 +424,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 	}
 	int borderless_width = width - border * 2;
 	int borderless_height = height - border * 2;
-	VALIDATE_TEX_IMAGE(level, width, height, borderless_width, borderless_height);
+	VALIDATE_TEX_IMAGE(level, width, height, border, borderless_width, borderless_height);
 	VALIDATE_TEX_IMAGE_FORMAT;
 
 	GLint components = internalformat;
@@ -497,7 +497,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 	}
 
 	int borderless_width = width - border * 2;
-	VALIDATE_TEX_IMAGE(level, width, 1, borderless_width, 1);
+	VALIDATE_TEX_IMAGE(level, width, 1, border, borderless_width, 1);
 	VALIDATE_TEX_IMAGE_FORMAT;
 
 	GLint components = internalformat;
@@ -556,7 +556,7 @@ static void gl_copyTexImage(const char *func, GLenum target, GLint level, GLenum
 	}
 	int borderless_width = width - border * 2;
 	int borderless_height = (target == GL_TEXTURE_1D) ? 1 : (height - border * 2);
-	VALIDATE_TEX_IMAGE_(func, level, width, height, borderless_width, borderless_height);
+	VALIDATE_TEX_IMAGE_(func, level, width, height, border, borderless_width, borderless_height);
 
 	GLint components = 0;
 	GLenum baseformat = 0;
