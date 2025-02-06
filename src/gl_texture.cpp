@@ -401,7 +401,9 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 	{
 		auto &dl = gs->display_list_indices[0];
 		size_t old_size = dl.data.size();
-		int pix_size = gl_pixels_size(width, height, format, type);
+		int pix_size = 0;
+		if (data)
+			pix_size = gl_pixels_size(width, height, format, type);
 		if (pix_size)
 		{
 			dl.data.resize(old_size + pix_size);
@@ -474,7 +476,9 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 	{
 		auto &dl = gs->display_list_indices[0];
 		size_t old_size = dl.data.size();
-		int pix_size = gl_pixels_size(width, 1, format, type);
+		int pix_size = 0;
+		if (data)
+			pix_size = gl_pixels_size(width, 1, format, type);
 		if (pix_size)
 		{
 			dl.data.resize(old_size + pix_size);

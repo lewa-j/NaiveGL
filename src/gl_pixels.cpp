@@ -350,7 +350,7 @@ static void emit_stencil(gl_state& st, int x, int y, uint8_t index)
 
 int gl_pixels_size(GLsizei width, GLsizei height, GLenum format, GLenum type)
 {
-	if (width < 0 || height < 0)
+	if (width <= 0 || height <= 0)
 		return 0;
 
 	if (type == GL_BITMAP)

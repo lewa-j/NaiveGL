@@ -277,7 +277,7 @@ void gl_callList(gl_state *gs, GLuint list)
 			gl_state::pixelStore save = gs->pixel_unpack;
 			gs->pixel_pack = {};
 			gs->pixel_pack.alignment = 1;
-			glTexImage2D((GLenum)call.argsf[0], call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4], call.argsi[5], call.argsi[6], data);
+			glTexImage2D((GLenum)call.argsf[0], call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4], call.argsi[5], call.argsi[6], call.argsi[7] ? data : nullptr);
 			data += call.argsi[7];
 			gs->pixel_unpack = save;
 			break;
@@ -287,7 +287,7 @@ void gl_callList(gl_state *gs, GLuint list)
 			gl_state::pixelStore save = gs->pixel_unpack;
 			gs->pixel_pack = {};
 			gs->pixel_pack.alignment = 1;
-			glTexImage1D(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4], call.argsi[5], call.argsi[6], data);
+			glTexImage1D(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4], call.argsi[5], call.argsi[6], call.argsi[7] ? data : nullptr);
 			data += call.argsi[7];
 			gs->pixel_unpack = save;
 			break;
