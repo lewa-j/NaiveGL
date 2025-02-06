@@ -5,7 +5,7 @@ Naive implementation of OpenGL 1.0 in C++
 Almost complete 1.0 feature set, except
 
 * Wide lines
-* Antiaiasing
+* Antialiasing
 * Texture border
 * FRONT and AUX color buffers
 * Clear color dithering
