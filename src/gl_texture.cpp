@@ -553,11 +553,6 @@ static void gl_copyTexImage(const char *func, GLenum target, GLint level, GLenum
 		gl_set_error_(GL_INVALID_OPERATION, func);
 		return;
 	}
-	if (target != GL_TEXTURE_2D && target != GL_TEXTURE_1D)
-	{
-		gl_set_error_a_(GL_INVALID_ENUM, target, func);
-		return;
-	}
 	int borderless_width = width - border * 2;
 	int borderless_height = (target == GL_TEXTURE_1D) ? 1 : (height - border * 2);
 	VALIDATE_TEX_IMAGE_(func, level, width, height, border, borderless_width, borderless_height);
@@ -592,11 +587,21 @@ static void gl_copyTexImage(const char *func, GLenum target, GLint level, GLenum
 
 void APIENTRY glCopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
 {
+	if (target != GL_TEXTURE_2D)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, target);
+		return;
+	}
 	gl_copyTexImage(__FUNCTION__, target, level, internalformat, x, y, width, height, border);
 }
 
 void APIENTRY glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border)
 {
+	if (target != GL_TEXTURE_1D)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, target);
+		return;
+	}
 	gl_copyTexImage(__FUNCTION__, target, level, internalformat, x, y, width, 1, border);
 }
 
