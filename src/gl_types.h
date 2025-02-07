@@ -256,6 +256,7 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_TEXTURE_WRAP_S 0x2802
 #define GL_TEXTURE_WRAP_T 0x2803
 #define GL_TEXTURE_BORDER_COLOR 0x1004
+#define GL_TEXTURE_PRIORITY 0x8066
 
 #define GL_TEXTURE_WIDTH 0x1000
 #define GL_TEXTURE_HEIGHT 0x1001

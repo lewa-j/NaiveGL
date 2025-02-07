@@ -804,6 +804,14 @@ void APIENTRY glGetTexImage(GLenum target, GLint level, GLenum format, GLenum ty
 	}
 }
 
+#if NGL_VERISON >= 110
+#define VALIDATE_TEX_PARAMETER_PNAME_CHECK_ \
+(pname < GL_TEXTURE_MAG_FILTER || pname > GL_TEXTURE_WRAP_T) && pname != GL_TEXTURE_BORDER_COLOR && pname != GL_TEXTURE_PRIORITY
+#else
+#define VALIDATE_TEX_PARAMETER_PNAME_CHECK_ \
+(pname < GL_TEXTURE_MAG_FILTER || pname > GL_TEXTURE_WRAP_T) && pname != GL_TEXTURE_BORDER_COLOR
+#endif
+
 #define VALIDATE_TEX_PARAMETER \
 VALIDATE_NOT_BEGIN_MODE; \
 if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D) \
@@ -811,7 +819,7 @@ if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D) \
 	gl_set_error_a(GL_INVALID_ENUM, target); \
 	return; \
 } \
-if ((pname < GL_TEXTURE_MAG_FILTER || pname > GL_TEXTURE_WRAP_T) && pname != GL_TEXTURE_BORDER_COLOR) \
+if (VALIDATE_TEX_PARAMETER_PNAME_CHECK_) \
 { \
 	gl_set_error_a(GL_INVALID_ENUM, pname); \
 	return; \
@@ -868,6 +876,10 @@ static int gl_texParameterv_size(GLenum pname)
 		return 1;
 	if (pname == GL_TEXTURE_BORDER_COLOR)
 		return 4;
+#if NGL_VERISON >= 110
+	if (pname == GL_TEXTURE_PRIORITY)
+		return 1;
+#endif
 	return 0;
 }
 
