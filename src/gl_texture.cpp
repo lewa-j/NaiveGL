@@ -900,7 +900,7 @@ void gl_texParameterv(gl_state *gs, GLenum target, GLenum pname, const T* params
 	else if (pname == GL_TEXTURE_WRAP_T)
 		tex.params.wrap_t = to_int(params[0]);
 	else if (pname == GL_TEXTURE_BORDER_COLOR)
-		tex.params.border_color = glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3]));
+		tex.params.border_color = glm::clamp(glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])), glm::vec4(0), glm::vec4(1));
 
 	tex.is_complete = gl_is_texture_complete(tex);
 }
