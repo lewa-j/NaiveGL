@@ -256,7 +256,6 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_TEXTURE_WRAP_S 0x2802
 #define GL_TEXTURE_WRAP_T 0x2803
 #define GL_TEXTURE_BORDER_COLOR 0x1004
-#define GL_TEXTURE_PRIORITY 0x8066
 
 #define GL_TEXTURE_WIDTH 0x1000
 #define GL_TEXTURE_HEIGHT 0x1001
@@ -555,7 +554,6 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_MAX_PROJECTION_STACK_DEPTH 0x0D38
 #define GL_MAX_TEXTURE_STACK_DEPTH 0x0D39
 #define GL_MAX_VIEWPORT_DIMS 0x0D3A
-#define GL_MAX_CLIENT_ATTRIB_STACK_DEPTH 0x0D3B
 #define GL_SUBPIXEL_BITS 0x0D50
 
 #define GL_AUX_BUFFERS 0x0C00
@@ -654,6 +652,10 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_RGB10_A2 0x8059
 #define GL_RGBA12 0x805A
 #define GL_RGBA16 0x805B
+
+#define GL_TEXTURE_PRIORITY 0x8066
+
+#define GL_MAX_CLIENT_ATTRIB_STACK_DEPTH 0x0D3B
 
 #define GL_CLIENT_PIXEL_STORE_BIT 0x00000001
 #define GL_CLIENT_VERTEX_ARRAY_BIT 0x00000002
