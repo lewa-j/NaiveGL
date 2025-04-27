@@ -853,51 +853,51 @@ if (VALIDATE_TEX_PARAMETER_PNAME_CHECK_) \
 }
 
 #define VALIDATE_TEX_PARAMETER_PARAM(p) \
-if ((pname == GL_TEXTURE_WRAP_S || pname == GL_TEXTURE_WRAP_T) && (p != GL_CLAMP && p != GL_REPEAT)) \
+if ((pname == GL_TEXTURE_WRAP_S || pname == GL_TEXTURE_WRAP_T) && ((p) != GL_CLAMP && (p) != GL_REPEAT)) \
 { \
-	gl_set_error_a(GL_INVALID_ENUM, p); \
+	gl_set_error_a(GL_INVALID_ENUM, (p)); \
 	return; \
 } \
-if ((pname == GL_TEXTURE_MAG_FILTER && p != GL_NEAREST && p != GL_LINEAR) \
-	|| (pname == GL_TEXTURE_MIN_FILTER && p != GL_NEAREST && p != GL_LINEAR && (p < GL_NEAREST_MIPMAP_NEAREST || p > GL_LINEAR_MIPMAP_LINEAR))) \
+if ((pname == GL_TEXTURE_MAG_FILTER && (p) != GL_NEAREST && (p) != GL_LINEAR) \
+	|| (pname == GL_TEXTURE_MIN_FILTER && (p) != GL_NEAREST && (p) != GL_LINEAR && ((p) < GL_NEAREST_MIPMAP_NEAREST || (p) > GL_LINEAR_MIPMAP_LINEAR))) \
 { \
-	gl_set_error_a(GL_INVALID_ENUM, p); \
+	gl_set_error_a(GL_INVALID_ENUM, (p)); \
 	return; \
 }
 
 void APIENTRY glTexParameteri(GLenum target, GLenum pname, GLint param)
 {
+	glTexParameterf(target, pname, (float)param);
+}
+void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param)
+{
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-	WRITE_DISPLAY_LIST(TexParameter, {}, { (int)target, (int)pname, param });
+	WRITE_DISPLAY_LIST(TexParameter, { param }, { (int)target, (int)pname });
 	VALIDATE_TEX_PARAMETER;
-	VALIDATE_TEX_PARAMETER_PARAM(param);
+	VALIDATE_TEX_PARAMETER_PARAM((int)param);
 	if (pname == GL_TEXTURE_BORDER_COLOR)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, pname);
 		return;
 	}
 
-	gl_texture& tex = target == GL_TEXTURE_2D ? gs->texture_2d : gs->texture_1d;
+	gl_texture &tex = target == GL_TEXTURE_2D ? gs->texture_2d : gs->texture_1d;
 	gl_texture::params_t &p = tex.params;
 
 	if (pname == GL_TEXTURE_MAG_FILTER)
-		p.mag_filter = param;
+		p.mag_filter = to_int(param);
 	else if (pname == GL_TEXTURE_MIN_FILTER)
-		p.min_filter = param;
+		p.min_filter = to_int(param);
 	else if (pname == GL_TEXTURE_WRAP_S)
-		p.wrap_s = param;
+		p.wrap_s = to_int(param);
 	else if (pname == GL_TEXTURE_WRAP_T)
-		p.wrap_t = param;
+		p.wrap_t = to_int(param);
 	else if (pname == GL_TEXTURE_PRIORITY)
 		tex.params.priority = param;
 
 	if (pname == GL_TEXTURE_MIN_FILTER)
 		tex.is_complete = gl_is_texture_complete(tex);
-}
-void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param)
-{
-	glTexParameteri(target, pname, to_int(param));
 }
 
 static int gl_texParameterv_size(GLenum pname)
@@ -932,7 +932,7 @@ void gl_texParameterv(gl_state *gs, GLenum target, GLenum pname, const T* params
 	else if (pname == GL_TEXTURE_BORDER_COLOR)
 		tex.params.border_color = glm::clamp(glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])), glm::vec4(0), glm::vec4(1));
 	else if (pname == GL_TEXTURE_PRIORITY)
-		tex.params.priority = params[0];
+		tex.params.priority = (float)params[0];
 
 	if (pname == GL_TEXTURE_MIN_FILTER)
 		tex.is_complete = gl_is_texture_complete(tex);

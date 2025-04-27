@@ -293,7 +293,7 @@ void gl_callList(gl_state *gs, GLuint list)
 			break;
 		}
 		case gl_display_list_call::tTexParameter:
-			glTexParameteri(call.argsi[0], call.argsi[1], call.argsi[2]);
+			glTexParameterf(call.argsi[0], call.argsi[1], call.argsf[0]);
 			break;
 		case gl_display_list_call::tTexParameteriv:
 			glTexParameteriv(call.argsi[0], call.argsi[1], call.argsi + 2);
