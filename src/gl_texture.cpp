@@ -1233,7 +1233,7 @@ bool gl_state::need_tex_lod()
 glm::vec4 gl_state::sample_tex2d(const gl_texture& tex, const glm::vec4& tex_coord, float lod)
 {
 	float c = 0;
-	if (tex.params.mag_filter == GL_LINEAR && (tex.params.min_filter == GL_NEAREST_MIPMAP_NEAREST || tex.params.min_filter == GL_LINEAR_MIPMAP_NEAREST))
+	if (tex.params.mag_filter == GL_LINEAR && (tex.params.min_filter == GL_NEAREST_MIPMAP_NEAREST || tex.params.min_filter == GL_NEAREST_MIPMAP_LINEAR))
 		c = 0.5;
 
 	if (lod < c || tex.params.min_filter == tex.params.mag_filter)
