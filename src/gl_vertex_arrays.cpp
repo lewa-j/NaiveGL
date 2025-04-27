@@ -4,6 +4,7 @@
 #include "gl_state.h"
 #include "gl_pixels.h"
 
+#if NGL_VERISON >= 110
 void APIENTRY glEdgeFlagPointer(GLsizei stride, const void *pointer)
 {
 	gl_state *gs = gl_current_state();
@@ -459,3 +460,4 @@ void APIENTRY glInterleavedArrays(GLenum format, GLsizei stride, const void *poi
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glVertexPointer(intr[5], GL_FLOAT, stride, data + intr[9]);
 }
+#endif
