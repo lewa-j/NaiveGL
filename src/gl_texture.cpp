@@ -884,7 +884,8 @@ void APIENTRY glTexParameteri(GLenum target, GLenum pname, GLint param)
 	else if (pname == GL_TEXTURE_WRAP_T)
 		p.wrap_t = param;
 
-	tex.is_complete = gl_is_texture_complete(tex);
+	if (pname == GL_TEXTURE_MIN_FILTER)
+		tex.is_complete = gl_is_texture_complete(tex);
 }
 void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param)
 {
@@ -923,7 +924,8 @@ void gl_texParameterv(gl_state *gs, GLenum target, GLenum pname, const T* params
 	else if (pname == GL_TEXTURE_BORDER_COLOR)
 		tex.params.border_color = glm::clamp(glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])), glm::vec4(0), glm::vec4(1));
 
-	tex.is_complete = gl_is_texture_complete(tex);
+	if (pname == GL_TEXTURE_MIN_FILTER)
+		tex.is_complete = gl_is_texture_complete(tex);
 }
 
 void APIENTRY glTexParameteriv(GLenum target, GLenum pname, const GLint* params)
