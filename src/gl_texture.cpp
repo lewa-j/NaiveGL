@@ -63,7 +63,7 @@ if (type == GL_BITMAP && format != GL_COLOR_INDEX) \
 	return; \
 }
 
-static bool gl_is_texture_complete(gl_texture &tex)
+static bool gl_is_texture_complete(const gl_texture &tex)
 {
 	int w = tex.arrays[0].width;
 	int h = tex.arrays[0].height;
@@ -302,21 +302,26 @@ static void gl_texSubImage(gl_state *gs, gl_texture_array &ta, GLint xoffset, GL
 	}
 }
 
-static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const uint8_t *src)
+static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLenum target, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const uint8_t *src)
 {
 	size_t size = width * height * components;
+	size_t old_size = ta.width * ta.height * ta.components;
 
-	if (ta.width * ta.height * ta.components != size)
+	ta.width = width;
+	ta.height = height;
+	ta.components = components;
+	ta.border = border;
+
+	if (target == GL_PROXY_TEXTURE_1D || target == GL_PROXY_TEXTURE_2D)
+		return;
+
+	if (old_size != size)
 	{
 		if (ta.data)
 			delete[] ta.data;
 
 		ta.data = new uint8_t[size];
 	}
-	ta.width = width;
-	ta.height = height;
-	ta.components = components;
-	ta.border = border;
 
 	gl_texSubImage(gs, ta, 0, 0, width, height, format, type, src);
 }
@@ -402,7 +407,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 		auto &dl = gs->display_list_indices[0];
 		size_t old_size = dl.data.size();
 		int pix_size = 0;
-		if (data)
+		if (data && target == GL_TEXTURE_2D)
 			pix_size = gl_pixels_size(width, height, format, type);
 		if (pix_size)
 		{
@@ -440,7 +445,12 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 #endif
 	VALIDATE_TEX_IMAGE_COMPONENTS;
 
-	gl_texture& tex = gs->texture_2d;
+#if NGL_VERISON >= 110
+	gl_texture_base &tex = target == GL_PROXY_TEXTURE_2D ? gs->proxy_texture_2d : gs->texture_2d;
+#else
+	gl_texture &tex = gs->texture_2d;
+#endif
+	gl_texture &tex_params = gs->texture_2d;
 	gl_texture_array& ta = tex.arrays[level];
 
 	if (width == 0 || height == 0)
@@ -450,7 +460,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 		ta.data = nullptr;
 		ta.width = 0;
 		ta.height = 0;
-		tex.is_complete = gl_is_texture_complete(tex);
+		tex.is_complete = gl_is_texture_complete(tex_params);
 		return;
 	}
 
@@ -464,8 +474,11 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 		return;
 	}
 
-	gl_texImage(gs, ta, components, width, height, border, format, type, (const uint8_t *)data);
-	tex.is_complete = gl_is_texture_complete(tex);
+#if NGL_VERISON >= 110
+	ta.internal_format = internalformat;
+#endif
+	gl_texImage(gs, ta, target, components, width, height, border, format, type, (const uint8_t *)data);
+	tex.is_complete = gl_is_texture_complete(tex_params);
 }
 
 void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLsizei width, GLint border, GLenum format, GLenum type, const void *data)
@@ -477,7 +490,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 		auto &dl = gs->display_list_indices[0];
 		size_t old_size = dl.data.size();
 		int pix_size = 0;
-		if (data)
+		if (data && target == GL_TEXTURE_1D)
 			pix_size = gl_pixels_size(width, 1, format, type);
 		if (pix_size)
 		{
@@ -515,7 +528,12 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 #endif
 	VALIDATE_TEX_IMAGE_COMPONENTS;
 
+#if NGL_VERISON >= 110
+	gl_texture_base &tex = target == GL_PROXY_TEXTURE_1D ? gs->proxy_texture_1d : gs->texture_1d;
+#else
 	gl_texture &tex = gs->texture_1d;
+#endif
+	gl_texture &tex_params = gs->texture_1d;
 	gl_texture_array &ta = tex.arrays[level];
 
 	if (width == 0)
@@ -525,7 +543,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 		ta.data = nullptr;
 		ta.width = 0;
 		ta.height = 0;
-		tex.is_complete = gl_is_texture_complete(tex);
+		tex.is_complete = gl_is_texture_complete(tex_params);
 		return;
 	}
 
@@ -539,8 +557,11 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 		return;
 	}
 
-	gl_texImage(gs, ta, components, width, 1, border, format, type, (const uint8_t *)data);
-	tex.is_complete = gl_is_texture_complete(tex);
+#if NGL_VERISON >= 110
+	ta.internal_format = internalformat;
+#endif
+	gl_texImage(gs, ta, target, components, width, 1, border, format, type, (const uint8_t *)data);
+	tex.is_complete = gl_is_texture_complete(tex_params);
 }
 
 #if NGL_VERISON >= 110

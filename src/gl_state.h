@@ -65,16 +65,30 @@ struct gl_texture_array
 	int width = 0;
 	int height = 0;
 	int border = 0;
+#if NGL_VERISON >= 110
+	int internal_format = 1;
+	/* deduced from internal fromat (8 or 0)
+	int red_bits = 0;
+	int green_bits = 0;
+	int blue_bits = 0;
+	int alpha_bits = 0;
+	int luminance_bits = 0;
+	int intensity_bits = 0;
+	*/
+#endif
 	int components = 1;
 };
 
-struct gl_texture
+struct gl_texture_base
 {
 	gl_texture_array arrays[gl_max_tex_level + 1];
 	int num_arrays = gl_max_tex_level + 1;
 	bool is_complete = false;//cached
 	int max_lod = 0;
+};
 
+struct gl_texture : gl_texture_base
+{
 	struct params_t
 	{
 		glm::vec4 border_color{ 0,0,0,0 };
@@ -345,6 +359,11 @@ struct gl_state
 	bool texture_2d_enabled = false;
 	gl_texture texture_1d;
 	gl_texture texture_2d;
+
+#if NGL_VERISON >= 110
+	gl_texture_base proxy_texture_1d;
+	gl_texture_base proxy_texture_2d;
+#endif
 
 	struct texture_env_t
 	{
