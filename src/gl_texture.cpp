@@ -82,7 +82,13 @@ static bool gl_is_texture_complete(const gl_texture &tex)
 	{
 		w = glm::max(1, (w >> 1));
 		h = glm::max(1, (h >> 1));
-		if (w != tex.arrays[i].width || h != tex.arrays[i].height || tex.arrays[i].components != tex.arrays[0].components || tex.arrays[i].border != tex.arrays[0].border)
+		if (w != tex.arrays[i].width || h != tex.arrays[i].height
+#if NGL_VERISON >= 110
+			|| tex.arrays[i].internal_format != tex.arrays[0].internal_format
+#else
+			|| tex.arrays[i].components != tex.arrays[0].components
+#endif
+			|| tex.arrays[i].border != tex.arrays[0].border)
 			return false;
 	}
 	return true;
