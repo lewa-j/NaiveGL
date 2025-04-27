@@ -96,6 +96,9 @@ struct gl_texture : gl_texture_base
 		int mag_filter = GL_LINEAR;
 		int wrap_s = GL_REPEAT;
 		int wrap_t = GL_REPEAT;
+#if NGL_VERISON >= 110
+		float priority = 1;
+#endif
 	} params;
 };
 
