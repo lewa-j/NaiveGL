@@ -94,8 +94,13 @@ static bool gl_is_texture_complete(const gl_texture &tex)
 	return true;
 }
 
-static void gl_tex_store_pixel(const glm::vec4 &col, int components, uint8_t *dst)
+static void gl_tex_store_pixel(const glm::vec4 &col, int components, int base_internal_format, uint8_t *dst)
 {
+#if NGL_VERISON >= 110
+	if (base_internal_format == GL_ALPHA)
+		dst[0] = (uint8_t)lroundf(0xFF * glm::clamp(col.a, 0.f, 1.f));
+	else
+#endif
 	if (components == 2)
 	{
 		dst[0] = (uint8_t)lroundf(0xFF * glm::clamp(col.r, 0.f, 1.f));
@@ -155,7 +160,11 @@ static void gl_texSubImage(gl_state *gs, gl_texture_array &ta, GLint xoffset, GL
 				return;
 			}
 
-			if (components < pstore.components && components != 2)
+			if (components < pstore.components && components != 2
+#if NGL_VERISON >= 110
+				&& ta.base_internal_format != GL_ALPHA
+#endif
+				)
 			{
 				if (width == ta.width && pstore.stride == width * pstore.components)
 				{
@@ -181,6 +190,7 @@ static void gl_texSubImage(gl_state *gs, gl_texture_array &ta, GLint xoffset, GL
 					src += pstore.stride;
 					dst += dst_stride;
 				}
+				return;
 			}
 		}
 
@@ -213,6 +223,11 @@ static void gl_texSubImage(gl_state *gs, gl_texture_array &ta, GLint xoffset, GL
 					break;
 				}
 
+#if NGL_VERISON >= 110
+				if (ta.base_internal_format == GL_ALPHA)
+					dst_row[0] = pixel[3];
+				else
+#endif
 				if (components == 2)
 				{
 					dst_row[0] = pixel[0];
@@ -232,6 +247,11 @@ static void gl_texSubImage(gl_state *gs, gl_texture_array &ta, GLint xoffset, GL
 	}
 
 	gl_log("glTexImage(c %d,%dx%d,b %d,f %X,t %X) al=%d map %d slow path\n", components, width, height, ta.border, format, type, ps.alignment, gs->pixel.map_color);
+
+	int base_internal_format = components;
+#if NGL_VERISON >= 110
+	base_internal_format = ta.base_internal_format;
+#endif
 
 	if (type != GL_BITMAP)
 	{
@@ -261,7 +281,7 @@ static void gl_texSubImage(gl_state *gs, gl_texture_array &ta, GLint xoffset, GL
 						pixel = remap_color(pixel, gs->pixel_map_color_table + 4);
 				}
 
-				gl_tex_store_pixel(pixel, components, dst_row);
+				gl_tex_store_pixel(pixel, components, base_internal_format, dst_row);
 
 				dst_row += components;
 				row += pstore.group_size;
@@ -273,8 +293,8 @@ static void gl_texSubImage(gl_state *gs, gl_texture_array &ta, GLint xoffset, GL
 	else //GL_BITMAP
 	{
 		uint8_t bitmap_colors[2][4];
-		gl_tex_store_pixel(index_to_rgba(0, gs->pixel_map_color_table), components, bitmap_colors[0]);
-		gl_tex_store_pixel(index_to_rgba(1, gs->pixel_map_color_table), components, bitmap_colors[1]);
+		gl_tex_store_pixel(index_to_rgba(0, gs->pixel_map_color_table), components, base_internal_format, bitmap_colors[0]);
+		gl_tex_store_pixel(index_to_rgba(1, gs->pixel_map_color_table), components, base_internal_format, bitmap_colors[1]);
 
 		for (int j = 0; j < height; j++)
 		{
@@ -480,6 +500,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 
 #if NGL_VERISON >= 110
 	ta.internal_format = internalformat;
+	ta.base_internal_format = baseformat;
 #endif
 	gl_texImage(gs, ta, target, components, width, height, border, format, type, (const uint8_t *)data);
 	tex.is_complete = gl_is_texture_complete(tex_params);
@@ -563,6 +584,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 
 #if NGL_VERISON >= 110
 	ta.internal_format = internalformat;
+	ta.base_internal_format = baseformat;
 #endif
 	gl_texImage(gs, ta, target, components, width, 1, border, format, type, (const uint8_t *)data);
 	tex.is_complete = gl_is_texture_complete(tex_params);
@@ -1200,8 +1222,16 @@ if (pname != GL_TEXTURE_ENV_MODE && pname != GL_TEXTURE_ENV_COLOR) \
 	return; \
 }
 
+#if NGL_VERISON >= 110
+#define VALIDATE_TEX_ENV_MODE_(p) \
+(p != GL_MODULATE && p != GL_DECAL && p != GL_BLEND && p != GL_REPLACE)
+#else
+#define VALIDATE_TEX_ENV_MODE_(p) \
+(p != GL_MODULATE && p != GL_DECAL && p != GL_BLEND)
+#endif
+
 #define VALIDATE_TEX_ENV_PARAM(p) \
-if (pname == GL_TEXTURE_ENV_MODE && (p != GL_MODULATE && p != GL_DECAL && p != GL_BLEND)) \
+if (pname == GL_TEXTURE_ENV_MODE && VALIDATE_TEX_ENV_MODE_(p)) \
 { \
 	gl_set_error_a(GL_INVALID_ENUM, p); \
 	return; \
@@ -1329,6 +1359,15 @@ glm::vec4 gl_tex_tap(const gl_texture_array& a, glm::ivec2 uv)
 	glm::ivec2 c{ glm::clamp(uv, glm::ivec2(0), glm::ivec2(a.width - 1, a.height - 1)) };
 	uint8_t* d = a.data + (c.y * a.width + c.x) * a.components;
 	
+#if NGL_VERISON >= 110
+	if (a.base_internal_format == GL_INTENSITY)
+	{
+		float i = GLtof(d[0]);
+		return glm::vec4(i, i, i, i);
+	}
+	else if (a.base_internal_format == GL_ALPHA)
+		return glm::vec4(1, 1, 1, GLtof(d[0]));
+#endif
 	if (a.components >= 3)
 		return glm::vec4{ GLtof(d[0]), GLtof(d[1]), GLtof(d[2]), a.components == 4 ? GLtof(d[3]) : 1 };
 	return glm::vec4{ GLtof(d[0]), 0, 0, a.components == 2 ? GLtof(d[1]) : 1 };

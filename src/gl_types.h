@@ -656,6 +656,8 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_TEXTURE_PRIORITY 0x8066
 #define GL_TEXTURE_RESIDENT 0x8067
 
+#define GL_REPLACE 0x1E01
+
 #define GL_MAX_CLIENT_ATTRIB_STACK_DEPTH 0x0D3B
 
 #define GL_CLIENT_PIXEL_STORE_BIT 0x00000001

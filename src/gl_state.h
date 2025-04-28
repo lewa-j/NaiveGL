@@ -90,6 +90,7 @@ struct gl_texture_array
 	int luminance_bits = 0;
 	int intensity_bits = 0;
 	*/
+	int base_internal_format = GL_LUMINANCE;
 #endif
 	int components = 1;
 };

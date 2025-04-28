@@ -262,29 +262,37 @@ void APIENTRY glFogfv(GLenum pname, const GLfloat* params)
 	gl_fogv(gs, pname, params);
 }
 
+static gl_texture &get_enabled_texture(gl_state &st)
+{
+	if (st.texture_2d_enabled)
+	{
+		return st.get_texture_2d();
+	}
+	//else if (st.texture_1d_enabled)
+	{
+		return st.get_texture_1d();
+	}
+}
+
 static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &data)
 {
 	glm::vec4 tex_color(1);
-	int cpts = 0;
+	gl_texture &tex = get_enabled_texture(st);
+	if (!tex.is_complete)
+		return;
+
 	if (st.texture_2d_enabled)
 	{
-		gl_texture &tex_2d = st.get_texture_2d();
-		if (!tex_2d.is_complete)
-			return;
-		tex_color = st.sample_tex2d(tex_2d, data.tex_coord, data.lod);
-		cpts = tex_2d.arrays[0].components;
+		tex_color = st.sample_tex2d(tex, data.tex_coord, data.lod);
 	}
 	else if (st.texture_1d_enabled)
 	{
-		gl_texture &tex_1d = st.get_texture_1d();
-		if (!tex_1d.is_complete)
-			return;
 		glm::vec4 t = data.tex_coord;
 		t.y = 0.5f;
-		tex_color = st.sample_tex2d(tex_1d, t, data.lod);
-		cpts = tex_1d.arrays[0].components;
+		tex_color = st.sample_tex2d(tex, t, data.lod);
 	}
 
+	int cpts = tex.arrays[0].components;
 	if (st.texture_env.mode == GL_DECAL)
 	{
 		if (cpts == 4)
@@ -295,16 +303,44 @@ static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &da
 	}
 	else if (st.texture_env.mode == GL_BLEND)
 	{
+#if NGL_VERISON >= 110
+		int fmt = tex.arrays[0].base_internal_format;
+		if (fmt == GL_ALPHA)
+			color.a *= tex_color.a;
+		else if (fmt == GL_INTENSITY)
+			color = color * (1 - tex_color.r) + st.texture_env.color * tex_color.r;
+		else
+		{
+			glm::vec3 tc(tex_color);
+			color = glm::vec4(glm::vec3(color) * (1.f - tc) + tc * glm::vec3(st.texture_env.color), tex_color.a * color.a);
+		}
+#else
 		color = glm::vec4((1 - tex_color.r) * glm::vec3(color) + tex_color.r * glm::vec3(st.texture_env.color), tex_color.a * color.a);
 		// 3 and 4 components are undefined
+#endif
 	}
-	else //if (st.texture_env.mode == GL_MODULATE)
+	else if (st.texture_env.mode == GL_MODULATE)
 	{
 		if (cpts < 3)
 			color = glm::vec4(tex_color.r * glm::vec3(color), tex_color.a * color.a);
 		else
 			color *= tex_color;
 	}
+#if NGL_VERISON >= 110
+	else if (st.texture_env.mode == GL_REPLACE)
+	{
+		int fmt = tex.arrays[0].base_internal_format;
+		if (fmt == GL_LUMINANCE_ALPHA || fmt == GL_INTENSITY || fmt == GL_RGBA)
+			color = tex_color;
+		else
+		{
+			if (fmt == GL_LUMINANCE || fmt == GL_RGB)
+				memcpy(&color[0], &tex_color[0], sizeof(float) * 3);
+			if (fmt == GL_ALPHA)
+				color.a = tex_color.a;
+		}
+	}
+#endif
 }
 
 glm::vec4 gl_state::get_fog_color(const glm::vec4& cr, float c)
