@@ -831,7 +831,7 @@ void APIENTRY glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLen
 	if (type == GL_BITMAP)
 	{
 		//TODO unimplemented
-		printf("glReadPixels GL_BITMAP unimplemented\n");
+		gl_log("glReadPixels GL_BITMAP unimplemented\n");
 		return;
 	}
 

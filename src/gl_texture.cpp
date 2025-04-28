@@ -231,9 +231,7 @@ static void gl_texSubImage(gl_state *gs, gl_texture_array &ta, GLint xoffset, GL
 		return;
 	}
 
-#ifndef NDEBUG
-	printf("glTexImage(c %d,%dx%d,b %d,f %X,t %X) al=%d map %d slow path\n", components, width, height, ta.border, format, type, ps.alignment, gs->pixel.map_color);
-#endif
+	gl_log("glTexImage(c %d,%dx%d,b %d,f %X,t %X) al=%d map %d slow path\n", components, width, height, ta.border, format, type, ps.alignment, gs->pixel.map_color);
 
 	if (type != GL_BITMAP)
 	{
@@ -451,12 +449,12 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 #endif
 	VALIDATE_TEX_IMAGE_COMPONENTS;
 
+	gl_texture &tex_params = gs->get_texture_2d();
 #if NGL_VERISON >= 110
-	gl_texture_base &tex = target == GL_PROXY_TEXTURE_2D ? gs->proxy_texture_2d : gs->texture_2d;
+	gl_texture_base &tex = target == GL_PROXY_TEXTURE_2D ? gs->proxy_texture_2d : tex_params;
 #else
 	gl_texture &tex = gs->texture_2d;
 #endif
-	gl_texture &tex_params = gs->texture_2d;
 	gl_texture_array& ta = tex.arrays[level];
 
 	if (width == 0 || height == 0)
@@ -475,7 +473,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 
 	if (border != 0)
 	{
-		printf("glTexImage2D(%d,%d,%d,%d,%d,%X,%X) unhandled combination\n", level, components, width, height, border, format, type);
+		gl_log("glTexImage2D(%d,%d,%d,%d,%d,%X,%X) unhandled combination\n", level, components, width, height, border, format, type);
 		tex.is_complete = false;
 		return;
 	}
@@ -534,12 +532,12 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 #endif
 	VALIDATE_TEX_IMAGE_COMPONENTS;
 
+	gl_texture &tex_params = gs->get_texture_1d();
 #if NGL_VERISON >= 110
-	gl_texture_base &tex = target == GL_PROXY_TEXTURE_1D ? gs->proxy_texture_1d : gs->texture_1d;
+	gl_texture_base &tex = target == GL_PROXY_TEXTURE_1D ? gs->proxy_texture_1d : tex_params;
 #else
 	gl_texture &tex = gs->texture_1d;
 #endif
-	gl_texture &tex_params = gs->texture_1d;
 	gl_texture_array &ta = tex.arrays[level];
 
 	if (width == 0)
@@ -558,7 +556,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 
 	if (border != 0)
 	{
-		printf("glTexImage1D(%d,%d,%d,%d,%X,%X) unhandled combination\n", level, components, width, border, format, type);
+		gl_log("glTexImage1D(%d,%d,%d,%d,%X,%X) unhandled combination\n", level, components, width, border, format, type);
 		tex.is_complete = false;
 		return;
 	}
@@ -653,7 +651,7 @@ void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint y
 	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_2D, level, width, height);
 	VALIDATE_TEX_IMAGE_FORMAT;
 
-	gl_texture &tex = gs->texture_2d;
+	gl_texture &tex = gs->get_texture_2d();
 	gl_texture_array &ta = tex.arrays[level];
 
 	if (xoffset < -ta.border
@@ -676,7 +674,7 @@ void APIENTRY glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei
 	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_1D, level, width, 1);
 	VALIDATE_TEX_IMAGE_FORMAT;
 
-	gl_texture &tex = gs->texture_1d;
+	gl_texture &tex = gs->get_texture_1d();
 	gl_texture_array &ta = tex.arrays[level];
 
 	if (xoffset < -ta.border
@@ -696,7 +694,7 @@ void APIENTRY glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLi
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_2D, level, width, height);
 
-	gl_texture &tex = gs->texture_2d;
+	gl_texture &tex = gs->get_texture_2d();
 	gl_texture_array &ta = tex.arrays[level];
 
 	if (xoffset < -ta.border
@@ -731,7 +729,7 @@ void APIENTRY glCopyTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLi
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_1D, level, width, 1);
 
-	gl_texture &tex = gs->texture_1d;
+	gl_texture &tex = gs->get_texture_1d();
 	gl_texture_array &ta = tex.arrays[level];
 
 	if (xoffset < -ta.border
@@ -785,7 +783,7 @@ void APIENTRY glGetTexImage(GLenum target, GLint level, GLenum format, GLenum ty
 		return;
 	}
 
-	const gl_texture &tex = (target == GL_TEXTURE_1D) ? gs->texture_1d : gs->texture_2d;
+	const gl_texture &tex = gs->get_texture(target);
 	const gl_texture_array &ta = tex.arrays[level];
 
 	if (!ta.data)
@@ -882,7 +880,7 @@ void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param)
 		return;
 	}
 
-	gl_texture &tex = target == GL_TEXTURE_2D ? gs->texture_2d : gs->texture_1d;
+	gl_texture &tex = gs->get_texture(target);
 	gl_texture::params_t &p = tex.params;
 
 	if (pname == GL_TEXTURE_MAG_FILTER)
@@ -921,7 +919,7 @@ void gl_texParameterv(gl_state *gs, GLenum target, GLenum pname, const T* params
 	VALIDATE_TEX_PARAMETER;
 	VALIDATE_TEX_PARAMETER_PARAM(int(params[0]));
 
-	gl_texture& tex = target == GL_TEXTURE_2D ? gs->texture_2d : gs->texture_1d;
+	gl_texture& tex = gs->get_texture(target);
 
 	if (pname == GL_TEXTURE_MAG_FILTER)
 		tex.params.mag_filter = to_int(params[0]);
@@ -964,7 +962,7 @@ void gl_getTexParameterv(GLenum target, GLenum pname, T *params)
 	if (!gs) return;
 	VALIDATE_TEX_PARAMETER;
 
-	gl_texture &tex = target == GL_TEXTURE_2D ? gs->texture_2d : gs->texture_1d;
+	gl_texture &tex = gs->get_texture(target);
 
 	if (pname == GL_TEXTURE_MAG_FILTER)
 		*params = (T)tex.params.mag_filter;
@@ -1009,7 +1007,7 @@ void gl_getTexLevelParameterv(GLenum target, GLint level, GLenum pname, T *param
 		return;
 	}
 
-	gl_texture_array &ta = (target == GL_TEXTURE_2D ? gs->texture_2d : gs->texture_1d).arrays[level];
+	gl_texture_array &ta = gs->get_texture(target).arrays[level];
 
 	if (pname == GL_TEXTURE_WIDTH)
 		*params = (T)ta.width;
@@ -1033,6 +1031,97 @@ void APIENTRY glGetTexLevelParameterfv(GLenum target, GLint level, GLenum pname,
 	gl_getTexLevelParameterv(target, level, pname, params);
 }
 
+#if NGL_VERISON >= 110
+void APIENTRY glBindTexture(GLenum target, GLuint texture)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, target);
+		return;
+	}
+
+	if (texture != 0)
+	{
+		auto fit = gs->texture_objects.find(texture);
+
+		if (fit == gs->texture_objects.end() || fit->second.target == 0)
+		{
+			// unallocated or allocated with GenTextures but unitialized
+			gs->texture_objects[texture].target = target;
+		}
+		else if (fit->second.target != target)
+		{
+			gl_set_error(GL_INVALID_OPERATION);
+			return;
+		}
+	}
+
+	if (target == GL_TEXTURE_1D)
+		gs->texture_binding_1d = texture;
+	else if(target == GL_TEXTURE_2D)
+		gs->texture_binding_2d = texture;
+}
+
+void APIENTRY glDeleteTextures(GLsizei n, const GLuint *textures)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (n < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
+	for (int ti = 0; ti < n; ti++)
+	{
+		if (textures[ti] == 0)
+			continue;
+
+		if (gs->texture_binding_1d == textures[ti])
+			gs->texture_binding_1d = 0;
+		if (gs->texture_binding_2d == textures[ti])
+			gs->texture_binding_2d = 0;
+		auto it = gs->texture_objects.find(textures[ti]);
+		if (it != gs->texture_objects.end())
+		{
+			gl_log("glDeleteTextures %d\n", textures[ti]);
+			gs->texture_objects.erase(it);
+		}
+	}
+}
+
+void APIENTRY glGenTextures(GLsizei n, GLuint *textures)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (n < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
+	int last_unused_texture = 1;
+	for (int i = 0; i < n; last_unused_texture++)
+	{
+		auto it = gs->texture_objects.find(last_unused_texture);
+		if (it == gs->texture_objects.end())
+		{
+			textures[i] = last_unused_texture;
+			gs->texture_objects[last_unused_texture];
+			i++;
+		}
+	}
+}
+
+#endif
 
 #define VALIDATE_TEX_ENV \
 VALIDATE_NOT_BEGIN_MODE; \
@@ -1136,6 +1225,39 @@ void APIENTRY glGetTexEnviv(GLenum target, GLenum pname, GLint *params)
 void APIENTRY glGetTexEnvfv(GLenum target, GLenum pname, GLfloat *params)
 {
 	gl_getTexEnvv(target, pname, params);
+}
+
+gl_texture &gl_state::get_texture(GLenum target)
+{
+	if (target == GL_TEXTURE_1D)
+		return get_texture_1d();
+	else if (target == GL_TEXTURE_2D)
+		return get_texture_2d();
+
+	fprintf(stderr, "gl_state::get_texture invalid target 0x%X\n", target);
+	abort();
+}
+
+gl_texture &gl_state::get_texture_1d()
+{
+#if NGL_VERISON >= 110
+	if (texture_binding_1d)
+	{
+		return texture_objects[texture_binding_1d].data;
+	}
+#endif
+	return texture_1d;
+}
+
+gl_texture &gl_state::get_texture_2d()
+{
+#if NGL_VERISON >= 110
+	if (texture_binding_2d)
+	{
+		return texture_objects[texture_binding_2d].data;
+	}
+#endif
+	return texture_2d;
 }
 
 glm::vec4 gl_tex_tap(const gl_texture_array& a, glm::ivec2 uv)

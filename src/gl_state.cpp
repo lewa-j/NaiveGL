@@ -40,8 +40,8 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 
 	texture_2d_enabled = false;
 	texture_1d_enabled = false;
-	texture_1d = {};
-	texture_2d = {};
+	//texture_1d = {};
+	//texture_2d = {};
 	texture_env = {};
 
 	for (int i = 0; i < 4; i++)
@@ -134,6 +134,7 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 void gl_state::destroy()
 {
 	display_list_indices.clear();
+	texture_objects.clear();
 }
 
 GLint APIENTRY glRenderMode(GLenum mode)

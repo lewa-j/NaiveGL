@@ -47,7 +47,7 @@ void APIENTRY glEndList(void)
 	auto it = gs->display_list_indices.find(0);
 	if (it != gs->display_list_indices.end())
 	{
-		printf("glEndList list %d recorded %d calls, %d bulk bytes\n", gs->display_list_begun, (int)it->second.calls.size(), (int)it->second.data.size());
+		gl_log("glEndList list %d recorded %d calls, %d bulk bytes\n", gs->display_list_begun, (int)it->second.calls.size(), (int)it->second.data.size());
 		it->second.recorded = true;
 		std::swap(gs->display_list_indices[gs->display_list_begun], it->second);
 		gs->display_list_indices.erase(it);
@@ -590,14 +590,14 @@ GLuint APIENTRY glGenLists(GLsizei range)
 		if (i == range)
 		{
 			for (GLuint l = start; l < start + range; l++)
-				gs->display_list_indices[l] = {};
-			printf("glGenLists(%d) = %d (total size %d)\n", range, start, (int)gs->display_list_indices.size());
+				gs->display_list_indices[l];
+			gl_log("glGenLists(%d) = %d (total size %d)\n", range, start, (int)gs->display_list_indices.size());
 			return start;
 		}
 		start += i;
 	}
 
-	printf("glGenLists(%d) failed\n", range);
+	gl_log("glGenLists(%d) failed\n", range);
 	return 0;
 }
 
@@ -632,7 +632,7 @@ void APIENTRY glDeleteLists(GLuint list, GLsizei range)
 		if (it != gs->display_list_indices.end())
 		{
 			gs->display_list_indices.erase(it);
-			printf("glDeleteLists(%d, %d) %d deleted (total size %d)\n", list, range, i, (int)gs->display_list_indices.size());
+			gl_log("glDeleteLists(%d, %d) %d deleted (total size %d)\n", list, range, i, (int)gs->display_list_indices.size());
 		}
 	}
 }

@@ -268,19 +268,21 @@ static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &da
 	int cpts = 0;
 	if (st.texture_2d_enabled)
 	{
-		if (!st.texture_2d.is_complete)
+		gl_texture &tex_2d = st.get_texture_2d();
+		if (!tex_2d.is_complete)
 			return;
-		tex_color = st.sample_tex2d(st.texture_2d, data.tex_coord, data.lod);
-		cpts = st.texture_2d.arrays[0].components;
+		tex_color = st.sample_tex2d(tex_2d, data.tex_coord, data.lod);
+		cpts = tex_2d.arrays[0].components;
 	}
 	else if (st.texture_1d_enabled)
 	{
-		if (!st.texture_1d.is_complete)
+		gl_texture &tex_1d = st.get_texture_1d();
+		if (!tex_1d.is_complete)
 			return;
 		glm::vec4 t = data.tex_coord;
 		t.y = 0.5f;
-		tex_color = st.sample_tex2d(st.texture_1d, t, data.lod);
-		cpts = st.texture_1d.arrays[0].components;
+		tex_color = st.sample_tex2d(tex_1d, t, data.lod);
+		cpts = tex_1d.arrays[0].components;
 	}
 
 	if (st.texture_env.mode == GL_DECAL)
@@ -693,7 +695,8 @@ void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_pro
 
 				float t2 = t + fdx;
 				glm::vec2 tex_coord2 = glm::mix(v0.tex_coord / v0.clip.w, v1.tex_coord / v1.clip.w, t2) / glm::mix(v0.tex_coord.q / v0.clip.w, v1.tex_coord.q / v1.clip.w, t2);
-				glm::vec2 duv = (tex_coord2 - glm::vec2(data.tex_coord)) * glm::vec2(st.texture_2d.arrays[0].width, st.texture_2d.arrays[0].height);
+				gl_texture &tex_2d = st.get_texture_2d();
+				glm::vec2 duv = (tex_coord2 - glm::vec2(data.tex_coord)) * glm::vec2(tex_2d.arrays[0].width, tex_2d.arrays[0].height);
 
 				float duxy = duv.x * dx + duv.x * dy;
 				float dvxy = duv.y * dx + duv.y * dy;
@@ -913,7 +916,8 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 				bc_clip2 = bc_clip2 / (bc_clip2.x + bc_clip2.y + bc_clip2.z);
 				glm::vec2 tex_coord2 = bc_clip2.x * v0.tex_coord + bc_clip2.y * v1.tex_coord + bc_clip2.z * v2.tex_coord;
 
-				glm::vec2 duv = (tex_coord2 - glm::vec2(data.tex_coord)) * glm::vec2(st.texture_2d.arrays[0].width, st.texture_2d.arrays[0].height);
+				gl_texture &tex_2d = st.get_texture_2d();
+				glm::vec2 duv = (tex_coord2 - glm::vec2(data.tex_coord)) * glm::vec2(tex_2d.arrays[0].width, tex_2d.arrays[0].height);
 				float scale_factor = glm::sqrt(duv.x * duv.x + duv.y * duv.y);
 				data.lod = glm::log2(scale_factor);
 			}

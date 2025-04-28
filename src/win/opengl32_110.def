@@ -348,6 +348,9 @@ EXPORTS
 	glTexSubImage1D
 	glCopyTexSubImage2D
 	glCopyTexSubImage1D
+	glBindTexture
+	glDeleteTextures
+	glGenTextures
 
 	glPushClientAttrib
 	glPopClientAttrib

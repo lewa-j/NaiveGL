@@ -10,6 +10,12 @@
 	#define NAGL_FLIP_VIEWPORT_Y 1
 #endif
 
+#if NAGL_DEBUG_LOG
+#define gl_log printf
+#else
+#define gl_log(...)
+#endif
+
 constexpr int gl_max_viewport_dims[2]{0x4000,0x4000};
 constexpr int gl_max_viewmodel_mtx = 32;
 constexpr int gl_max_projection_mtx = 2;
@@ -61,6 +67,15 @@ struct gl_full_vertex : gl_processed_vertex
 
 struct gl_texture_array
 {
+	~gl_texture_array()
+	{
+		if (data)
+		{
+			gl_log("~gl_texture_array() %p data %p\n", this, data);
+			delete[] data;
+		}
+	}
+
 	uint8_t* data = nullptr;
 	int width = 0;
 	int height = 0;
@@ -81,6 +96,13 @@ struct gl_texture_array
 
 struct gl_texture_base
 {
+#if _DEBUG
+	~gl_texture_base()
+	{
+		gl_log("~gl_texture_base() %p\n", this);
+	}
+#endif
+
 	gl_texture_array arrays[gl_max_tex_level + 1];
 	int num_arrays = gl_max_tex_level + 1;
 	bool is_complete = false;//cached
@@ -368,6 +390,15 @@ struct gl_state
 	gl_texture_base proxy_texture_2d;
 #endif
 
+	struct texture_object_t
+	{
+		GLenum target = 0;
+		gl_texture data;
+	};
+	std::unordered_map<GLuint, texture_object_t> texture_objects;
+	GLuint texture_binding_1d = 0;
+	GLuint texture_binding_2d = 0;
+
 	struct texture_env_t
 	{
 		int mode = GL_MODULATE;
@@ -601,18 +632,15 @@ struct gl_state
 	void set_material_color(GLenum face, GLenum pname, const glm::vec4& param, bool force = false);
 
 	bool need_tex_lod();
+	gl_texture &get_texture(GLenum target);
+	gl_texture &get_texture_1d();
+	gl_texture &get_texture_2d();
 	glm::vec4 sample_tex2d(const gl_texture &tex, const glm::vec4 &tex_coord, float lod);
 
 	glm::vec4 get_fog_color(const glm::vec4& cr, float c);
 };
 
 gl_state *gl_current_state();
-
-#if NAGL_DEBUG_LOG
-#define gl_log printf
-#else
-#define gl_log(...)
-#endif
 
 #define gl_set_error(e) gl_set_error_(e, __FUNCTION__)
 #define gl_set_error_a(e, a) gl_set_error_a_(e, a, __FUNCTION__)

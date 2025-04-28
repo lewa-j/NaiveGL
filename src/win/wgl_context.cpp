@@ -90,6 +90,7 @@ EXPORT BOOL APIENTRY wglDeleteContext(HGLRC rendering_context)
 	wgl_context *rc = (wgl_context*)rendering_context;
 	if (rc)
 	{
+		gl_log("wglDeleteContext(%p)\n", rendering_context);
 		if (current_context == rc)
 			current_context = nullptr;
 
