@@ -3,7 +3,7 @@
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
 #include <glm/mat4x4.hpp>
-#include <map>
+#include <unordered_map>
 #include <vector>
 
 #ifdef ANDROID
@@ -502,10 +502,10 @@ struct gl_state
 		std::vector<gl_display_list_call> calls;
 		std::vector<uint8_t> data;
 	};
-	std::map<int, displayList> display_list_indices;
+	std::unordered_map<GLuint, displayList> display_list_indices;
 
 	GLuint display_list_base = 0;
-	int display_list_begun = 0;
+	GLuint display_list_begun = 0;
 	bool display_list_execute = false;
 	int display_list_nesting = 0;
 

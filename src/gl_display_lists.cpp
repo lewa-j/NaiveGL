@@ -575,21 +575,21 @@ GLuint APIENTRY glGenLists(GLsizei range)
 	if (range == 0)
 		return 0;
 
-	int start = 1;
+	GLuint start = 1;
 	while (start < 0xFFFFFF)
 	{
 		while (gs->display_list_indices.find(start) != gs->display_list_indices.end())
 			start++;
 
-		int i = 1;
-		for (; i < range; i++)
+		GLuint i = 1;
+		for (; i < (GLuint)range; i++)
 		{
 			if (gs->display_list_indices.find(start + i) != gs->display_list_indices.end())
 				break;
 		}
 		if (i == range)
 		{
-			for (int l = start; l < start + range; l++)
+			for (GLuint l = start; l < start + range; l++)
 				gs->display_list_indices[l] = {};
 			printf("glGenLists(%d) = %d (total size %d)\n", range, start, (int)gs->display_list_indices.size());
 			return start;
