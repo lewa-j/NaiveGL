@@ -351,6 +351,8 @@ EXPORTS
 	glBindTexture
 	glDeleteTextures
 	glGenTextures
+	glAreTexturesResident
+	glPrioritizeTextures
 
 	glPushClientAttrib
 	glPopClientAttrib

@@ -832,9 +832,12 @@ void APIENTRY glGetTexImage(GLenum target, GLint level, GLenum format, GLenum ty
 #if NGL_VERISON >= 110
 #define VALIDATE_TEX_PARAMETER_PNAME_CHECK_ \
 (pname < GL_TEXTURE_MAG_FILTER || pname > GL_TEXTURE_WRAP_T) && pname != GL_TEXTURE_BORDER_COLOR && pname != GL_TEXTURE_PRIORITY
+#define VALIDATE_GET_TEX_PARAMETER_PNAME_CHECK_ \
+VALIDATE_TEX_PARAMETER_PNAME_CHECK_ && pname != GL_TEXTURE_RESIDENT
 #else
 #define VALIDATE_TEX_PARAMETER_PNAME_CHECK_ \
 (pname < GL_TEXTURE_MAG_FILTER || pname > GL_TEXTURE_WRAP_T) && pname != GL_TEXTURE_BORDER_COLOR
+#define VALIDATE_GET_TEX_PARAMETER_PNAME_CHECK_ VALIDATE_TEX_PARAMETER_PNAME_CHECK_
 #endif
 
 #define VALIDATE_TEX_PARAMETER \
@@ -893,7 +896,7 @@ void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param)
 		p.wrap_t = to_int(param);
 #if NGL_VERISON >= 110
 	else if (pname == GL_TEXTURE_PRIORITY)
-		tex.params.priority = param;
+		tex.params.priority = glm::clamp(param, 0.f, 1.f);
 #endif
 
 	if (pname == GL_TEXTURE_MIN_FILTER)
@@ -960,7 +963,17 @@ void gl_getTexParameterv(GLenum target, GLenum pname, T *params)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-	VALIDATE_TEX_PARAMETER;
+	VALIDATE_NOT_BEGIN_MODE;
+	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, target);
+		return;
+	}
+	if (VALIDATE_GET_TEX_PARAMETER_PNAME_CHECK_)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, pname);
+		return;
+	}
 
 	gl_texture &tex = gs->get_texture(target);
 
@@ -977,6 +990,8 @@ void gl_getTexParameterv(GLenum target, GLenum pname, T *params)
 #if NGL_VERISON >= 110
 	else if (pname == GL_TEXTURE_PRIORITY)
 		*params = (T)tex.params.priority;
+	else if (pname == GL_TEXTURE_RESIDENT)
+		*params = (T)GL_TRUE;
 #endif
 }
 
@@ -1117,6 +1132,55 @@ void APIENTRY glGenTextures(GLsizei n, GLuint *textures)
 			textures[i] = last_unused_texture;
 			gs->texture_objects[last_unused_texture];
 			i++;
+		}
+	}
+}
+
+GLboolean APIENTRY glAreTexturesResident(GLsizei n, const GLuint *textures, GLboolean *residences)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return GL_FALSE;
+	VALIDATE_NOT_BEGIN_MODE_RET(GL_FALSE);
+
+	if (n < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return GL_FALSE;
+	}
+
+	for (int i = 0; i < n; i++)
+	{
+		auto it = gs->texture_objects.find(textures[i]);
+		if (it == gs->texture_objects.end())
+		{
+			gl_set_error(GL_INVALID_VALUE);
+			return GL_FALSE;
+		}
+	}
+
+	return GL_TRUE;
+}
+
+void APIENTRY glPrioritizeTextures(GLsizei n, const GLuint *textures, const GLfloat *priorities)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (n < 0)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
+	for (int i = 0; i < n; i++)
+	{
+		if (textures[i] == 0)
+			continue;
+		auto it = gs->texture_objects.find(textures[i]);
+		if (it != gs->texture_objects.end())
+		{
+			it->second.data.params.priority = glm::clamp(priorities[i], 0.f, 1.f);
 		}
 	}
 }

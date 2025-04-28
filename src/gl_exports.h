@@ -272,6 +272,8 @@ EXPORT void APIENTRY glTexParameterfv(GLenum target, GLenum pname, const GLfloat
 EXPORT void APIENTRY glBindTexture(GLenum target, GLuint texture);
 EXPORT void APIENTRY glDeleteTextures(GLsizei n, const GLuint *textures);
 EXPORT void APIENTRY glGenTextures(GLsizei n, GLuint *textures);
+EXPORT GLboolean APIENTRY glAreTexturesResident(GLsizei n, const GLuint *textures, GLboolean *residences);
+EXPORT void APIENTRY glPrioritizeTextures(GLsizei n, const GLuint *textures, const GLfloat *priorities);
 #endif
 EXPORT void APIENTRY glTexEnvi(GLenum target, GLenum pname, GLint param);
 EXPORT void APIENTRY glTexEnvf(GLenum target, GLenum pname, GLfloat param);

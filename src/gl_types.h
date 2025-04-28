@@ -654,6 +654,7 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_RGBA16 0x805B
 
 #define GL_TEXTURE_PRIORITY 0x8066
+#define GL_TEXTURE_RESIDENT 0x8067
 
 #define GL_MAX_CLIENT_ATTRIB_STACK_DEPTH 0x0D3B
 
@@ -687,7 +688,6 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_INDEX_ARRAY_POINTER 0x8091
 #define GL_TEXTURE_COORD_ARRAY_POINTER 0x8092
 #define GL_EDGE_FLAG_ARRAY_POINTER 0x8093
-
 
 #define GL_POLYGON_OFFSET_FACTOR 0x8038
 #define GL_POLYGON_OFFSET_UNITS 0x2A00

@@ -339,6 +339,8 @@ X(glCopyTexSubImage1D)
 X(glBindTexture)
 X(glDeleteTextures)
 X(glGenTextures)
+X(glAreTexturesResident)
+X(glPrioritizeTextures)
 
 X(glPushClientAttrib)
 X(glPopClientAttrib)
