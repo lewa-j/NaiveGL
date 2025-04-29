@@ -334,7 +334,9 @@ static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &da
 			color = tex_color;
 		else
 		{
-			if (fmt == GL_LUMINANCE || fmt == GL_RGB)
+			if (fmt == GL_LUMINANCE)
+				color = glm::vec4(glm::vec3(tex_color.r), color.a);
+			else if (fmt == GL_RGB)
 				memcpy(&color[0], &tex_color[0], sizeof(float) * 3);
 			if (fmt == GL_ALPHA)
 				color.a = tex_color.a;
@@ -784,6 +786,8 @@ void gl_emit_line(gl_state& st, gl_processed_vertex &v0, gl_processed_vertex &v1
 
 static bool triangle_side(gl_state& st, const gl_processed_vertex& v0, const gl_processed_vertex& v1, const gl_processed_vertex& v2)
 {
+	// brakes when triangle goes into negative z behind camera
+	// ok after clipping
 	glm::vec3 pts[3];
 
 	pts[0] = st.get_window_coords(glm::vec3(v0.clip) / v0.clip.w);
@@ -804,6 +808,9 @@ glm::vec3 barycentric(glm::vec3* pts, glm::vec2 P)
 
 void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vertex& v1, gl_processed_vertex& v2)
 {
+	// gives wrong result for some triangles before clipping. do it again now for correct value
+	st.last_side = triangle_side(st, v0, v1, v2);
+
 	if (st.polygon.cull_face)
 	{
 		if (st.polygon.cull_face_mode == GL_FRONT_AND_BACK)
