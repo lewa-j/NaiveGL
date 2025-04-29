@@ -50,6 +50,8 @@ struct gl_framebuffer
 	glm::vec4 *accum = nullptr;
 };
 
+#define NGL_VERTEX_DEBUG 1
+
 struct gl_processed_vertex
 {
 	glm::vec4 position;
@@ -57,6 +59,10 @@ struct gl_processed_vertex
 	glm::vec4 color;
 	glm::vec4 tex_coord;
 	bool edge;
+
+#if NGL_VERTEX_DEBUG
+	glm::vec3 world_position;
+#endif
 };
 
 struct gl_full_vertex : gl_processed_vertex
@@ -64,6 +70,22 @@ struct gl_full_vertex : gl_processed_vertex
 	glm::vec4 original_color;
 	glm::vec3 normal;//for two sided lighting
 };
+
+#if NGL_VERTEX_DEBUG
+struct debug_mesh_frame_t
+{
+	std::vector<gl_processed_vertex> verts;
+};
+
+struct debug_mesh_t
+{
+	bool has_backfaces = false;
+	debug_mesh_frame_t source_mesh_frame;
+	debug_mesh_frame_t clipped_mesh_frame;
+};
+
+extern debug_mesh_t debug_mesh;
+#endif
 
 struct gl_texture_array
 {

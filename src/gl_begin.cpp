@@ -49,6 +49,9 @@ void gl_emit_vertex(gl_state *gs, glm::vec4 v_object, glm::vec4 col, glm::vec4 t
 	}
 
 	gl_full_vertex vertex;
+#if NGL_VERTEX_DEBUG
+	vertex.world_position = v_object;
+#endif
 	vertex.position = gs->get_modelview() * v_object;
 	vertex.tex_coord = gs->get_vertex_texcoord(tex, norm, v_object, vertex.position);
 	if (!gs->lighting.light_model_two_side

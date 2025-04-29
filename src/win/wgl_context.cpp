@@ -240,6 +240,37 @@ static void resize_context(wgl_context* rc, int w, int h)
 	}
 }
 
+#if NGL_VERTEX_DEBUG
+void print_vertex(FILE *f, const gl_processed_vertex &v, glm::vec3 p)
+{
+	fprintf(f,"v %g %g %g %g %g %g %g\n",
+		p.x, p.y, p.z,
+		v.color.x, v.color.y, v.color.z, v.color.w);
+	fprintf(f,"vt %g %g %g %g\n", v.tex_coord.x, v.tex_coord.y, v.tex_coord.z, v.tex_coord.w);
+}
+
+void write_indices(FILE *f, int count)
+{
+	for (int i = 0; i < count; i++)
+	{
+		int v = i * 3 + 1;
+		fprintf(f, "f %d/%d %d/%d %d/%d\n", v, v, v + 1, v + 1, v + 2, v + 2);
+	}
+}
+
+void write_mesh(const char *filename, debug_mesh_frame_t &mesh, glm::vec3 (*getter)(gl_processed_vertex &))
+{
+	FILE *f = fopen(filename, "w");
+	for (int i = 0; i < mesh.verts.size(); i++)
+	{
+		auto &v0 = mesh.verts[i];
+		print_vertex(f, v0, getter(v0));
+	}
+	write_indices(f, mesh.verts.size() / 3);
+	fclose(f);
+}
+#endif
+
 EXPORT BOOL WINAPI wglSwapBuffers(HDC device_context)
 {
 	if (current_context && current_context->bitmap_dc)
@@ -261,6 +292,43 @@ EXPORT BOOL WINAPI wglSwapBuffers(HDC device_context)
 				resize_context(rc, w, h);
 			}
 		}
+
+#if NGL_VERTEX_DEBUG
+		static int frame = 0;
+		static int frames_writen = 0;
+
+		if (debug_mesh.has_backfaces && frames_writen < 3)
+		{
+			char filename[256];
+			sprintf(filename, "frame_%d_source_world.obj", frame);
+			write_mesh(filename, debug_mesh.source_mesh_frame, [](gl_processed_vertex &v) {return v.world_position; });
+			sprintf(filename, "frame_%d_clipped_world.obj", frame);
+			write_mesh(filename,  debug_mesh.clipped_mesh_frame, [](gl_processed_vertex &v) {return v.world_position; });
+
+			sprintf(filename, "frame_%d_source_view.obj", frame);
+			write_mesh(filename, debug_mesh.source_mesh_frame, [](gl_processed_vertex &v) {return glm::vec3(v.position); });
+			sprintf(filename, "frame_%d_clipped_view.obj", frame);
+			write_mesh(filename, debug_mesh.clipped_mesh_frame, [](gl_processed_vertex &v) {return glm::vec3(v.position); });
+
+			sprintf(filename, "frame_%d_source_clip.obj", frame);
+			write_mesh(filename, debug_mesh.source_mesh_frame, [](gl_processed_vertex &v) {return glm::vec3(v.clip); });
+			sprintf(filename, "frame_%d_clipped_clip.obj", frame);
+			write_mesh(filename, debug_mesh.clipped_mesh_frame, [](gl_processed_vertex &v) {return glm::vec3(v.clip); });
+
+			sprintf(filename, "frame_%d_source_device.obj", frame);
+			write_mesh(filename, debug_mesh.source_mesh_frame, [](gl_processed_vertex &v) {return glm::vec3(v.clip / v.clip.w); });
+
+			sprintf(filename, "frame_%d_clipped_device.obj", frame);
+			write_mesh(filename, debug_mesh.clipped_mesh_frame, [](gl_processed_vertex &v) {return glm::vec3(v.clip / v.clip.w); });
+
+			frames_writen++;
+		}
+
+		debug_mesh.source_mesh_frame.verts.clear();
+		debug_mesh.clipped_mesh_frame.verts.clear();
+		debug_mesh.has_backfaces = false;
+		frame++;
+#endif
 	}
 	return 1;
 }

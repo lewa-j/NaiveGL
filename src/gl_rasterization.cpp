@@ -802,6 +802,8 @@ glm::vec3 barycentric(glm::vec3* pts, glm::vec2 P)
 	return glm::vec3(1.f - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
 }
 
+debug_mesh_t debug_mesh;
+
 void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_vertex& v1, gl_processed_vertex& v2)
 {
 	if (st.polygon.cull_face)
@@ -809,8 +811,11 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 		if (st.polygon.cull_face_mode == GL_FRONT_AND_BACK)
 			return;
 
+	//HACK
+#if 0
 		if (st.last_side != (st.polygon.cull_face_mode == GL_FRONT))
 			return;
+#endif
 	}
 
 	if (st.render_mode == GL_SELECT)
@@ -912,6 +917,15 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 	}
 #endif
 
+	if (st.polygon.cull_face && st.last_side != (st.polygon.cull_face_mode == GL_FRONT))
+	{
+		st.texture_env.mode = GL_MODULATE;
+		debug_mesh.has_backfaces = true;
+	}
+	debug_mesh.clipped_mesh_frame.verts.push_back(v0);
+	debug_mesh.clipped_mesh_frame.verts.push_back(v1);
+	debug_mesh.clipped_mesh_frame.verts.push_back(v2);
+
 	gl_frag_data data;
 
 	glm::ivec2 P;
@@ -963,6 +977,11 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 
 			if (st.depth.test && st.framebuffer->depth)
 				data.z = abs(bc_screen.x * win_c[0].z + bc_screen.y * win_c[1].z + bc_screen.z * win_c[2].z) + o;
+
+			if (st.last_side != (st.polygon.cull_face_mode == GL_FRONT))
+			{
+				data.color = glm::vec4(1, 0, 0, 1);
+			}
 
 			gl_emit_fragment(st, P.x, P.y, data);
 		}
@@ -1020,6 +1039,9 @@ void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_fu
 	}
 	else
 	{
+		debug_mesh.source_mesh_frame.verts.push_back(v0);
+		debug_mesh.source_mesh_frame.verts.push_back(v1);
+		debug_mesh.source_mesh_frame.verts.push_back(v2);
 		if (st.clip_point(v0.position, v0.clip) && st.clip_point(v1.position, v1.clip) && st.clip_point(v2.position, v2.clip))
 			gl_rasterize_triangle(st, v0, v1, v2);
 		else
