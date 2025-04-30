@@ -303,8 +303,13 @@ void APIENTRY glEvalCoord1f(GLfloat u)
 	glm::vec4 tex_coord = gs->current.tex_coord;
 	glm::vec3 normal = gs->current.normal;
 
+	glm::vec4 save_color = gs->current.color;
 	if (gs->eval.enabled_maps & (1 << map1_index(GL_MAP1_COLOR_4)))
+	{
 		color = evaluate1d<4>(gs->eval_maps_1d[map1_index(GL_MAP1_COLOR_4)], u);
+		if (gs->lighting.color_material && gs->lighting.enabled)
+			gs->set_material_color(gs->lighting.color_material_face, gs->lighting.color_material_param, color, true);
+	}
 
 	// color index mode
 	// GL_MAP1_INDEX
@@ -331,6 +336,9 @@ void APIENTRY glEvalCoord1f(GLfloat u)
 		glm::vec3 p = evaluate1d<3>(gs->eval_maps_1d[map1_index(GL_MAP1_VERTEX_3)], u);
 		gl_emit_vertex(gs, glm::make_vec4(p), color, tex_coord, normal);
 	}
+
+	if (gs->eval.enabled_maps & 1 << (map2_index(GL_MAP2_COLOR_4) + 9) && gs->lighting.color_material && gs->lighting.enabled)
+		gs->set_material_color(gs->lighting.color_material_face, gs->lighting.color_material_param, save_color, true);
 }
 
 void APIENTRY glEvalCoord1d(GLdouble u)
@@ -381,8 +389,13 @@ void APIENTRY glEvalCoord2f(GLfloat u, GLfloat v)
 	glm::vec4 tex_coord = gs->current.tex_coord;
 	glm::vec3 normal = gs->current.normal;
 
+	glm::vec4 save_color = gs->current.color;
 	if (gs->eval.enabled_maps & 1 << (map2_index(GL_MAP2_COLOR_4) + 9))
+	{
 		color = evaluate2d<4>(gs->eval_maps_2d[map2_index(GL_MAP2_COLOR_4)], u, v);
+		if (gs->lighting.color_material && gs->lighting.enabled)
+			gs->set_material_color(gs->lighting.color_material_face, gs->lighting.color_material_param, color, true);
+	}
 
 	// color index mode
 	// GL_MAP2_INDEX
@@ -428,9 +441,11 @@ void APIENTRY glEvalCoord2f(GLfloat u, GLfloat v)
 			normal = glm::cross((p1 - p) / du, (p2 - p) / dv);
 			normal = normalize(normal);
 		}
-
 		gl_emit_vertex(gs, glm::make_vec4(p), color, tex_coord, normal);
 	}
+
+	if (gs->eval.enabled_maps & 1 << (map2_index(GL_MAP2_COLOR_4) + 9) && gs->lighting.color_material && gs->lighting.enabled)
+		gs->set_material_color(gs->lighting.color_material_face, gs->lighting.color_material_param, save_color, true);
 }
 void APIENTRY glEvalCoord2d(GLdouble u, GLdouble v)
 { glEvalCoord2f((float)u, (float)v); }
