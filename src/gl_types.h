@@ -299,6 +299,7 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_BLEND 0x0BE2
 #define GL_DITHER 0x0BD0
 #define GL_LOGIC_OP 0x0BF1
+#define GL_INDEX_LOGIC_OP 0x0BF1
 
 #define GL_NEVER 0x0200
 #define GL_LESS 0x0201
@@ -657,6 +658,8 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_TEXTURE_RESIDENT 0x8067
 
 #define GL_REPLACE 0x1E01
+
+#define GL_COLOR_LOGIC_OP 0x0BF2
 
 #define GL_MAX_CLIENT_ATTRIB_STACK_DEPTH 0x0D3B
 

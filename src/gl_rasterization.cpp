@@ -442,6 +442,45 @@ static glm::vec4 gl_blend(GLenum sfactor, GLenum dfactor, glm::vec4 color_src, c
 	return glm::clamp(color_src * src + color_dst * dst, 0.f, 1.f);
 }
 
+static void gl_color_logic_op(GLenum op, uint8_t &src, uint8_t &dst)
+{
+	switch (op)
+	{
+	case GL_CLEAR:
+		dst = 0; break;
+	case GL_AND:
+		dst = src & dst; break;
+	case GL_AND_REVERSE:
+		dst = src & ~dst; break;
+	case GL_COPY:
+		dst = src; break;
+	case GL_AND_INVERTED:
+		dst = ~src & dst; break;
+	case GL_NOOP:
+		break;
+	case GL_XOR:
+		dst = src ^ dst; break;
+	case GL_OR:
+		dst = src | dst; break;
+	case GL_NOR:
+		dst = ~(src | dst); break;
+	case GL_EQUIV:
+		dst = ~(src ^ dst); break;
+	case GL_INVERT:
+		dst = ~dst; break;
+	case GL_OR_REVERSE:
+		dst = src | ~dst; break;
+	case GL_COPY_INVERTED:
+		dst = ~src; break;
+	case GL_OR_INVERTED:
+		dst = ~src | dst; break;
+	case GL_NAND:
+		dst = ~(src & dst); break;
+	case GL_SET:
+		dst = 0xFF; break;
+	}
+}
+
 void gl_dither(glm::vec4& color, int x, int y)
 {
 	// https://bisqwit.iki.fi/story/howto/dither/jy/
@@ -526,6 +565,9 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 		color = st.get_fog_color(color, data.fog_z);
 
 	int ci = pi * 4;
+#if NGL_VERISON >= 110
+	if (!st.color_buffer.color_logic_op)
+#endif
 	if (st.color_buffer.blend && (st.color_buffer.blend_func_src != GL_ONE || st.color_buffer.blend_func_dst != GL_ZERO))
 	{
 		//bgra
@@ -541,16 +583,33 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 	{
 		gl_dither(color, x, y);
 	}
-	
+
 	//bgra
-	if (st.color_buffer.color_writemask.b)
-		fb.color[ci]     = uint8_t(color.b * 0xFF);
-	if (st.color_buffer.color_writemask.g)
-		fb.color[ci + 1] = uint8_t(color.g * 0xFF);
-	if (st.color_buffer.color_writemask.r)
-		fb.color[ci + 2] = uint8_t(color.r * 0xFF);
-	if (st.color_buffer.color_writemask.a)
-		fb.color[ci + 3] = uint8_t(color.a * 0xFF);
+#if NGL_VERISON >= 110
+	if (!st.color_buffer.color_logic_op)
+	{
+		uint8_t src_color[4]{ uint8_t(color.b * 0xFF),uint8_t(color.g * 0xFF),uint8_t(color.r * 0xFF),uint8_t(color.a * 0xFF) };
+		if (st.color_buffer.color_writemask.b)
+			gl_color_logic_op(st.color_buffer.logic_op_mode, src_color[0], fb.color[ci]);
+		if (st.color_buffer.color_writemask.g)
+			gl_color_logic_op(st.color_buffer.logic_op_mode, src_color[1], fb.color[ci + 1]);
+		if (st.color_buffer.color_writemask.r)
+			gl_color_logic_op(st.color_buffer.logic_op_mode, src_color[2], fb.color[ci + 2]);
+		if (st.color_buffer.color_writemask.a)
+			gl_color_logic_op(st.color_buffer.logic_op_mode, src_color[3], fb.color[ci + 3]);
+	}
+	else
+#endif
+	{
+		if (st.color_buffer.color_writemask.b)
+			fb.color[ci] = uint8_t(color.b * 0xFF);
+		if (st.color_buffer.color_writemask.g)
+			fb.color[ci + 1] = uint8_t(color.g * 0xFF);
+		if (st.color_buffer.color_writemask.r)
+			fb.color[ci + 2] = uint8_t(color.r * 0xFF);
+		if (st.color_buffer.color_writemask.a)
+			fb.color[ci + 3] = uint8_t(color.a * 0xFF);
+	}
 }
 
 void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex, float depth_offset)

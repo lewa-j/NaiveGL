@@ -275,10 +275,16 @@ bool &gl_get_enabled_ref(gl_state &gs, GLenum cap, bool &fail)
 	{
 		return gs.color_buffer.dither;
 	}
-	else if (cap == GL_LOGIC_OP)
+	else if (cap == GL_LOGIC_OP)//aka GL_INDEX_LOGIC_OP
 	{
-		return gs.color_buffer.logic_op;
+		return gs.color_buffer.index_logic_op;
 	}
+#if NGL_VERISON >= 110
+	else if (cap == GL_COLOR_LOGIC_OP)
+	{
+		return gs.color_buffer.color_logic_op;
+	}
+#endif
 	else if (cap == GL_AUTO_NORMAL)
 	{
 		return gs.eval.auto_normal;
