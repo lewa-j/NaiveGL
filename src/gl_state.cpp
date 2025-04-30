@@ -134,7 +134,9 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 void gl_state::destroy()
 {
 	display_list_indices.clear();
+#if NGL_VERISON >= 110
 	texture_objects.clear();
+#endif
 }
 
 GLint APIENTRY glRenderMode(GLenum mode)

@@ -389,7 +389,6 @@ struct gl_state
 #if NGL_VERISON >= 110
 	gl_texture_base proxy_texture_1d;
 	gl_texture_base proxy_texture_2d;
-#endif
 
 	struct texture_object_t
 	{
@@ -399,6 +398,7 @@ struct gl_state
 	std::unordered_map<GLuint, texture_object_t> texture_objects;
 	GLuint texture_binding_1d = 0;
 	GLuint texture_binding_2d = 0;
+#endif
 
 	struct texture_env_t
 	{
@@ -442,7 +442,9 @@ struct gl_state
 		GLenum blend_func_src = GL_ONE;
 		GLenum blend_func_dst = GL_ZERO;
 		bool index_logic_op = false;
+#if NGL_VERISON >= 110
 		bool color_logic_op = false;
+#endif
 		GLenum logic_op_mode = GL_COPY;
 		bool dither = true;
 		int draw_buffer = GL_FRONT;

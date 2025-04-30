@@ -531,7 +531,9 @@ static void gl_copyAttribs(DT &d, const ST &s, GLbitfield mask)
 	d.depth.test = s.depth.test;
 	d.color_buffer.blend = s.color_buffer.blend;
 	d.color_buffer.index_logic_op = s.color_buffer.index_logic_op;
+#if NGL_VERISON >= 110
 	d.color_buffer.color_logic_op = s.color_buffer.color_logic_op;
+#endif
 	d.color_buffer.dither = s.color_buffer.dither;
 	d.eval.enabled_maps = s.eval.enabled_maps;
 }
