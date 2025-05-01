@@ -442,6 +442,12 @@ void gl_callList(gl_state *gs, GLuint list)
 		case gl_display_list_call::tHint:
 			glHint(call.argsi[0], call.argsi[1]);
 			break;
+		case gl_display_list_call::tPushAttrib:
+			glPushAttrib(call.argsi[0]);
+			break;
+		case gl_display_list_call::tPopAttrib:
+			glPopAttrib();
+			break;
 		}
 	}
 

@@ -542,6 +542,7 @@ void APIENTRY glPushAttrib(GLbitfield mask)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(PushAttrib, {}, { (int)mask });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (gs->attrib_sp >= gl_max_attrib_stack_depth)
@@ -567,6 +568,7 @@ void APIENTRY glPopAttrib(void)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(PopAttrib);
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (gs->attrib_sp == 0)

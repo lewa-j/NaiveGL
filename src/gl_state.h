@@ -229,6 +229,8 @@ struct gl_display_list_call
 		tCallLists,//2i+n big
 		tListBase,//1i
 		tHint,//2i
+		tPushAttrib,//1i
+		tPopAttrib
 	};
 
 	eType type;

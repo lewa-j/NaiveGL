@@ -235,6 +235,7 @@ void APIENTRY glMaterialfv(GLenum face, GLenum pname, const GLfloat *params)
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 
+	// color index mode unimplemented
 	if (pname == GL_COLOR_INDEXES)
 		return;
 
@@ -253,6 +254,7 @@ void APIENTRY glMaterialiv(GLenum face, GLenum pname, const GLint *params)
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 
+	// color index mode unimplemented
 	if (pname == GL_COLOR_INDEXES)
 		return;
 

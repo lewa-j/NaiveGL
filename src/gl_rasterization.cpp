@@ -8,6 +8,7 @@ void APIENTRY glPointSize(GLfloat size)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(PointSize, {size});
 	VALIDATE_NOT_BEGIN_MODE;
 	if (size <= 0)
 	{
@@ -22,6 +23,7 @@ void APIENTRY glLineWidth(GLfloat width)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(LineWidth, { width });
 	VALIDATE_NOT_BEGIN_MODE;
 	if (width <= 0)
 	{
@@ -36,6 +38,7 @@ void APIENTRY glLineStipple(GLint factor, GLushort pattern)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(LineStipple, {}, { factor, (int)pattern });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	gs->line.stipple_repeat = glm::clamp(factor, 1, 256);
@@ -46,6 +49,7 @@ void APIENTRY glCullFace(GLenum face)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(CullFace, {}, { (int)face });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_FACE;
 
@@ -156,6 +160,7 @@ void APIENTRY glPolygonMode(GLenum face, GLenum mode)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(PolygonMode, {}, { (int)face, (int)mode });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_FACE;
 	if (mode < GL_POINT && mode > GL_FILL)
