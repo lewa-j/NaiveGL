@@ -307,8 +307,10 @@ void APIENTRY glEvalCoord1f(GLfloat u)
 	if (gs->eval.enabled_maps & (1 << map1_index(GL_MAP1_COLOR_4)))
 	{
 		color = evaluate1d<4>(gs->eval_maps_1d[map1_index(GL_MAP1_COLOR_4)], u);
+#if NGL_VERISON >= 110
 		if (gs->lighting.color_material && gs->lighting.enabled)
 			gs->set_material_color(gs->lighting.color_material_face, gs->lighting.color_material_param, color, true);
+#endif
 	}
 
 	// color index mode
@@ -337,8 +339,10 @@ void APIENTRY glEvalCoord1f(GLfloat u)
 		gl_emit_vertex(gs, glm::make_vec4(p), color, tex_coord, normal);
 	}
 
+#if NGL_VERISON >= 110
 	if (gs->eval.enabled_maps & (1 << map1_index(GL_MAP1_COLOR_4)) && gs->lighting.color_material && gs->lighting.enabled)
 		gs->set_material_color(gs->lighting.color_material_face, gs->lighting.color_material_param, save_color, true);
+#endif
 }
 
 void APIENTRY glEvalCoord1d(GLdouble u)
@@ -393,8 +397,10 @@ void APIENTRY glEvalCoord2f(GLfloat u, GLfloat v)
 	if (gs->eval.enabled_maps & 1 << (map2_index(GL_MAP2_COLOR_4) + 9))
 	{
 		color = evaluate2d<4>(gs->eval_maps_2d[map2_index(GL_MAP2_COLOR_4)], u, v);
+#if NGL_VERISON >= 110
 		if (gs->lighting.color_material && gs->lighting.enabled)
 			gs->set_material_color(gs->lighting.color_material_face, gs->lighting.color_material_param, color, true);
+#endif
 	}
 
 	// color index mode
@@ -444,8 +450,10 @@ void APIENTRY glEvalCoord2f(GLfloat u, GLfloat v)
 		gl_emit_vertex(gs, glm::make_vec4(p), color, tex_coord, normal);
 	}
 
+#if NGL_VERISON >= 110
 	if (gs->eval.enabled_maps & 1 << (map2_index(GL_MAP2_COLOR_4) + 9) && gs->lighting.color_material && gs->lighting.enabled)
 		gs->set_material_color(gs->lighting.color_material_face, gs->lighting.color_material_param, save_color, true);
+#endif
 }
 void APIENTRY glEvalCoord2d(GLdouble u, GLdouble v)
 { glEvalCoord2f((float)u, (float)v); }

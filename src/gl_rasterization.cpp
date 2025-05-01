@@ -204,7 +204,14 @@ static void gl_fog_scalar(const char *func, gl_state *gs, GLenum pname, GLfloat 
 			return;
 		}
 	}
-	if ((pname == GL_FOG_DENSITY || pname == GL_FOG_START || pname == GL_FOG_END) && param < 0)
+#if NGL_VERISON < 110
+	if ((pname == GL_FOG_START || pname == GL_FOG_END) && param < 0)
+	{
+		gl_set_error_(GL_INVALID_VALUE, func);
+		return;
+	}
+#endif
+	if (pname == GL_FOG_DENSITY && param < 0)
 	{
 		gl_set_error_(GL_INVALID_VALUE, func);
 		return;
