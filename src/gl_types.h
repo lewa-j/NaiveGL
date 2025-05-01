@@ -588,6 +588,7 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_RENDER_MODE 0x0C40
 
 //gl 1.1
+#if NGL_VERISON >= 110
 #define GL_DOUBLE 0x140A
 
 #define GL_VERTEX_ARRAY 0x8074
@@ -715,3 +716,4 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_SELECTION_BUFFER_SIZE 0x0DF4
 #define GL_FEEDBACK_BUFFER_SIZE 0x0DF1
 #define GL_FEEDBACK_BUFFER_TYPE 0x0DF2
+#endif

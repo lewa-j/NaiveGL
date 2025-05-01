@@ -337,8 +337,10 @@ static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLenum target, GLint
 	ta.components = components;
 	ta.border = border;
 
+#if NGL_VERISON >= 110
 	if (target == GL_PROXY_TEXTURE_1D || target == GL_PROXY_TEXTURE_2D)
 		return;
+#endif
 
 	if (old_size != size)
 	{
@@ -427,7 +429,11 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-	if (target != GL_PROXY_TEXTURE_2D && gs->display_list_begun)
+	if (gs->display_list_begun
+#if NGL_VERISON >= 110
+		&& target != GL_PROXY_TEXTURE_2D
+#endif
+		)
 	{
 		auto &dl = gs->display_list_indices[0];
 		size_t old_size = dl.data.size();
@@ -511,7 +517,11 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-	if (target != GL_PROXY_TEXTURE_1D && gs->display_list_begun)
+	if (gs->display_list_begun
+#if NGL_VERISON >= 110
+		&& target != GL_PROXY_TEXTURE_1D
+#endif
+		)
 	{
 		auto &dl = gs->display_list_indices[0];
 		size_t old_size = dl.data.size();
@@ -1081,15 +1091,17 @@ static gl_texture_base &gl_get_texture_or_proxy(gl_state *gs, GLenum target)
 		return gs->get_texture_1d();
 	else if (target == GL_TEXTURE_2D)
 		return gs->get_texture_2d();
+#if NGL_VERISON >= 110
 	else if (target == GL_PROXY_TEXTURE_1D)
 		return gs->proxy_texture_1d;
 	else if (target == GL_PROXY_TEXTURE_2D)
 		return gs->proxy_texture_2d;
-
+#endif
 	fprintf(stderr, "gl_get_texture_or_proxy invalid target 0x%X\n", target);
 	abort();
 }
 
+#if NGL_VERISON >= 110
 static int get_base_format_component_bits(GLenum fmt, GLenum pname)
 {
 	if (pname < GL_TEXTURE_RED_SIZE || pname > GL_TEXTURE_INTENSITY_SIZE)
@@ -1109,6 +1121,7 @@ static int get_base_format_component_bits(GLenum fmt, GLenum pname)
 
 	return formats[fmt][pname - GL_TEXTURE_RED_SIZE];
 }
+#endif
 
 template<typename T>
 void gl_getTexLevelParameterv(GLenum target, GLint level, GLenum pname, T *params)
@@ -1116,7 +1129,11 @@ void gl_getTexLevelParameterv(GLenum target, GLint level, GLenum pname, T *param
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
-	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_PROXY_TEXTURE_1D && target != GL_PROXY_TEXTURE_2D)
+	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D
+#if NGL_VERISON >= 110
+		&& target != GL_PROXY_TEXTURE_1D && target != GL_PROXY_TEXTURE_2D
+#endif
+		)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, target);
 		return;
