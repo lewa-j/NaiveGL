@@ -1,8 +1,8 @@
 # NaiveGL
 
-Naive implementation of OpenGL 1.0 in C++
+Naive implementation of OpenGL 1.0 and 1.1 in C++
 
-Almost complete 1.0 feature set, except
+Almost complete 1.1 feature set, except
 
 * Wide lines
 * Antialiasing
@@ -14,7 +14,7 @@ Almost complete 1.0 feature set, except
 
 ## Acknowledgments
 
-specification [OpenGL](https://registry.khronos.org/OpenGL/specs/gl/glspec10.pdf)
+specification [OpenGL 1.0](https://registry.khronos.org/OpenGL/specs/gl/glspec10.pdf) [OpenGL 1.1](https://registry.khronos.org/OpenGL/specs/gl/glspec11.pdf)
 
 generated headers [glad](https://github.com/Dav1dde/glad)
 
