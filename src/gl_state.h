@@ -230,7 +230,18 @@ struct gl_display_list_call
 		tListBase,//1i
 		tHint,//2i
 		tPushAttrib,//1i
-		tPopAttrib
+		tPopAttrib,
+#if NGL_VERISON >= 110
+		tPolygonOffset,//2f
+		tCopyTexImage2D,//8i
+		tCopyTexImage1D,//7i
+		tTexSubImage2D,//1f+7i+n	big i[7] size
+		tTexSubImage1D,//6i+n		big i[6] size
+		tCopyTexSubImage2D,//8i
+		tCopyTexSubImage1D,//6i
+		tBindTexture,//2i
+		tPrioritizeTextures,//1i+n	big [1] size
+#endif
 	};
 
 	eType type;

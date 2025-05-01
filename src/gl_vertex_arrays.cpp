@@ -331,6 +331,7 @@ void APIENTRY glArrayElement(GLint i)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	// display list will record glVertex* calls
 	gl_elementArray(gs->va, i);
 }
 
@@ -338,6 +339,7 @@ void APIENTRY glDrawArrays(GLenum mode, GLint first, GLsizei count)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	// display list will record glBegin glVertex* glEnd calls
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (mode < GL_POINTS || mode > GL_POLYGON)
@@ -361,6 +363,7 @@ void APIENTRY glDrawElements(GLenum mode, GLsizei count, GLenum type, const void
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	// display list will record glBegin glVertex* glEnd calls
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (mode < GL_POINTS || mode > GL_POLYGON)

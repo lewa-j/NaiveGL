@@ -44,6 +44,11 @@ void APIENTRY glEndList(void)
 		return;
 	}
 
+#if NGL_VERISON >= 110
+	// can generate GL_OUT_OF_MEMORY
+	// no changes to gs->display_list_indices[gs->display_list_begun] in that case
+#endif
+
 	auto it = gs->display_list_indices.find(0);
 	if (it != gs->display_list_indices.end())
 	{
@@ -448,6 +453,50 @@ void gl_callList(gl_state *gs, GLuint list)
 		case gl_display_list_call::tPopAttrib:
 			glPopAttrib();
 			break;
+#if NGL_VERISON >= 110
+		case gl_display_list_call::tPolygonOffset:
+			glPolygonOffset(call.argsf[0], call.argsf[1]);
+			break;
+		case gl_display_list_call::tCopyTexImage2D:
+			glCopyTexImage2D(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4], call.argsi[5], call.argsi[6], call.argsi[7]);
+			break;
+		case gl_display_list_call::tCopyTexImage1D:
+			glCopyTexImage1D(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4], call.argsi[5], call.argsi[6]);
+			break;
+		case gl_display_list_call::tTexSubImage2D:
+		{
+			gl_state::pixelStore save = gs->pixel_unpack;
+			gs->pixel_pack = {};
+			gs->pixel_pack.alignment = 1;
+			glTexSubImage2D((GLenum)call.argsf[0], call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4], call.argsi[5], call.argsi[6], call.argsi[7] ? data : nullptr);
+			data += call.argsi[7];
+			gs->pixel_unpack = save;
+			break;
+		}
+		case gl_display_list_call::tTexSubImage1D:
+		{
+			gl_state::pixelStore save = gs->pixel_unpack;
+			gs->pixel_pack = {};
+			gs->pixel_pack.alignment = 1;
+			glTexSubImage1D(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4], call.argsi[5], call.argsi[6] ? data : nullptr);
+			data += call.argsi[6];
+			gs->pixel_unpack = save;
+			break;
+		}
+		case gl_display_list_call::tCopyTexSubImage2D:
+			glCopyTexSubImage2D(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4], call.argsi[5], call.argsi[6],call.argsi[7]);
+			break;
+		case gl_display_list_call::tCopyTexSubImage1D:
+			glCopyTexSubImage1D(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4], call.argsi[5]);
+			break;
+		case gl_display_list_call::tBindTexture:
+			glBindTexture(call.argsi[0], call.argsi[1]);
+			break;
+		case gl_display_list_call::tPrioritizeTextures://1i+n	big [1] size
+			glPrioritizeTextures(call.argsi[0], (const GLuint *)data, (const GLfloat *)(data + call.argsi[0] * sizeof(GLuint)));
+			data += call.argsi[1];
+			break;
+#endif
 		}
 	}
 

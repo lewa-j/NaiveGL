@@ -426,7 +426,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-	if (gs->display_list_begun)
+	if (target != GL_PROXY_TEXTURE_2D && gs->display_list_begun)
 	{
 		auto &dl = gs->display_list_indices[0];
 		size_t old_size = dl.data.size();
@@ -510,7 +510,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
-	if (gs->display_list_begun)
+	if (target != GL_PROXY_TEXTURE_1D && gs->display_list_begun)
 	{
 		auto &dl = gs->display_list_indices[0];
 		size_t old_size = dl.data.size();
@@ -591,10 +591,8 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 }
 
 #if NGL_VERISON >= 110
-static void gl_copyTexImage(const char *func, GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
+static void gl_copyTexImage(gl_state *gs, const char *func, GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
 {
-	gl_state *gs = gl_current_state();
-	if (!gs) return;
 	if (gs->begin_primitive_mode != -1)
 	{
 		gl_set_error_(GL_INVALID_OPERATION, func);
@@ -634,22 +632,28 @@ static void gl_copyTexImage(const char *func, GLenum target, GLint level, GLenum
 
 void APIENTRY glCopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
 {
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST(CopyTexImage2D, {}, { (int)target, level, (int)internalformat, x, y, width, height, border });
 	if (target != GL_TEXTURE_2D)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, target);
 		return;
 	}
-	gl_copyTexImage(__FUNCTION__, target, level, internalformat, x, y, width, height, border);
+	gl_copyTexImage(gs, __FUNCTION__, target, level, internalformat, x, y, width, height, border);
 }
 
 void APIENTRY glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border)
 {
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST(CopyTexImage1D, {}, { (int)target, level, (int)internalformat, x, y, width, border });
 	if (target != GL_TEXTURE_1D)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, target);
 		return;
 	}
-	gl_copyTexImage(__FUNCTION__, target, level, internalformat, x, y, width, 1, border);
+	gl_copyTexImage(gs, __FUNCTION__, target, level, internalformat, x, y, width, 1, border);
 }
 
 #define VALIDATE_TEX_SUB_IMAGE(FUNC,TARGET,LEVEL,W,H) \
@@ -669,6 +673,22 @@ void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint y
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	if (gs->display_list_begun)
+	{
+		auto &dl = gs->display_list_indices[0];
+		size_t old_size = dl.data.size();
+		int pix_size = 0;
+		if (pixels && target == GL_TEXTURE_2D)
+			pix_size = gl_pixels_size(width, height, format, type);
+		if (pix_size)
+		{
+			dl.data.resize(old_size + pix_size);
+			gl_unpack_pixels(gs, width, height, format, type, pixels, dl.data.data() + old_size);
+		}
+		dl.calls.push_back({ gl_display_list_call::tTexSubImage2D, {(float)target}, {level, xoffset, yoffset, width, height, (int)format, (int)type, pix_size} });
+		if (!gs->display_list_execute)
+			return;
+	}
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_2D, level, width, height);
 	VALIDATE_TEX_IMAGE_FORMAT;
@@ -692,6 +712,22 @@ void APIENTRY glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	if (gs->display_list_begun)
+	{
+		auto &dl = gs->display_list_indices[0];
+		size_t old_size = dl.data.size();
+		int pix_size = 0;
+		if (pixels && target == GL_TEXTURE_1D)
+			pix_size = gl_pixels_size(width, 1, format, type);
+		if (pix_size)
+		{
+			dl.data.resize(old_size + pix_size);
+			gl_unpack_pixels(gs, width, 1, format, type, pixels, dl.data.data() + old_size);
+		}
+		dl.calls.push_back({ gl_display_list_call::tTexSubImage1D, {}, {(int)target, level, xoffset, width, (int)format, (int)type, pix_size} });
+		if (!gs->display_list_execute)
+			return;
+	}
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_1D, level, width, 1);
 	VALIDATE_TEX_IMAGE_FORMAT;
@@ -713,6 +749,7 @@ void APIENTRY glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLi
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(CopyTexSubImage2D, {}, { (int)target, level, xoffset, yoffset, x, y, width, height });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_2D, level, width, height);
 
@@ -748,6 +785,7 @@ void APIENTRY glCopyTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLi
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(CopyTexSubImage1D, {}, { (int)target, level, xoffset, x, y, width });
 	VALIDATE_NOT_BEGIN_MODE;
 	VALIDATE_TEX_SUB_IMAGE(__FUNCTION__, GL_TEXTURE_1D, level, width, 1);
 
@@ -1073,6 +1111,7 @@ void APIENTRY glBindTexture(GLenum target, GLuint texture)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(BindTexture, {}, { (int)target, (int)texture });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D)
@@ -1187,6 +1226,22 @@ void APIENTRY glPrioritizeTextures(GLsizei n, const GLuint *textures, const GLfl
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	if (gs->display_list_begun)
+	{
+		auto &dl = gs->display_list_indices[0];
+		int s = (sizeof(GLuint) + sizeof(GLfloat)) * n;
+		if (s)
+		{
+			size_t old_size = dl.data.size();
+			dl.data.resize(old_size + s);
+			memcpy(dl.data.data() + old_size, textures, sizeof(GLuint) * n);
+			old_size += sizeof(GLuint) * n;
+			memcpy(dl.data.data() + old_size, priorities, sizeof(GLfloat) * n);
+			dl.calls.push_back({ gl_display_list_call::tPrioritizeTextures, {}, { n, s } });
+		}
+		if (!gs->display_list_execute)
+			return;
+	}
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (n < 0)

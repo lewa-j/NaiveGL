@@ -180,6 +180,7 @@ void APIENTRY glPolygonOffset(GLfloat factor, GLfloat units)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+	WRITE_DISPLAY_LIST(PolygonOffset, { factor, units });
 	VALIDATE_NOT_BEGIN_MODE;
 
 	gs->polygon.offset_factor = factor;
