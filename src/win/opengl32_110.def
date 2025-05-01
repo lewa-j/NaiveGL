@@ -353,6 +353,7 @@ EXPORTS
 	glGenTextures
 	glAreTexturesResident
 	glPrioritizeTextures
+	glIsTexture
 
 	glPushClientAttrib
 	glPopClientAttrib

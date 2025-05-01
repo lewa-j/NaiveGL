@@ -341,6 +341,7 @@ X(glDeleteTextures)
 X(glGenTextures)
 X(glAreTexturesResident)
 X(glPrioritizeTextures)
+X(glIsTexture)
 
 X(glPushClientAttrib)
 X(glPopClientAttrib)

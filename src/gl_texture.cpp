@@ -4,6 +4,7 @@
 #include "gl_pixels.h"
 #include "gl_exports.h"
 #include <glm/gtx/integer.hpp>
+#include <array>
 
 #define VALIDATE_TEX_LEVEL_(FUNC,LEVEL) \
 if (LEVEL < 0 || LEVEL > gl_max_tex_level) \
@@ -870,6 +871,15 @@ void APIENTRY glGetTexImage(GLenum target, GLint level, GLenum format, GLenum ty
 
 			if (ta.components == 2)
 				std::swap(col.g, col.a);
+#if NGL_VERISON >= 110
+			else if (ta.base_internal_format == GL_ALPHA)
+				col = glm::vec4(0, 0, 0, col.r);
+
+			if (ta.base_internal_format == GL_LUMINANCE
+				|| ta.base_internal_format == GL_RGB
+				|| ta.base_internal_format == GL_INTENSITY)
+				col.a = 1;
+#endif
 
 			col = col * gs->pixel.color_scale + gs->pixel.color_bias;
 
@@ -1065,13 +1075,48 @@ void APIENTRY glGetTexParameterfv(GLenum target, GLenum pname, GLfloat *params)
 	gl_getTexParameterv(target, pname, params);
 }
 
+static gl_texture_base &gl_get_texture_or_proxy(gl_state *gs, GLenum target)
+{
+	if (target == GL_TEXTURE_1D)
+		return gs->get_texture_1d();
+	else if (target == GL_TEXTURE_2D)
+		return gs->get_texture_2d();
+	else if (target == GL_PROXY_TEXTURE_1D)
+		return gs->proxy_texture_1d;
+	else if (target == GL_PROXY_TEXTURE_2D)
+		return gs->proxy_texture_2d;
+
+	fprintf(stderr, "gl_get_texture_or_proxy invalid target 0x%X\n", target);
+	abort();
+}
+
+static int get_base_format_component_bits(GLenum fmt, GLenum pname)
+{
+	if (pname < GL_TEXTURE_RED_SIZE || pname > GL_TEXTURE_INTENSITY_SIZE)
+		return 0;
+
+	static std::unordered_map<int, std::array<int, 6>> formats{
+		{GL_LUMINANCE,		{0,0,0,0,8,0}},
+		{GL_LUMINANCE_ALPHA,{0,0,0,8,8,0}},
+		{GL_RGB,			{8,8,8,0,0,0}},
+		{GL_RGBA,			{8,8,8,8,0,0}},
+		{GL_ALPHA,			{0,0,0,8,0,0}},
+		{GL_INTENSITY,		{0,0,0,0,0,8}},
+		};
+
+	if (formats.find(fmt) == formats.end())
+		return 0;
+
+	return formats[fmt][pname - GL_TEXTURE_RED_SIZE];
+}
+
 template<typename T>
 void gl_getTexLevelParameterv(GLenum target, GLint level, GLenum pname, T *params)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
-	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D)
+	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D && target != GL_PROXY_TEXTURE_1D && target != GL_PROXY_TEXTURE_2D)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, target);
 		return;
@@ -1082,14 +1127,21 @@ void gl_getTexLevelParameterv(GLenum target, GLint level, GLenum pname, T *param
 		return;
 	}
 
-	gl_texture_array &ta = gs->get_texture(target).arrays[level];
+	gl_texture_array &ta = gl_get_texture_or_proxy(gs, target).arrays[level];
 
 	if (pname == GL_TEXTURE_WIDTH)
 		*params = (T)ta.width;
 	else if (pname == GL_TEXTURE_HEIGHT)
 		*params = (T)ta.height;
+#if NGL_VERISON >= 110
+	else if (pname == GL_TEXTURE_INTERNAL_FORMAT)
+		*params = (T)ta.internal_format;
+	else if (pname >= GL_TEXTURE_RED_SIZE && pname <= GL_TEXTURE_INTENSITY_SIZE)
+		*params = (T)get_base_format_component_bits(ta.base_internal_format, pname);
+#else
 	else if (pname == GL_TEXTURE_COMPONENTS)
 		*params = (T)ta.components;
+#endif
 	else if (pname != GL_TEXTURE_BORDER)
 		*params = (T)ta.border;
 	else
@@ -1262,6 +1314,21 @@ void APIENTRY glPrioritizeTextures(GLsizei n, const GLuint *textures, const GLfl
 	}
 }
 
+GLboolean APIENTRY glIsTexture(GLuint texture)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return GL_FALSE;
+	VALIDATE_NOT_BEGIN_MODE_RET(GL_FALSE);
+	
+	if (texture == 0)
+		return GL_FALSE;
+
+	auto it = gs->texture_objects.find(texture);
+	if (it == gs->texture_objects.end() || it->second.target == 0)
+		return GL_FALSE;
+
+	return GL_TRUE;
+}
 #endif
 
 #define VALIDATE_TEX_ENV \
