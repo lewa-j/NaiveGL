@@ -621,6 +621,10 @@ static void gl_copyTexImage(gl_state *gs, const char *func, GLenum target, GLint
 		return;
 	}
 
+	// prevent glDrawPixels from writing into display list
+	int save_dl = gs->display_list_begun;
+	gs->display_list_begun = 0;
+
 	// may be optimized
 
 	gl_state::pixelStore save_pack{};
@@ -639,6 +643,8 @@ static void gl_copyTexImage(gl_state *gs, const char *func, GLenum target, GLint
 
 	gs->pixel_pack = save_pack;
 	gs->pixel_unpack = save_unpack;
+
+	gs->display_list_begun = save_dl;
 }
 
 void APIENTRY glCopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
