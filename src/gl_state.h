@@ -572,6 +572,8 @@ struct gl_state
 
 		bool texture_1d_enabled = false;
 		bool texture_2d_enabled = false;
+		GLuint texture_binding_1d;
+		GLuint texture_binding_2d;
 		gl_texture::params_t texture_1d;
 		gl_texture::params_t texture_2d;
 		texture_env_t texture_env;
@@ -624,7 +626,7 @@ struct gl_state
 	{
 		GLfloat *buffer = nullptr;
 		GLsizei buffer_size = 0;
-		GLenum buffer_type = 0;
+		GLenum buffer_type = GL_2D;
 	} feedback;
 	bool feedback_overflow = false;
 	GLfloat *feedback_array_pos = nullptr;

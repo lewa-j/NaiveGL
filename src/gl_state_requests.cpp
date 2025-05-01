@@ -157,7 +157,9 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 		copy_vals(data, &gs.lighting.light_model_local_viewer, 1);
 	else if (pname == GL_LIGHT_MODEL_TWO_SIDE)
 		copy_vals(data, &gs.lighting.light_model_two_side, 1);
+#if NGL_VERISON == 100 // moved to GetMaterialfv
 	else if (pname == GL_COLOR_INDEXES) {}
+#endif
 	else if (pname == GL_POINT_SIZE)
 		copy_vals(data, &gs.point.size, 1);
 	else if (pname == GL_LINE_WIDTH)
@@ -187,6 +189,10 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 		copy_vals(data, &gs.polygon.offset_factor, 1);
 	else if (pname == GL_POLYGON_OFFSET_UNITS)
 		copy_vals(data, &gs.polygon.offset_units, 1);
+	else if (pname == GL_TEXTURE_BINDING_1D)
+		copy_vals(data, &gs.texture_binding_1d, 1);
+	else if (pname == GL_TEXTURE_BINDING_2D)
+		copy_vals(data, &gs.texture_binding_2d, 1);
 #endif
 	else if (pname == GL_SCISSOR_BOX)
 		copy_vals(data, &gs.scissor.box.x, 4);
@@ -415,10 +421,86 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 	else if (pname == GL_RENDER_MODE)
 		copy_vals(data, &gs.render_mode, 1);
 	else
+#if NGL_VERISON >= 110
+		keep_going = true;
+	// Break up else if chain to avoid exceeding `error C1061: compiler limit: blocks nested too deeply`
+	if (!keep_going)
+		return true;
+	keep_going = false;
+
+	if (pname == GL_CLIENT_ATTRIB_STACK_DEPTH)
+		copy_vals(data, &gs.client_attrib_sp, 1);
+	else if (pname == GL_SELECTION_BUFFER_SIZE)
+		copy_vals(data, &gs.select.buffer_size, 1);
+	else if (pname == GL_FEEDBACK_BUFFER_SIZE)
+		copy_vals(data, &gs.feedback.buffer_size, 1);
+	else if (pname == GL_FEEDBACK_BUFFER_TYPE)
+		copy_vals(data, &gs.feedback.buffer_type, 1);
+	else if (pname == GL_VERTEX_ARRAY_SIZE)
+		copy_vals(data, &gs.va.vertex.size, 1);
+	else if (pname == GL_VERTEX_ARRAY_TYPE)
+		copy_vals(data, &gs.va.vertex.type, 1);
+	else if (pname == GL_VERTEX_ARRAY_STRIDE)
+		copy_vals(data, &gs.va.vertex.stride, 1);
+	else if (pname == GL_NORMAL_ARRAY_TYPE)
+		copy_vals(data, &gs.va.normal.type, 1);
+	else if (pname == GL_NORMAL_ARRAY_STRIDE)
+		copy_vals(data, &gs.va.normal.stride, 1);
+	else if (pname == GL_COLOR_ARRAY_SIZE)
+		copy_vals(data, &gs.va.color.size, 1);
+	else if (pname == GL_COLOR_ARRAY_TYPE)
+		copy_vals(data, &gs.va.color.type, 1);
+	else if (pname == GL_COLOR_ARRAY_STRIDE)
+		copy_vals(data, &gs.va.color.stride, 1);
+	else if (pname == GL_INDEX_ARRAY_TYPE)
+		copy_vals(data, &gs.va.index.type, 1);
+	else if (pname == GL_INDEX_ARRAY_STRIDE)
+		copy_vals(data, &gs.va.index.stride, 1);
+	else if (pname == GL_TEXTURE_COORD_ARRAY_SIZE)
+		copy_vals(data, &gs.va.tex_coord.size, 1);
+	else if (pname == GL_TEXTURE_COORD_ARRAY_TYPE)
+		copy_vals(data, &gs.va.tex_coord.type, 1);
+	else if (pname == GL_TEXTURE_COORD_ARRAY_STRIDE)
+		copy_vals(data, &gs.va.tex_coord.stride, 1);
+	else if (pname == GL_EDGE_FLAG_ARRAY_STRIDE)
+		copy_vals(data, &gs.va.edge_flag.stride, 1);
+	else
+#endif
 		return false;
 
 	return true;
 }
+
+#if NGL_VERISON >= 110
+void APIENTRY glGetPointerv(GLenum pname, void **params)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	switch (pname)
+	{
+	case GL_SELECTION_BUFFER_POINTER:
+		*params = gs->select.buffer; break;
+	case GL_FEEDBACK_BUFFER_POINTER:
+		*params = gs->feedback.buffer; break;
+	case GL_VERTEX_ARRAY_POINTER:
+		*params = (void*)gs->va.vertex.pointer; break;
+	case GL_NORMAL_ARRAY_POINTER:
+		*params = (void *)gs->va.normal.pointer; break;
+	case GL_COLOR_ARRAY_POINTER:
+		*params = (void *)gs->va.color.pointer; break;
+	case GL_INDEX_ARRAY_POINTER:
+		*params = (void *)gs->va.index.pointer; break;
+	case GL_TEXTURE_COORD_ARRAY_POINTER:
+		*params = (void *)gs->va.tex_coord.pointer; break;
+	case GL_EDGE_FLAG_ARRAY_POINTER:
+		*params = (void *)gs->va.edge_flag.pointer; break;
+	default:
+		gl_set_error_a(GL_INVALID_ENUM, pname);
+	}
+}
+#endif
 
 void APIENTRY glGetBooleanv(GLenum pname, GLboolean *data)
 {
@@ -481,6 +563,10 @@ static void gl_copyAttribs(DT &d, const ST &s, GLbitfield mask)
 	{
 		d.texture_1d_enabled = s.texture_1d_enabled;
 		d.texture_2d_enabled = s.texture_2d_enabled;
+#if NGL_VERISON >= 110
+		d.texture_binding_1d = s.texture_binding_1d;
+		d.texture_binding_2d = s.texture_binding_2d;
+#endif
 		d.texture_env = s.texture_env;
 		memcpy(d.texgen, s.texgen, sizeof(d.texgen));
 	}
@@ -536,6 +622,9 @@ static void gl_copyAttribs(DT &d, const ST &s, GLbitfield mask)
 #endif
 	d.color_buffer.dither = s.color_buffer.dither;
 	d.eval.enabled_maps = s.eval.enabled_maps;
+#if NGL_VERISON >= 110
+	d.eval.auto_normal = s.eval.auto_normal;
+#endif
 }
 
 void APIENTRY glPushAttrib(GLbitfield mask)
@@ -557,8 +646,8 @@ void APIENTRY glPushAttrib(GLbitfield mask)
 	gl_copyAttribs(d, *gs, mask);
 	if (mask & GL_TEXTURE_BIT)
 	{
-		d.texture_1d = gs->texture_1d.params;
-		d.texture_2d = gs->texture_2d.params;
+		d.texture_1d = gs->get_texture_1d().params;
+		d.texture_2d = gs->get_texture_2d().params;
 	}
 
 	gs->attrib_sp++;
@@ -583,8 +672,8 @@ void APIENTRY glPopAttrib(void)
 	gl_copyAttribs(*gs, s, s.attrib_mask);
 	if (s.attrib_mask & GL_TEXTURE_BIT)
 	{
-		gs->texture_1d.params = s.texture_1d;
-		gs->texture_2d.params = s.texture_2d;
+		gs->get_texture_1d().params = s.texture_1d;
+		gs->get_texture_2d().params = s.texture_2d;
 	}
 }
 

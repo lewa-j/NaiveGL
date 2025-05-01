@@ -1133,6 +1133,8 @@ void gl_getTexLevelParameterv(GLenum target, GLint level, GLenum pname, T *param
 		*params = (T)ta.width;
 	else if (pname == GL_TEXTURE_HEIGHT)
 		*params = (T)ta.height;
+	else if (pname != GL_TEXTURE_BORDER)
+		*params = (T)ta.border;
 #if NGL_VERISON >= 110
 	else if (pname == GL_TEXTURE_INTERNAL_FORMAT)
 		*params = (T)ta.internal_format;
@@ -1142,8 +1144,6 @@ void gl_getTexLevelParameterv(GLenum target, GLint level, GLenum pname, T *param
 	else if (pname == GL_TEXTURE_COMPONENTS)
 		*params = (T)ta.components;
 #endif
-	else if (pname != GL_TEXTURE_BORDER)
-		*params = (T)ta.border;
 	else
 		gl_set_error_a(GL_INVALID_ENUM, target);
 }

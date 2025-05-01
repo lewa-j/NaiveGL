@@ -381,6 +381,7 @@ EXPORT void APIENTRY glPushAttrib(GLbitfield mask);
 EXPORT void APIENTRY glPopAttrib(void);
 #if NGL_VERISON >= 110
 EXPORT GLboolean APIENTRY glIsTexture(GLuint texture);
+EXPORT void APIENTRY glGetPointerv(GLenum pname, void **params);
 EXPORT void APIENTRY glPushClientAttrib(GLbitfield mask);
 EXPORT void APIENTRY glPopClientAttrib(void);
 #endif

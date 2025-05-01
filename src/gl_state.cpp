@@ -416,6 +416,10 @@ int gl_isEnabled(gl_state &gs, GLenum cap)
 	{
 		return (gs.polygon.offset_enabled & 0x4) ? 1 : 0;
 	}
+	else if (cap >= GL_VERTEX_ARRAY && cap <= GL_EDGE_FLAG_ARRAY)
+	{
+		return (gs.va.enabled & (1 << (cap - GL_VERTEX_ARRAY))) ? 1 : 0;
+	}
 #endif
 
 	return -1;
