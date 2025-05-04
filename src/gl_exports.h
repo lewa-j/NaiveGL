@@ -242,6 +242,8 @@ EXPORT void APIENTRY glPolygonStipple(const GLubyte *mask);
 EXPORT void APIENTRY glPolygonMode(GLenum face, GLenum mode);
 #if NGL_VERISON >= 110
 EXPORT void APIENTRY glPolygonOffset(GLfloat factor, GLfloat units);
+#elif GL_EXT_polygon_offset
+void APIENTRY glPolygonOffset(GLfloat factor, GLfloat units);
 #endif
 
 EXPORT void APIENTRY glPixelStorei(GLenum pname, GLint param);

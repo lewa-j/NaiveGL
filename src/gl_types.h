@@ -598,6 +598,15 @@ static void set_bit(T &set, int bit, bool val)
 #define GL_RENDER_MODE 0x0C40
 
 //gl 1.1
+#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
+#define GL_POLYGON_OFFSET_FILL 0x8037
+#define GL_POLYGON_OFFSET_FACTOR 0x8038
+#endif
+
+#if GL_EXT_polygon_offset
+#define GL_POLYGON_OFFSET_BIAS_EXT 0x8039
+#endif
+
 #if NGL_VERISON >= 110 || GL_EXT_vertex_array
 #define GL_DOUBLE 0x140A
 
@@ -663,7 +672,6 @@ static void set_bit(T &set, int bit, bool val)
 
 #define GL_POLYGON_OFFSET_POINT 0x2A01
 #define GL_POLYGON_OFFSET_LINE 0x2A02
-#define GL_POLYGON_OFFSET_FILL 0x8037
 
 #define GL_PROXY_TEXTURE_1D 0x8063
 #define GL_PROXY_TEXTURE_2D 0x8064
@@ -727,7 +735,6 @@ static void set_bit(T &set, int bit, bool val)
 #define GL_CLIENT_VERTEX_ARRAY_BIT 0x00000002
 #define GL_CLIENT_ALL_ATTRIB_BITS 0xFFFFFFFF
 
-#define GL_POLYGON_OFFSET_FACTOR 0x8038
 #define GL_POLYGON_OFFSET_UNITS 0x2A00
 
 #define GL_TEXTURE_BINDING_1D 0x8068

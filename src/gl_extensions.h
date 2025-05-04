@@ -9,6 +9,10 @@
 #endif
 #endif
 
+#if GL_EXT_polygon_offset
+void APIENTRY glPolygonOffsetEXT(GLfloat factor, GLfloat bias);
+#endif
+
 #if GL_EXT_vertex_array
 void APIENTRY glArrayElementEXT(GLint i);
 void APIENTRY glDrawArraysEXT(GLenum mode, GLint first, GLsizei count);

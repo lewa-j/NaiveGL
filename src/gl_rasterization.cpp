@@ -175,7 +175,7 @@ void APIENTRY glPolygonMode(GLenum face, GLenum mode)
 		gs->polygon.mode[1] = mode;
 }
 
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
 void APIENTRY glPolygonOffset(GLfloat factor, GLfloat units)
 {
 	gl_state *gs = gl_current_state();
@@ -185,6 +185,12 @@ void APIENTRY glPolygonOffset(GLfloat factor, GLfloat units)
 
 	gs->polygon.offset_factor = factor;
 	gs->polygon.offset_units = units;
+}
+#endif
+#if GL_EXT_polygon_offset
+void APIENTRY glPolygonOffsetEXT(GLfloat factor, GLfloat bias)
+{
+	glPolygonOffset(factor, bias * 0xFFFF);
 }
 #endif
 
@@ -963,17 +969,21 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 	}
 
 	float o = 0;
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
 	if (st.depth.test && st.framebuffer->depth &&
 		(  ((st.polygon.offset_enabled & 4) && pmode == GL_FILL) // GL_POLYGON_OFFSET_FILL
+#if NGL_VERISON >= 110
 		|| ((st.polygon.offset_enabled & 2) && pmode == GL_LINE) // GL_POLYGON_OFFSET_LINE
-		|| ((st.polygon.offset_enabled & 1) && pmode == GL_POINT))) // GL_POLYGON_OFFSET_POINT
+		|| ((st.polygon.offset_enabled & 1) && pmode == GL_POINT) // GL_POLYGON_OFFSET_POINT
+#endif
+		))
 	{
 		const float r = 1.0f / 0xFFFF;
 		glm::vec2 dz = glm::vec2((bbmax.z - bbmin.z) * r) / glm::vec2(bbmax - bbmin);
 		float m = glm::sqrt(dz.x * dz.x + dz.y * dz.y);
 		o = m * st.polygon.offset_factor + r * st.polygon.offset_units;
 
+#if NGL_VERISON >= 110
 		if (st.polygon.mode[st.last_side] == GL_LINE)
 		{
 			if (v0.edge) gl_rasterize_line(st, v0, v1, o);
@@ -988,6 +998,7 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 			if (v2.edge) gl_emit_point(st, v2, o);
 			return;
 		}
+#endif
 	}
 #endif
 

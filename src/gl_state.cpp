@@ -330,6 +330,8 @@ bool gl_setable(gl_state &gs, GLenum cap, bool val)
 	{
 		set_bit(gs.polygon.offset_enabled, cap - GL_POLYGON_OFFSET_POINT, val);
 	}
+#endif
+#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
 	else if (cap == GL_POLYGON_OFFSET_FILL)
 	{
 		set_bit(gs.polygon.offset_enabled, 2, val);
@@ -414,6 +416,8 @@ int gl_isEnabled(gl_state &gs, GLenum cap)
 	{
 		return (gs.polygon.offset_enabled & (1 << (cap - GL_POLYGON_OFFSET_POINT))) ? 1 : 0;
 	}
+#endif
+#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
 	else if (cap == GL_POLYGON_OFFSET_FILL)
 	{
 		return (gs.polygon.offset_enabled & 0x4) ? 1 : 0;
@@ -494,8 +498,11 @@ const char *APIENTRY glGetString(GLenum name)
 #endif
 	case GL_EXTENSIONS:
 		return ""
+#if GL_EXT_polygon_offset
+			"GL_EXT_polygon_offset "
+#endif
 #if GL_EXT_vertex_array
-			"GL_EXT_vertex_array"
+			"GL_EXT_vertex_array "
 #endif
 			;
 	default:

@@ -232,8 +232,10 @@ struct gl_display_list_call
 		tHint,//2i
 		tPushAttrib,//1i
 		tPopAttrib,
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
 		tPolygonOffset,//2f
+#endif
+#if NGL_VERISON >= 110
 		tCopyTexImage2D,//8i
 		tCopyTexImage1D,//7i
 		tTexSubImage2D,//1f+7i+n	big i[7] size
@@ -391,9 +393,11 @@ struct gl_state
 		bool front_face_ccw = true;
 		bool smooth = false;
 		GLenum mode[2]{ GL_FILL,GL_FILL };//front and back
+#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
 		float offset_factor = 0;
 		float offset_units = 0;
 		uint8_t offset_enabled = 0;//point, line, fill
+#endif
 		bool stipple = false;
 	} polygon;
 	uint8_t polygon_stipple_mask[128];

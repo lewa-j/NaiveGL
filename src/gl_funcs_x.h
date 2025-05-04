@@ -346,6 +346,10 @@ X(glPushClientAttrib)
 X(glPopClientAttrib)
 #endif
 
+#if GL_EXT_polygon_offset
+X(glPolygonOffsetEXT)
+#endif
+
 #if GL_EXT_vertex_array
 X(glArrayElementEXT)
 X(glDrawArraysEXT)

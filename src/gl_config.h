@@ -11,4 +11,5 @@
 	#define NGL_FLIP_VIEWPORT_Y 1
 #endif
 
+#define GL_EXT_polygon_offset 1
 #define GL_EXT_vertex_array 1

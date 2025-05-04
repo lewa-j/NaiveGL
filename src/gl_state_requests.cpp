@@ -184,9 +184,18 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 
 	if (pname == GL_POLYGON_MODE)
 		copy_vals(data, gs.polygon.mode, 2);
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
 	else if (pname == GL_POLYGON_OFFSET_FACTOR)
 		copy_vals(data, &gs.polygon.offset_factor, 1);
+#endif
+#if GL_EXT_polygon_offset
+	else if (pname == GL_POLYGON_OFFSET_BIAS_EXT)
+	{
+		float bias = gs.polygon.offset_units / 0xFFFF;
+		copy_vals(data, &bias, 1);
+	}
+#endif
+#if NGL_VERISON >= 110
 	else if (pname == GL_POLYGON_OFFSET_UNITS)
 		copy_vals(data, &gs.polygon.offset_units, 1);
 	else if (pname == GL_TEXTURE_BINDING_1D)
