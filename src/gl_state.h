@@ -6,11 +6,7 @@
 #include <unordered_map>
 #include <vector>
 
-#ifdef ANDROID
-	#define NAGL_FLIP_VIEWPORT_Y 1
-#endif
-
-#if NAGL_DEBUG_LOG
+#if NGL_DEBUG_LOG
 #define gl_log printf
 #else
 #define gl_log(...)
@@ -29,8 +25,13 @@ constexpr float gl_point_size_granularity = 0.1f;
 constexpr float gl_line_width_range[2]{ 1, 1 };
 constexpr float gl_line_width_granularity = 1;
 constexpr int gl_max_pixel_map_table = 32;
+#if NGL_MINIMAL
 constexpr int gl_max_texture_size = 64;
 constexpr int gl_max_tex_level = 6;// log2(gl_max_texture_size)
+#else
+constexpr int gl_max_texture_size = 256;
+constexpr int gl_max_tex_level = 8;// log2(gl_max_texture_size)
+#endif
 constexpr int gl_max_aux_buffers = 0;
 constexpr int gl_max_eval_order = 8;
 constexpr int gl_max_name_stack_depth = 64;
@@ -278,7 +279,7 @@ struct gl_state
 		bool edge_flag = true;
 	} current;
 
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_vertex_array
 	struct vertex_array_t
 	{
 		uint8_t enabled;
@@ -287,6 +288,9 @@ struct gl_state
 			int size = 4;
 			GLenum type = GL_FLOAT;
 			int stride = 0;
+#if GL_EXT_vertex_array
+			int count = 0;
+#endif
 			const void *pointer;
 		};
 		array_t vertex;

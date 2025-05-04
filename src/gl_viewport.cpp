@@ -7,7 +7,7 @@ void gl_state::set_viewport(int x, int y, int w, int h)
 {
 	viewport.width = w;
 	viewport.height = h;
-#if NAGL_FLIP_VIEWPORT_Y
+#if NGL_FLIP_VIEWPORT_Y
 	viewport.height *= -1;
 #endif
 	viewport.center_x = x + w / 2;

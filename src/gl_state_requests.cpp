@@ -421,22 +421,14 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 	else if (pname == GL_RENDER_MODE)
 		copy_vals(data, &gs.render_mode, 1);
 	else
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_vertex_array
 		keep_going = true;
 	// Break up else if chain to avoid exceeding `error C1061: compiler limit: blocks nested too deeply`
 	if (!keep_going)
 		return true;
 	keep_going = false;
 
-	if (pname == GL_CLIENT_ATTRIB_STACK_DEPTH)
-		copy_vals(data, &gs.client_attrib_sp, 1);
-	else if (pname == GL_SELECTION_BUFFER_SIZE)
-		copy_vals(data, &gs.select.buffer_size, 1);
-	else if (pname == GL_FEEDBACK_BUFFER_SIZE)
-		copy_vals(data, &gs.feedback.buffer_size, 1);
-	else if (pname == GL_FEEDBACK_BUFFER_TYPE)
-		copy_vals(data, &gs.feedback.buffer_type, 1);
-	else if (pname == GL_VERTEX_ARRAY_SIZE)
+	if (pname == GL_VERTEX_ARRAY_SIZE)
 		copy_vals(data, &gs.va.vertex.size, 1);
 	else if (pname == GL_VERTEX_ARRAY_TYPE)
 		copy_vals(data, &gs.va.vertex.type, 1);
@@ -464,6 +456,30 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 		copy_vals(data, &gs.va.tex_coord.stride, 1);
 	else if (pname == GL_EDGE_FLAG_ARRAY_STRIDE)
 		copy_vals(data, &gs.va.edge_flag.stride, 1);
+#if GL_EXT_vertex_array
+	else if (pname == GL_VERTEX_ARRAY_COUNT_EXT)
+		copy_vals(data, &gs.va.vertex.count, 1);
+	else if (pname == GL_NORMAL_ARRAY_COUNT_EXT)
+		copy_vals(data, &gs.va.normal.count, 1);
+	else if (pname == GL_COLOR_ARRAY_COUNT_EXT)
+		copy_vals(data, &gs.va.color.count, 1);
+	else if (pname == GL_INDEX_ARRAY_COUNT_EXT)
+		copy_vals(data, &gs.va.index.count, 1);
+	else if (pname == GL_TEXTURE_COORD_ARRAY_COUNT_EXT)
+		copy_vals(data, &gs.va.tex_coord.count, 1);
+	else if (pname == GL_EDGE_FLAG_ARRAY_COUNT_EXT)
+		copy_vals(data, &gs.va.edge_flag.count, 1);
+#endif
+#if NGL_VERISON >= 110
+	else if (pname == GL_CLIENT_ATTRIB_STACK_DEPTH)
+		copy_vals(data, &gs.client_attrib_sp, 1);
+	else if (pname == GL_SELECTION_BUFFER_SIZE)
+		copy_vals(data, &gs.select.buffer_size, 1);
+	else if (pname == GL_FEEDBACK_BUFFER_SIZE)
+		copy_vals(data, &gs.feedback.buffer_size, 1);
+	else if (pname == GL_FEEDBACK_BUFFER_TYPE)
+		copy_vals(data, &gs.feedback.buffer_type, 1);
+#endif
 	else
 #endif
 		return false;
@@ -471,8 +487,8 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 	return true;
 }
 
-#if NGL_VERISON >= 110
-void APIENTRY glGetPointerv(GLenum pname, void **params)
+#if NGL_VERISON >= 110 || GL_EXT_vertex_array
+void APIENTRY glGetPointervEXT(GLenum pname, void **params)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
@@ -480,12 +496,8 @@ void APIENTRY glGetPointerv(GLenum pname, void **params)
 
 	switch (pname)
 	{
-	case GL_SELECTION_BUFFER_POINTER:
-		*params = gs->select.buffer; break;
-	case GL_FEEDBACK_BUFFER_POINTER:
-		*params = gs->feedback.buffer; break;
 	case GL_VERTEX_ARRAY_POINTER:
-		*params = (void*)gs->va.vertex.pointer; break;
+		*params = (void *)gs->va.vertex.pointer; break;
 	case GL_NORMAL_ARRAY_POINTER:
 		*params = (void *)gs->va.normal.pointer; break;
 	case GL_COLOR_ARRAY_POINTER:
@@ -496,6 +508,31 @@ void APIENTRY glGetPointerv(GLenum pname, void **params)
 		*params = (void *)gs->va.tex_coord.pointer; break;
 	case GL_EDGE_FLAG_ARRAY_POINTER:
 		*params = (void *)gs->va.edge_flag.pointer; break;
+	default:
+		gl_set_error_a(GL_INVALID_ENUM, pname);
+	}
+}
+#endif
+
+#if NGL_VERISON >= 110
+void APIENTRY glGetPointerv(GLenum pname, void **params)
+{
+	if (pname >= GL_VERTEX_ARRAY_POINTER && pname <= GL_EDGE_FLAG_ARRAY_POINTER)
+	{
+		glGetPointervEXT(pname, params);
+		return;
+	}
+
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	switch (pname)
+	{
+	case GL_SELECTION_BUFFER_POINTER:
+		*params = gs->select.buffer; break;
+	case GL_FEEDBACK_BUFFER_POINTER:
+		*params = gs->feedback.buffer; break;
 	default:
 		gl_set_error_a(GL_INVALID_ENUM, pname);
 	}

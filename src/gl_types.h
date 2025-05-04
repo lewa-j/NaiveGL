@@ -1,4 +1,5 @@
 #pragma once
+#include "gl_config.h"
 #include <stdint.h>
 #include <string.h>
 #include <math.h>
@@ -73,6 +74,15 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 {
 	for (int i = 0; i < count; i++)
 		dst[i] = src[i];
+}
+
+template <typename T>
+static void set_bit(T &set, int bit, bool val)
+{
+	if (val)
+		set |= (1 << bit);
+	else
+		set &= ~(1 << bit);
 }
 
 #define GL_FALSE 0
@@ -588,7 +598,7 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_RENDER_MODE 0x0C40
 
 //gl 1.1
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_vertex_array
 #define GL_DOUBLE 0x140A
 
 #define GL_VERTEX_ARRAY 0x8074
@@ -598,6 +608,44 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_TEXTURE_COORD_ARRAY 0x8078
 #define GL_EDGE_FLAG_ARRAY 0x8079
 
+#define GL_VERTEX_ARRAY_SIZE 0x807A
+#define GL_VERTEX_ARRAY_TYPE 0x807B
+#define GL_VERTEX_ARRAY_STRIDE 0x807C
+
+#define GL_NORMAL_ARRAY_TYPE 0x807E
+#define GL_NORMAL_ARRAY_STRIDE 0x807F
+
+#define GL_COLOR_ARRAY_SIZE 0x8081
+#define GL_COLOR_ARRAY_TYPE 0x8082
+#define GL_COLOR_ARRAY_STRIDE 0x8083
+
+#define GL_INDEX_ARRAY_TYPE 0x8085
+#define GL_INDEX_ARRAY_STRIDE 0x8086
+
+#define GL_TEXTURE_COORD_ARRAY_SIZE 0x8088
+#define GL_TEXTURE_COORD_ARRAY_TYPE 0x8089
+#define GL_TEXTURE_COORD_ARRAY_STRIDE 0x808A
+
+#define GL_EDGE_FLAG_ARRAY_STRIDE 0x808C
+
+#define GL_VERTEX_ARRAY_POINTER 0x808E
+#define GL_NORMAL_ARRAY_POINTER 0x808F
+#define GL_COLOR_ARRAY_POINTER 0x8090
+#define GL_INDEX_ARRAY_POINTER 0x8091
+#define GL_TEXTURE_COORD_ARRAY_POINTER 0x8092
+#define GL_EDGE_FLAG_ARRAY_POINTER 0x8093
+#endif
+
+#if GL_EXT_vertex_array
+#define GL_VERTEX_ARRAY_COUNT_EXT 0x807D
+#define GL_NORMAL_ARRAY_COUNT_EXT 0x8080
+#define GL_COLOR_ARRAY_COUNT_EXT 0x8084
+#define GL_INDEX_ARRAY_COUNT_EXT 0x8087
+#define GL_TEXTURE_COORD_ARRAY_COUNT_EXT 0x808B
+#define GL_EDGE_FLAG_ARRAY_COUNT_EXT 0x808D
+#endif
+
+#if NGL_VERISON >= 110
 #define GL_V2F 0x2A20
 #define GL_V3F 0x2A21
 #define GL_C4UB_V2F 0x2A22
@@ -674,36 +722,10 @@ inline void copy_vals(GLdouble *dst, const GLfloat *src, int count)
 #define GL_SELECTION_BUFFER_POINTER 0x0DF3
 #define GL_FEEDBACK_BUFFER_POINTER 0x0DF0
 
-#define GL_VERTEX_ARRAY_POINTER 0x808E
-#define GL_NORMAL_ARRAY_POINTER 0x808F
-#define GL_COLOR_ARRAY_POINTER 0x8090
-#define GL_INDEX_ARRAY_POINTER 0x8091
-#define GL_TEXTURE_COORD_ARRAY_POINTER 0x8092
-#define GL_EDGE_FLAG_ARRAY_POINTER 0x8093
 
 #define GL_CLIENT_PIXEL_STORE_BIT 0x00000001
 #define GL_CLIENT_VERTEX_ARRAY_BIT 0x00000002
 #define GL_CLIENT_ALL_ATTRIB_BITS 0xFFFFFFFF
-
-#define GL_VERTEX_ARRAY_SIZE 0x807A
-#define GL_VERTEX_ARRAY_TYPE 0x807B
-#define GL_VERTEX_ARRAY_STRIDE 0x807C
-
-#define GL_NORMAL_ARRAY_TYPE 0x807E
-#define GL_NORMAL_ARRAY_STRIDE 0x807F
-
-#define GL_COLOR_ARRAY_SIZE 0x8081
-#define GL_COLOR_ARRAY_TYPE 0x8082
-#define GL_COLOR_ARRAY_STRIDE 0x8083
-
-#define GL_INDEX_ARRAY_TYPE 0x8085
-#define GL_INDEX_ARRAY_STRIDE 0x8086
-
-#define GL_TEXTURE_COORD_ARRAY_SIZE 0x8088
-#define GL_TEXTURE_COORD_ARRAY_TYPE 0x8089
-#define GL_TEXTURE_COORD_ARRAY_STRIDE 0x808A
-
-#define GL_EDGE_FLAG_ARRAY_STRIDE 0x808C
 
 #define GL_POLYGON_OFFSET_FACTOR 0x8038
 #define GL_POLYGON_OFFSET_UNITS 0x2A00

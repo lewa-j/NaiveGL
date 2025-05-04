@@ -33,6 +33,12 @@
     <ClInclude Include="gl_pixels.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="gl_config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="gl_extensions.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">

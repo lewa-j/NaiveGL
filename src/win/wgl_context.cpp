@@ -5,6 +5,7 @@
 #include <windows.h>
 
 #include "gl_exports.h"
+#include "gl_extensions.h"
 
 struct wgl_context
 {

@@ -4,14 +4,18 @@
 #include "gl_state.h"
 #include "gl_pixels.h"
 
-#if NGL_VERISON >= 110
-void APIENTRY glEdgeFlagPointer(GLsizei stride, const void *pointer)
+#if NGL_VERISON >= 110 || GL_EXT_vertex_array
+void APIENTRY glEdgeFlagPointerEXT(GLsizei stride, GLsizei count, const void *pointer)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
 
-	if (stride < 0)
+	if (stride < 0
+#if GL_EXT_vertex_array
+		|| count < 0
+#endif
+		)
 	{
 		gl_set_error(GL_INVALID_VALUE);
 		return;
@@ -19,9 +23,12 @@ void APIENTRY glEdgeFlagPointer(GLsizei stride, const void *pointer)
 
 	gs->va.edge_flag.stride = stride;
 	gs->va.edge_flag.pointer = pointer;
+#if GL_EXT_vertex_array
+	gs->va.edge_flag.count = count;
+#endif
 }
 
-void APIENTRY glTexCoordPointer(GLint size, GLenum type, GLsizei stride, const void *pointer)
+void APIENTRY glTexCoordPointerEXT(GLint size, GLenum type, GLsizei stride, GLsizei count, const void *pointer)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
@@ -37,7 +44,11 @@ void APIENTRY glTexCoordPointer(GLint size, GLenum type, GLsizei stride, const v
 		gl_set_error_a(GL_INVALID_ENUM, type);
 		return;
 	}
-	if (stride < 0)
+	if (stride < 0
+#if GL_EXT_vertex_array
+		|| count < 0
+#endif
+		)
 	{
 		gl_set_error(GL_INVALID_VALUE);
 		return;
@@ -47,9 +58,12 @@ void APIENTRY glTexCoordPointer(GLint size, GLenum type, GLsizei stride, const v
 	gs->va.tex_coord.type = type;
 	gs->va.tex_coord.stride = stride;
 	gs->va.tex_coord.pointer = pointer;
+#if GL_EXT_vertex_array
+	gs->va.tex_coord.count = count;
+#endif
 }
 
-void APIENTRY glColorPointer(GLint size, GLenum type, GLsizei stride, const void *pointer)
+void APIENTRY glColorPointerEXT(GLint size, GLenum type, GLsizei stride, GLsizei count, const void *pointer)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
@@ -65,7 +79,11 @@ void APIENTRY glColorPointer(GLint size, GLenum type, GLsizei stride, const void
 		gl_set_error_a(GL_INVALID_ENUM, type);
 		return;
 	}
-	if (stride < 0)
+	if (stride < 0
+#if GL_EXT_vertex_array
+		|| count < 0
+#endif
+		)
 	{
 		gl_set_error(GL_INVALID_VALUE);
 		return;
@@ -75,20 +93,31 @@ void APIENTRY glColorPointer(GLint size, GLenum type, GLsizei stride, const void
 	gs->va.color.type = type;
 	gs->va.color.stride = stride;
 	gs->va.color.pointer = pointer;
+#if GL_EXT_vertex_array
+	gs->va.color.count = count;
+#endif
 }
 
-void APIENTRY glIndexPointer(GLenum type, GLsizei stride, const void *pointer)
+void APIENTRY glIndexPointerEXT(GLenum type, GLsizei stride, GLsizei count, const void *pointer)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
 
-	if (type != GL_UNSIGNED_BYTE && type != GL_SHORT && type != GL_INT && type != GL_FLOAT && type != GL_DOUBLE)
+	if (type != GL_SHORT && type != GL_INT && type != GL_FLOAT && type != GL_DOUBLE
+#if NGL_VERISON >= 110
+		&& type != GL_UNSIGNED_BYTE
+#endif
+		)
 	{
 		gl_set_error_a(GL_INVALID_ENUM, type);
 		return;
 	}
-	if (stride < 0)
+	if (stride < 0
+#if GL_EXT_vertex_array
+		|| count < 0
+#endif
+		)
 	{
 		gl_set_error(GL_INVALID_VALUE);
 		return;
@@ -97,9 +126,12 @@ void APIENTRY glIndexPointer(GLenum type, GLsizei stride, const void *pointer)
 	gs->va.index.type = type;
 	gs->va.index.stride = stride;
 	gs->va.index.pointer = pointer;
+#if GL_EXT_vertex_array
+	gs->va.index.count = count;
+#endif
 }
 
-void APIENTRY glNormalPointer(GLenum type, GLsizei stride, const void *pointer)
+void APIENTRY glNormalPointerEXT(GLenum type, GLsizei stride, GLsizei count, const void *pointer)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
@@ -110,7 +142,11 @@ void APIENTRY glNormalPointer(GLenum type, GLsizei stride, const void *pointer)
 		gl_set_error_a(GL_INVALID_ENUM, type);
 		return;
 	}
-	if (stride < 0)
+	if (stride < 0
+#if GL_EXT_vertex_array
+		|| count < 0
+#endif
+		)
 	{
 		gl_set_error(GL_INVALID_VALUE);
 		return;
@@ -119,9 +155,12 @@ void APIENTRY glNormalPointer(GLenum type, GLsizei stride, const void *pointer)
 	gs->va.normal.type = type;
 	gs->va.normal.stride = stride;
 	gs->va.normal.pointer = pointer;
+#if GL_EXT_vertex_array
+	gs->va.normal.count = count;
+#endif
 }
 
-void APIENTRY glVertexPointer(GLint size, GLenum type, GLsizei stride, const void *pointer)
+void APIENTRY glVertexPointerEXT(GLint size, GLenum type, GLsizei stride, GLsizei count, const void *pointer)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
@@ -137,7 +176,11 @@ void APIENTRY glVertexPointer(GLint size, GLenum type, GLsizei stride, const voi
 		gl_set_error_a(GL_INVALID_ENUM, type);
 		return;
 	}
-	if (stride < 0)
+	if (stride < 0
+#if GL_EXT_vertex_array
+		|| count < 0
+#endif
+		)
 	{
 		gl_set_error(GL_INVALID_VALUE);
 		return;
@@ -147,44 +190,9 @@ void APIENTRY glVertexPointer(GLint size, GLenum type, GLsizei stride, const voi
 	gs->va.vertex.type = type;
 	gs->va.vertex.stride = stride;
 	gs->va.vertex.pointer = pointer;
-}
-
-static void set_bit(uint8_t &set, int bit, bool val)
-{
-	if (val)
-		set |= (1 << bit);
-	else
-		set &= ~(1 << bit);
-}
-
-void APIENTRY glEnableClientState(GLenum array)
-{
-	gl_state *gs = gl_current_state();
-	if (!gs) return;
-	VALIDATE_NOT_BEGIN_MODE;
-
-	if (array < GL_VERTEX_ARRAY || array > GL_EDGE_FLAG_ARRAY)
-	{
-		gl_set_error_a(GL_INVALID_ENUM, array);
-		return;
-	}
-
-	set_bit(gs->va.enabled, array - GL_VERTEX_ARRAY, true);
-}
-
-void APIENTRY glDisableClientState(GLenum array)
-{
-	gl_state *gs = gl_current_state();
-	if (!gs) return;
-	VALIDATE_NOT_BEGIN_MODE;
-
-	if (array < GL_VERTEX_ARRAY || array > GL_EDGE_FLAG_ARRAY)
-	{
-		gl_set_error_a(GL_INVALID_ENUM, array);
-		return;
-	}
-
-	set_bit(gs->va.enabled, array - GL_VERTEX_ARRAY, false);
+#if GL_EXT_vertex_array
+	gs->va.vertex.count = count;
+#endif
 }
 
 static void gl_elementArray(gl_state::vertex_array_t &va, int i)
@@ -353,10 +361,80 @@ void APIENTRY glDrawArrays(GLenum mode, GLint first, GLsizei count)
 		return;
 	}
 
+	if (!(gs->va.enabled & 1))//GL_VERTEX_ARRAY
+		return;
+
 	glBegin(mode);
 	for (int i = 0; i < count; i++)
 		glArrayElement(i);
 	glEnd();
+}
+
+void APIENTRY glArrayElementEXT(GLint i)
+{
+	glArrayElement(i);
+}
+void APIENTRY glDrawArraysEXT(GLenum mode, GLint first, GLsizei count)
+{
+	glDrawArrays(mode, first, count);
+}
+
+void APIENTRY glVertexPointer(GLint size, GLenum type, GLsizei stride, const void *pointer)
+{
+	glVertexPointerEXT(size, type, stride, 0, pointer);
+}
+void APIENTRY glNormalPointer(GLenum type, GLsizei stride, const void *pointer)
+{
+	glNormalPointerEXT(type, stride, 0, pointer);
+}
+void APIENTRY glColorPointer(GLint size, GLenum type, GLsizei stride, const void *pointer)
+{
+	glColorPointerEXT(size, type, stride, 0, pointer);
+}
+void APIENTRY glIndexPointer(GLenum type, GLsizei stride, const void *pointer)
+{
+	glIndexPointerEXT(type, stride, 0, pointer);
+}
+void APIENTRY glTexCoordPointer(GLint size, GLenum type, GLsizei stride, const void *pointer)
+{
+	glTexCoordPointerEXT(size, type, stride, 0, pointer);
+}
+void APIENTRY glEdgeFlagPointer(GLsizei stride, const void *pointer)
+{
+	glEdgeFlagPointerEXT(stride, 0, pointer);
+}
+#endif
+
+#if NGL_VERISON >= 110
+
+void APIENTRY glEnableClientState(GLenum array)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (array < GL_VERTEX_ARRAY || array > GL_EDGE_FLAG_ARRAY)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, array);
+		return;
+	}
+
+	set_bit(gs->va.enabled, array - GL_VERTEX_ARRAY, true);
+}
+
+void APIENTRY glDisableClientState(GLenum array)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	VALIDATE_NOT_BEGIN_MODE;
+
+	if (array < GL_VERTEX_ARRAY || array > GL_EDGE_FLAG_ARRAY)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, array);
+		return;
+	}
+
+	set_bit(gs->va.enabled, array - GL_VERTEX_ARRAY, false);
 }
 
 void APIENTRY glDrawElements(GLenum mode, GLsizei count, GLenum type, const void *indices)

@@ -342,7 +342,18 @@ X(glGenTextures)
 X(glAreTexturesResident)
 X(glPrioritizeTextures)
 X(glIsTexture)
-
 X(glPushClientAttrib)
 X(glPopClientAttrib)
+#endif
+
+#if GL_EXT_vertex_array
+X(glArrayElementEXT)
+X(glDrawArraysEXT)
+X(glVertexPointerEXT)
+X(glNormalPointerEXT)
+X(glColorPointerEXT)
+X(glIndexPointerEXT)
+X(glTexCoordPointerEXT)
+X(glEdgeFlagPointerEXT)
+X(glGetPointervEXT)
 #endif

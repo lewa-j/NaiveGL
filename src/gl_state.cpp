@@ -299,15 +299,6 @@ bool &gl_get_enabled_ref(gl_state &gs, GLenum cap, bool &fail)
 	return _;
 }
 
-template <typename T> 
-static void set_bit(T &set, int bit, bool val)
-{
-	if (val)
-		set |= (1 << bit);
-	else
-		set &= ~(1 << bit);
-}
-
 //return false if cap is invalid
 bool gl_setable(gl_state &gs, GLenum cap, bool val)
 {
@@ -344,6 +335,12 @@ bool gl_setable(gl_state &gs, GLenum cap, bool val)
 		set_bit(gs.polygon.offset_enabled, 2, val);
 	}
 #endif
+#if GL_EXT_vertex_array
+	else if (cap >= GL_VERTEX_ARRAY && cap <= GL_EDGE_FLAG_ARRAY)
+	{
+		set_bit(gs.va.enabled, cap - GL_VERTEX_ARRAY, val);
+	}
+#endif
 	else
 	{
 		return false;
@@ -355,7 +352,12 @@ void APIENTRY glEnable(GLenum cap)
 {
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
+#if GL_EXT_vertex_array
+	if (cap < GL_VERTEX_ARRAY || cap > GL_EDGE_FLAG_ARRAY)
+#endif
+	{
 	WRITE_DISPLAY_LIST(Enable, {}, {(int)cap});
+	}
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (cap == GL_COLOR_MATERIAL)
@@ -416,6 +418,8 @@ int gl_isEnabled(gl_state &gs, GLenum cap)
 	{
 		return (gs.polygon.offset_enabled & 0x4) ? 1 : 0;
 	}
+#endif
+#if NGL_VERISON >= 110 || GL_EXT_vertex_array
 	else if (cap >= GL_VERTEX_ARRAY && cap <= GL_EDGE_FLAG_ARRAY)
 	{
 		return (gs.va.enabled & (1 << (cap - GL_VERTEX_ARRAY))) ? 1 : 0;
@@ -489,7 +493,11 @@ const char *APIENTRY glGetString(GLenum name)
 		return "1.1.0";
 #endif
 	case GL_EXTENSIONS:
-		return "";
+		return ""
+#if GL_EXT_vertex_array
+			"GL_EXT_vertex_array"
+#endif
+			;
 	default:
 		gl_set_error_a(GL_INVALID_ENUM, name);
 		return nullptr;
