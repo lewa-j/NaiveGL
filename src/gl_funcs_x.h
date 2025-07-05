@@ -342,6 +342,7 @@ X(glGenTextures)
 X(glAreTexturesResident)
 X(glPrioritizeTextures)
 X(glIsTexture)
+X(glGetPointerv)
 X(glPushClientAttrib)
 X(glPopClientAttrib)
 #endif
