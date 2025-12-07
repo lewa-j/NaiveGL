@@ -29,8 +29,10 @@ constexpr int gl_max_pixel_map_table = 32;
 constexpr int gl_max_texture_size = 64;
 constexpr int gl_max_tex_level = 6;// log2(gl_max_texture_size)
 #else
-constexpr int gl_max_texture_size = 256;
-constexpr int gl_max_tex_level = 8;// log2(gl_max_texture_size)
+//constexpr int gl_max_texture_size = 256;
+//constexpr int gl_max_tex_level = 8;// log2(gl_max_texture_size)
+constexpr int gl_max_texture_size = 2048;
+constexpr int gl_max_tex_level = 10;// log2(gl_max_texture_size)
 #endif
 constexpr int gl_max_aux_buffers = 0;
 constexpr int gl_max_eval_order = 8;
