@@ -124,6 +124,10 @@ EXPORT PROC APIENTRY wglGetProcAddress(LPCSTR func_name)
 
 	static struct { const char *n; PROC pfn; } funcs[]{
 #include "gl_funcs_x.h"
+#if NGL_GS_HACKS
+		{"glGetLevelParameteriv", (PROC) &glGetTexLevelParameteriv},
+		{"glGetLevelParameterfv", (PROC) &glGetTexLevelParameterfv},
+#endif
 		{nullptr, nullptr}
 	};
 #undef X

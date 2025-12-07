@@ -916,8 +916,14 @@ void APIENTRY glGetTexImage(GLenum target, GLint level, GLenum format, GLenum ty
 }
 
 #if NGL_VERISON >= 110
+#if NGL_GS_HACKS
+#define GL_TEXTURE_MAX_ANISOTROPY 0x84FE //gl 4.6
+#define VALIDATE_TEX_PARAMETER_PNAME_CHECK_ \
+(pname < GL_TEXTURE_MAG_FILTER || pname > GL_TEXTURE_WRAP_T) && pname != GL_TEXTURE_BORDER_COLOR && pname != GL_TEXTURE_PRIORITY && pname != GL_TEXTURE_MAX_ANISOTROPY
+#else
 #define VALIDATE_TEX_PARAMETER_PNAME_CHECK_ \
 (pname < GL_TEXTURE_MAG_FILTER || pname > GL_TEXTURE_WRAP_T) && pname != GL_TEXTURE_BORDER_COLOR && pname != GL_TEXTURE_PRIORITY
+#endif
 #define VALIDATE_GET_TEX_PARAMETER_PNAME_CHECK_ \
 VALIDATE_TEX_PARAMETER_PNAME_CHECK_ && pname != GL_TEXTURE_RESIDENT
 #else
@@ -939,8 +945,15 @@ if (VALIDATE_TEX_PARAMETER_PNAME_CHECK_) \
 	return; \
 }
 
+#if NGL_GS_HACKS
+#define GL_CLAMP_TO_EDGE 0x812F //gl 1.2
+#define VALIDATE_TEX_PARAMETER_PARAM_CHECK_(p) (pname == GL_TEXTURE_WRAP_S || pname == GL_TEXTURE_WRAP_T) && ((p) != GL_CLAMP && (p) != GL_REPEAT && (p != GL_CLAMP_TO_EDGE))
+#else
+#define VALIDATE_TEX_PARAMETER_PARAM_CHECK_(p) (pname == GL_TEXTURE_WRAP_S || pname == GL_TEXTURE_WRAP_T) && ((p) != GL_CLAMP && (p) != GL_REPEAT)
+#endif
+
 #define VALIDATE_TEX_PARAMETER_PARAM(p) \
-if ((pname == GL_TEXTURE_WRAP_S || pname == GL_TEXTURE_WRAP_T) && ((p) != GL_CLAMP && (p) != GL_REPEAT)) \
+if (VALIDATE_TEX_PARAMETER_PARAM_CHECK_(p)) \
 { \
 	gl_set_error_a(GL_INVALID_ENUM, (p)); \
 	return; \

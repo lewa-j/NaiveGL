@@ -6,6 +6,7 @@
 
 #define NGL_MINIMAL 0
 #define NGL_DEBUG_LOG 1
+#define NGL_GS_HACKS 1
 
 #ifdef ANDROID
 	#define NGL_FLIP_VIEWPORT_Y 1

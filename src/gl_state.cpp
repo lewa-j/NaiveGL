@@ -300,8 +300,13 @@ bool &gl_get_enabled_ref(gl_state &gs, GLenum cap, bool &fail)
 }
 
 //return false if cap is invalid
-bool gl_setable(gl_state &gs, GLenum cap, bool val)
+static bool gl_setable(gl_state &gs, GLenum cap, bool val)
 {
+#if NGL_GS_HACKS
+	if (cap == 0x809D)//GL_MULTISAMPLE gl 1.3
+		return true;
+#endif
+
 	bool fail = false;
 	bool &state = gl_get_enabled_ref(gs, cap, fail);
 	if (!fail)
