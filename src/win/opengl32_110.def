@@ -319,6 +319,7 @@ EXPORTS
 	wglGetCurrentDC
 	wglGetProcAddress
 	wglMakeCurrent
+	wglShareLists
 ;internal
 	wglChoosePixelFormat
 	wglSetPixelFormat

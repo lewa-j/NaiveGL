@@ -266,6 +266,12 @@ EXPORT BOOL WINAPI wglSwapBuffers(HDC device_context)
 	return 1;
 }
 
+EXPORT BOOL WINAPI wglShareLists(HGLRC c1, HGLRC c2)
+{
+	gl_log("wglShareLists(%p, %p)\n", c1, c2);
+	return 0;
+}
+
 void APIENTRY glFlush(void)
 {
 	//HACK
