@@ -19,6 +19,7 @@ Also for 1.0 set Module Definition File to `win/opengl32_100.def` in Linker > In
 
 * [GL_EXT_vertex_array](https://registry.khronos.org/OpenGL/extensions/EXT/EXT_vertex_array.txt)
 * [GL_EXT_polygon_offset](https://registry.khronos.org/OpenGL/extensions/EXT/EXT_polygon_offset.txt)
+* [GL_EXT_blend_logic_op](https://registry.khronos.org/OpenGL/extensions/EXT/EXT_blend_logic_op.txt)
 
 ## Acknowledgments
 
