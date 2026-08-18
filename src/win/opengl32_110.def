@@ -320,6 +320,11 @@ EXPORTS
 	wglGetProcAddress
 	wglMakeCurrent
 	wglShareLists
+	wglSwapLayerBuffers
+	wglCopyContext
+	wglUseFontOutlinesA
+	wglUseFontBitmapsA
+	wglUseFontBitmapsW
 ;internal
 	wglChoosePixelFormat
 	wglSetPixelFormat
@@ -355,6 +360,6 @@ EXPORTS
 	glAreTexturesResident
 	glPrioritizeTextures
 	glIsTexture
-
+	glGetPointerv
 	glPushClientAttrib
 	glPopClientAttrib

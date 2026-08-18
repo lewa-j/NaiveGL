@@ -319,10 +319,16 @@ EXPORTS
 	wglGetCurrentDC
 	wglGetProcAddress
 	wglMakeCurrent
+	wglShareLists
+	wglSwapLayerBuffers
+	wglCopyContext
+	wglUseFontOutlinesA
+	wglUseFontBitmapsA
+	wglUseFontBitmapsW
 ;internal
 	wglChoosePixelFormat
 	wglSetPixelFormat
 	wglGetPixelFormat
 	wglDescribePixelFormat
 	wglSwapBuffers
-
+	

@@ -241,13 +241,13 @@ static void resize_context(wgl_context* rc, int w, int h)
 	}
 }
 
-EXPORT BOOL WINAPI wglSwapBuffers(HDC device_context)
+EXPORT BOOL WINAPI wglSwapLayerBuffers(HDC hdc, UINT fuPlanes)
 {
-	if (current_context && current_context->bitmap_dc)
+	if (current_context && current_context->bitmap_dc && (fuPlanes & WGL_SWAP_MAIN_PLANE))
 	{
-		BitBlt(device_context, 0, 0, current_context->framebuffer.width, current_context->framebuffer.height, current_context->bitmap_dc, 0, 0, SRCCOPY);
+		BitBlt(hdc, 0, 0, current_context->framebuffer.width, current_context->framebuffer.height, current_context->bitmap_dc, 0, 0, SRCCOPY);
 
-		HWND win = WindowFromDC(device_context);
+		HWND win = WindowFromDC(hdc);
 		if (win)
 		{
 			RECT rect{ 0 };
@@ -255,7 +255,7 @@ EXPORT BOOL WINAPI wglSwapBuffers(HDC device_context)
 			int w = rect.right - rect.left;
 			int h = rect.bottom - rect.top;
 
-			wgl_context* rc = current_context;
+			wgl_context *rc = current_context;
 			if (w != rc->framebuffer.width || h != rc->framebuffer.height)
 			{
 				gl_log("wglSwapBuffers: need resize %dx%d %dx%d\n", rc->framebuffer.width, rc->framebuffer.height, w, h);
@@ -266,9 +266,38 @@ EXPORT BOOL WINAPI wglSwapBuffers(HDC device_context)
 	return 1;
 }
 
+EXPORT BOOL WINAPI wglSwapBuffers(HDC hdc)
+{
+	return wglSwapLayerBuffers(hdc, WGL_SWAP_MAIN_PLANE);
+}
+
 EXPORT BOOL WINAPI wglShareLists(HGLRC c1, HGLRC c2)
 {
 	gl_log("wglShareLists(%p, %p)\n", c1, c2);
+	return 0;
+}
+
+EXPORT BOOL WINAPI wglCopyContext(HGLRC hglrcSrc, HGLRC hlglrcDst, UINT mask)
+{
+	gl_log("wglCopyContext(%p, %p, %X)\n", hglrcSrc, hlglrcDstm, mask);
+	return 0;
+}
+
+EXPORT BOOL WINAPI wglUseFontOutlinesA(HDC hdc, DWORD first, DWORD count, DWORD listBase, FLOAT deviation, FLOAT extrusion, int format, LPGLYPHMETRICSFLOAT lpgmf)
+{
+	gl_log("wglUseFontOutlinesA\n");
+	return 0;
+}
+
+EXPORT BOOL WINAPI wglUseFontBitmapsA(HDC hdc, DWORD first, DWORD count, DWORD listBase)
+{
+	gl_log("wglUseFontBitmapsA\n");
+	return 0;
+}
+
+EXPORT BOOL WINAPI wglUseFontBitmapsW(HDC hdc, DWORD first, DWORD count, DWORD listBase)
+{
+	gl_log("wglUseFontBitmapsW\n");
 	return 0;
 }
 
