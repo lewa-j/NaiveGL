@@ -10,7 +10,7 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	line_stipple_counter = 0;
 
 	current = {};
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_vertex_array
 	va = {};
 #endif
 
