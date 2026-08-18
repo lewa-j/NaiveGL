@@ -24,3 +24,8 @@ void APIENTRY glTexCoordPointerEXT(GLint size, GLenum type, GLsizei stride, GLsi
 void APIENTRY glEdgeFlagPointerEXT(GLsizei stride, GLsizei count, const void *pointer);
 void APIENTRY glGetPointervEXT(GLenum pname, void **params);
 #endif
+
+#if GL_EXT_blend_logic_op
+//originally from GL_EXT_blend_minmax but not required
+void APIENTRY glBlendEquationEXT(GLenum mode);
+#endif

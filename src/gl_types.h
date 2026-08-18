@@ -654,6 +654,11 @@ static void set_bit(T &set, int bit, bool val)
 #define GL_EDGE_FLAG_ARRAY_COUNT_EXT 0x808D
 #endif
 
+#if GL_EXT_blend_logic_op
+#define GL_FUNC_ADD_EXT 0x8006
+#define GL_BLEND_EQUATION_EXT 0x8009
+#endif
+
 #if NGL_VERISON >= 110
 #define GL_V2F 0x2A20
 #define GL_V3F 0x2A21

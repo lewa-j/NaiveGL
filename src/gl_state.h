@@ -235,6 +235,9 @@ struct gl_display_list_call
 #if NGL_VERISON >= 110 || GL_EXT_polygon_offset
 		tPolygonOffset,//2f
 #endif
+#if GL_EXT_blend_logic_op
+		tBlendEquation,//1i
+#endif
 #if NGL_VERISON >= 110
 		tCopyTexImage2D,//8i
 		tCopyTexImage1D,//7i
@@ -462,6 +465,9 @@ struct gl_state
 		bool blend = false;
 		GLenum blend_func_src = GL_ONE;
 		GLenum blend_func_dst = GL_ZERO;
+#if GL_EXT_blend_logic_op
+		GLenum blend_equation = GL_FUNC_ADD_EXT;
+#endif
 		bool index_logic_op = false;
 #if NGL_VERISON >= 110
 		bool color_logic_op = false;

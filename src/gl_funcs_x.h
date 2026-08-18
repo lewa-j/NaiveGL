@@ -362,3 +362,7 @@ X(glTexCoordPointerEXT)
 X(glEdgeFlagPointerEXT)
 X(glGetPointervEXT)
 #endif
+
+#if GL_EXT_blend_logic_op
+X(glBlendEquationEXT)
+#endif

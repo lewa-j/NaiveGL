@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "gl_state.h"
 #include "gl_exports.h"
+#include "gl_extensions.h"
 
 void APIENTRY glNewList(GLuint list, GLenum mode)
 {
@@ -456,6 +457,11 @@ void gl_callList(gl_state *gs, GLuint list)
 #if NGL_VERISON >= 110 || GL_EXT_polygon_offset
 		case gl_display_list_call::tPolygonOffset:
 			glPolygonOffset(call.argsf[0], call.argsf[1]);
+			break;
+#endif
+#if GL_EXT_blend_logic_op
+		case gl_display_list_call::tBlendEquation:
+			glBlendEquationEXT(call.argsi[0]);
 			break;
 #endif
 #if NGL_VERISON >= 110

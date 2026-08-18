@@ -227,6 +227,10 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 		copy_vals(data, &gs.color_buffer.blend_func_src, 1);
 	else if (pname == GL_BLEND_DST)
 		copy_vals(data, &gs.color_buffer.blend_func_dst, 1);
+#if GL_EXT_blend_logic_op
+	else if (pname == GL_BLEND_EQUATION_EXT)
+		copy_vals(data, &gs.color_buffer.blend_equation, 1);
+#endif
 	else if (pname == GL_LOGIC_OP_MODE)
 		copy_vals(data, &gs.color_buffer.logic_op_mode, 1);
 	else if (pname == GL_DRAW_BUFFER)

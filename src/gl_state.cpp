@@ -504,6 +504,9 @@ const char *APIENTRY glGetString(GLenum name)
 #if GL_EXT_vertex_array
 			"GL_EXT_vertex_array "
 #endif
+#if GL_EXT_blend_logic_op
+			"GL_EXT_blend_logic_op "
+#endif
 			;
 	default:
 		gl_set_error_a(GL_INVALID_ENUM, name);

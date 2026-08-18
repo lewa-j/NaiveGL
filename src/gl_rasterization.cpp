@@ -587,6 +587,9 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 #if NGL_VERISON >= 110
 	if (!st.color_buffer.color_logic_op)
 #endif
+#if GL_EXT_blend_logic_op
+	if (st.color_buffer.blend_equation == GL_FUNC_ADD_EXT)
+#endif
 	if (st.color_buffer.blend && (st.color_buffer.blend_func_src != GL_ONE || st.color_buffer.blend_func_dst != GL_ZERO))
 	{
 		//bgra
@@ -604,8 +607,17 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 	}
 
 	//bgra
+#if NGL_VERISON >= 110 || GL_EXT_blend_logic_op
+	bool color_logic = false;
+#if GL_EXT_blend_logic_op
+	if (st.color_buffer.blend && st.color_buffer.blend_equation == GL_LOGIC_OP)
+		color_logic = true;
+#endif
 #if NGL_VERISON >= 110
-	if (!st.color_buffer.color_logic_op)
+	if (st.color_buffer.color_logic_op)
+		color_logic = true;
+#endif
+	if (color_logic)
 	{
 		uint8_t src_color[4]{ uint8_t(color.b * 0xFF),uint8_t(color.g * 0xFF),uint8_t(color.r * 0xFF),uint8_t(color.a * 0xFF) };
 		if (st.color_buffer.color_writemask.b)

@@ -103,6 +103,20 @@ void APIENTRY glBlendFunc(GLenum sfactor, GLenum dfactor)
 	gs->color_buffer.blend_func_dst = dfactor;
 }
 
+void APIENTRY glBlendEquationEXT(GLenum mode)
+{
+	gl_state *gs = gl_current_state();
+	if (!gs) return;
+	WRITE_DISPLAY_LIST(BlendEquation, {}, { (int)mode });
+	VALIDATE_NOT_BEGIN_MODE;
+	if (mode != GL_FUNC_ADD_EXT && mode != GL_LOGIC_OP)
+	{
+		gl_set_error_a(GL_INVALID_ENUM, mode);
+		return;
+	}
+	gs->color_buffer.blend_equation = mode;
+}
+
 void APIENTRY glLogicOp(GLenum opcode)
 {
 	gl_state* gs = gl_current_state();
