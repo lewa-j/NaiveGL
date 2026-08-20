@@ -319,10 +319,11 @@ static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &da
 		else
 			color = glm::vec4(glm::vec3(tex_color), color.a);
 		// 1 and 2 components are undefined
+		// ALPHA and INTENSITY are undefined too
 	}
 	else if (st.texture_env.mode == GL_BLEND)
 	{
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 		int fmt = tex.arrays[0].base_internal_format;
 		if (fmt == GL_ALPHA)
 			color.a *= tex_color.a;
@@ -345,8 +346,14 @@ static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &da
 		else
 			color *= tex_color;
 	}
-#if NGL_VERISON >= 110
-	else if (st.texture_env.mode == GL_REPLACE)
+#if NGL_VERISON >= 110 || GL_EXT_texture
+	else if (st.texture_env.mode == GL_REPLACE ||
+#if GL_EXT_texture
+		st.texture_env.mode == GL_REPLACE_EXT
+#else
+		0
+#endif
+		)
 	{
 		int fmt = tex.arrays[0].base_internal_format;
 		if (fmt == GL_LUMINANCE_ALPHA || fmt == GL_INTENSITY || fmt == GL_RGBA)

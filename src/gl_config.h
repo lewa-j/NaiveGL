@@ -12,5 +12,6 @@
 #endif
 
 #define GL_EXT_polygon_offset 1
+#define GL_EXT_texture 1
 #define GL_EXT_vertex_array 1
 #define GL_EXT_blend_logic_op 1

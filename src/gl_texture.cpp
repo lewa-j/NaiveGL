@@ -84,7 +84,7 @@ static bool gl_is_texture_complete(const gl_texture &tex)
 		w = glm::max(1, (w >> 1));
 		h = glm::max(1, (h >> 1));
 		if (w != tex.arrays[i].width || h != tex.arrays[i].height
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 			|| tex.arrays[i].internal_format != tex.arrays[0].internal_format
 #else
 			|| tex.arrays[i].components != tex.arrays[0].components
@@ -97,7 +97,7 @@ static bool gl_is_texture_complete(const gl_texture &tex)
 
 static void gl_tex_store_pixel(const glm::vec4 &col, int components, int base_internal_format, uint8_t *dst)
 {
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 	if (base_internal_format == GL_ALPHA)
 		dst[0] = (uint8_t)lroundf(0xFF * glm::clamp(col.a, 0.f, 1.f));
 	else
@@ -162,7 +162,7 @@ static void gl_texSubImage(gl_state *gs, gl_texture_array &ta, GLint xoffset, GL
 			}
 
 			if (components < pstore.components && components != 2
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 				&& ta.base_internal_format != GL_ALPHA
 #endif
 				)
@@ -224,7 +224,7 @@ static void gl_texSubImage(gl_state *gs, gl_texture_array &ta, GLint xoffset, GL
 					break;
 				}
 
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 				if (ta.base_internal_format == GL_ALPHA)
 					dst_row[0] = pixel[3];
 				else
@@ -250,7 +250,7 @@ static void gl_texSubImage(gl_state *gs, gl_texture_array &ta, GLint xoffset, GL
 	gl_log("glTexImage(c %d,%dx%d,b %d,f %X,t %X) al=%d map %d slow path\n", components, width, height, ta.border, format, type, ps.alignment, gs->pixel.map_color);
 
 	int base_internal_format = components;
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 	base_internal_format = ta.base_internal_format;
 #endif
 
@@ -337,7 +337,7 @@ static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLenum target, GLint
 	ta.components = components;
 	ta.border = border;
 
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 	if (target == GL_PROXY_TEXTURE_1D || target == GL_PROXY_TEXTURE_2D)
 		return;
 #endif
@@ -353,7 +353,7 @@ static void gl_texImage(gl_state *gs, gl_texture_array &ta, GLenum target, GLint
 	gl_texSubImage(gs, ta, 0, 0, width, height, format, type, src);
 }
 
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 static bool gl_derive_format(int internalformat, GLenum &baseformat, int &components)
 {
 	switch (internalformat)
@@ -396,7 +396,12 @@ static bool gl_derive_format(int internalformat, GLenum &baseformat, int &compon
 		break;
 	case 3:
 	case GL_RGB:
+#if NGL_VERISON >= 110
 	case GL_R3_G3_B2:
+#endif
+#if GL_EXT_texture
+	case GL_RGB2_EXT:
+#endif
 	case GL_RGB4:
 	case GL_RGB5:
 	case GL_RGB8:
@@ -430,7 +435,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	if (gs->display_list_begun
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 		&& target != GL_PROXY_TEXTURE_2D
 #endif
 		)
@@ -452,7 +457,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 	VALIDATE_NOT_BEGIN_MODE
 
 	if (target != GL_TEXTURE_2D
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 		&& target != GL_PROXY_TEXTURE_2D
 #endif
 		)
@@ -466,7 +471,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 	VALIDATE_TEX_IMAGE_FORMAT;
 
 	GLint components = internalformat;
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 	GLenum baseformat = 0;
 	if (!gl_derive_format(internalformat, baseformat, components))
 	{
@@ -477,7 +482,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 	VALIDATE_TEX_IMAGE_COMPONENTS;
 
 	gl_texture &tex_params = gs->get_texture_2d();
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 	gl_texture_base &tex = target == GL_PROXY_TEXTURE_2D ? gs->proxy_texture_2d : tex_params;
 #else
 	gl_texture &tex = gs->texture_2d;
@@ -505,7 +510,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 		return;
 	}
 
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 	ta.internal_format = internalformat;
 	ta.base_internal_format = baseformat;
 #endif
@@ -518,7 +523,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 	gl_state *gs = gl_current_state();
 	if (!gs) return;
 	if (gs->display_list_begun
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 		&& target != GL_PROXY_TEXTURE_1D
 #endif
 		)
@@ -540,7 +545,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 	VALIDATE_NOT_BEGIN_MODE
 
 	if (target != GL_TEXTURE_1D
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 		&& target != GL_PROXY_TEXTURE_1D
 #endif
 		)
@@ -554,7 +559,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 	VALIDATE_TEX_IMAGE_FORMAT;
 
 	GLint components = internalformat;
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 	GLenum baseformat = 0;
 	if (!gl_derive_format(internalformat, baseformat, components))
 	{
@@ -565,7 +570,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 	VALIDATE_TEX_IMAGE_COMPONENTS;
 
 	gl_texture &tex_params = gs->get_texture_1d();
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 	gl_texture_base &tex = target == GL_PROXY_TEXTURE_1D ? gs->proxy_texture_1d : tex_params;
 #else
 	gl_texture &tex = gs->texture_1d;
@@ -593,7 +598,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 		return;
 	}
 
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 	ta.internal_format = internalformat;
 	ta.base_internal_format = baseformat;
 #endif
@@ -887,7 +892,7 @@ void APIENTRY glGetTexImage(GLenum target, GLint level, GLenum format, GLenum ty
 
 			if (ta.components == 2)
 				std::swap(col.g, col.a);
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 			else if (ta.base_internal_format == GL_ALPHA)
 				col = glm::vec4(0, 0, 0, col.r);
 
@@ -1097,7 +1102,7 @@ static gl_texture_base &gl_get_texture_or_proxy(gl_state *gs, GLenum target)
 		return gs->get_texture_1d();
 	else if (target == GL_TEXTURE_2D)
 		return gs->get_texture_2d();
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 	else if (target == GL_PROXY_TEXTURE_1D)
 		return gs->proxy_texture_1d;
 	else if (target == GL_PROXY_TEXTURE_2D)
@@ -1107,7 +1112,7 @@ static gl_texture_base &gl_get_texture_or_proxy(gl_state *gs, GLenum target)
 	abort();
 }
 
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 static int get_base_format_component_bits(GLenum fmt, GLenum pname)
 {
 	if (pname < GL_TEXTURE_RED_SIZE || pname > GL_TEXTURE_INTENSITY_SIZE)
@@ -1136,7 +1141,7 @@ void gl_getTexLevelParameterv(GLenum target, GLint level, GLenum pname, T *param
 	if (!gs) return;
 	VALIDATE_NOT_BEGIN_MODE;
 	if (target != GL_TEXTURE_1D && target != GL_TEXTURE_2D
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 		&& target != GL_PROXY_TEXTURE_1D && target != GL_PROXY_TEXTURE_2D
 #endif
 		)
@@ -1158,7 +1163,7 @@ void gl_getTexLevelParameterv(GLenum target, GLint level, GLenum pname, T *param
 		*params = (T)ta.height;
 	else if (pname == GL_TEXTURE_BORDER)
 		*params = (T)ta.border;
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 	else if (pname == GL_TEXTURE_INTERNAL_FORMAT)
 		*params = (T)ta.internal_format;
 	else if (pname >= GL_TEXTURE_RED_SIZE && pname <= GL_TEXTURE_INTENSITY_SIZE)
@@ -1367,16 +1372,27 @@ if (pname != GL_TEXTURE_ENV_MODE && pname != GL_TEXTURE_ENV_COLOR) \
 	return; \
 }
 
-#if NGL_VERISON >= 110
-#define VALIDATE_TEX_ENV_MODE_(p) \
-(p != GL_MODULATE && p != GL_DECAL && p != GL_BLEND && p != GL_REPLACE)
-#else
-#define VALIDATE_TEX_ENV_MODE_(p) \
-(p != GL_MODULATE && p != GL_DECAL && p != GL_BLEND)
+static bool is_valid_tex_env_mode(GLenum p)
+{
+	switch (p)
+	{
+	case GL_MODULATE:
+	case GL_DECAL:
+	case GL_BLEND:
+#if GL_EXT_texture
+	case GL_REPLACE_EXT:
 #endif
+#if NGL_VERISON >= 110
+	case GL_REPLACE:
+#endif
+		return true;
+	default:
+		return false;
+	}
+}
 
 #define VALIDATE_TEX_ENV_PARAM(p) \
-if (pname == GL_TEXTURE_ENV_MODE && VALIDATE_TEX_ENV_MODE_(p)) \
+if (pname == GL_TEXTURE_ENV_MODE && !is_valid_tex_env_mode(p)) \
 { \
 	gl_set_error_a(GL_INVALID_ENUM, p); \
 	return; \
@@ -1504,7 +1520,7 @@ glm::vec4 gl_tex_tap(const gl_texture_array& a, glm::ivec2 uv)
 	glm::ivec2 c{ glm::clamp(uv, glm::ivec2(0), glm::ivec2(a.width - 1, a.height - 1)) };
 	uint8_t* d = a.data + (c.y * a.width + c.x) * a.components;
 	
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 	if (a.base_internal_format == GL_INTENSITY)
 	{
 		float i = GLtof(d[0]);

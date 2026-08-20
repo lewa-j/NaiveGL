@@ -81,7 +81,7 @@ struct gl_texture_array
 	int width = 0;
 	int height = 0;
 	int border = 0;
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 	int internal_format = 1;
 	/* deduced from internal fromat (8 or 0)
 	int red_bits = 0;
@@ -409,11 +409,11 @@ struct gl_state
 	bool texture_2d_enabled = false;
 	gl_texture texture_1d;
 	gl_texture texture_2d;
-
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture
 	gl_texture_base proxy_texture_1d;
 	gl_texture_base proxy_texture_2d;
-
+#endif
+#if NGL_VERISON >= 110
 	struct texture_object_t
 	{
 		GLenum target = 0;

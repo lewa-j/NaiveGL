@@ -659,29 +659,13 @@ static void set_bit(T &set, int bit, bool val)
 #define GL_BLEND_EQUATION_EXT 0x8009
 #endif
 
-#if NGL_VERISON >= 110
-#define GL_V2F 0x2A20
-#define GL_V3F 0x2A21
-#define GL_C4UB_V2F 0x2A22
-#define GL_C4UB_V3F 0x2A23
-#define GL_C3F_V3F 0x2A24
-#define GL_N3F_V3F 0x2A25
-#define GL_C4F_N3F_V3F 0x2A26
-#define GL_T2F_V3F 0x2A27
-#define GL_T4F_V4F 0x2A28
-#define GL_T2F_C4UB_V3F 0x2A29
-#define GL_T2F_C3F_V3F 0x2A2A
-#define GL_T2F_N3F_V3F 0x2A2B
-#define GL_T2F_C4F_N3F_V3F 0x2A2C
-#define GL_T4F_C4F_N3F_V4F 0x2A2D
+#if GL_EXT_texture
+#define GL_REPLACE_EXT 0x8062
+#define GL_TEXTURE_TOO_LARGE_EXT 0x8065
+#endif
 
-#define GL_POLYGON_OFFSET_POINT 0x2A01
-#define GL_POLYGON_OFFSET_LINE 0x2A02
-
-#define GL_PROXY_TEXTURE_1D 0x8063
-#define GL_PROXY_TEXTURE_2D 0x8064
-
-#define GL_INTENSITY 0x8049
+#if NGL_VERISON >= 110 || GL_EXT_texture
+#define GL_TEXTURE_INTERNAL_FORMAT 0x1003
 
 #define GL_ALPHA4 0x803B
 #define GL_ALPHA8 0x803C
@@ -701,7 +685,12 @@ static void set_bit(T &set, int bit, bool val)
 #define GL_INTENSITY8 0x804B
 #define GL_INTENSITY12 0x804C
 #define GL_INTENSITY16 0x804D
+#if GL_EXT_texture
+#define GL_RGB2_EXT 0x804E
+#endif
+#if NGL_VERISON >= 110
 #define GL_R3_G3_B2 0x2A10
+#endif
 #define GL_RGB4 0x804F
 #define GL_RGB5 0x8050
 #define GL_RGB8 0x8051
@@ -716,14 +705,7 @@ static void set_bit(T &set, int bit, bool val)
 #define GL_RGBA12 0x805A
 #define GL_RGBA16 0x805B
 
-#define GL_TEXTURE_PRIORITY 0x8066
-#define GL_TEXTURE_RESIDENT 0x8067
-
-#define GL_REPLACE 0x1E01
-
-#define GL_COLOR_LOGIC_OP 0x0BF2
-
-#define GL_TEXTURE_INTERNAL_FORMAT 0x1003
+#define GL_INTENSITY 0x8049
 
 #define GL_TEXTURE_RED_SIZE 0x805C
 #define GL_TEXTURE_GREEN_SIZE 0x805D
@@ -731,6 +713,35 @@ static void set_bit(T &set, int bit, bool val)
 #define GL_TEXTURE_ALPHA_SIZE 0x805F
 #define GL_TEXTURE_LUMINANCE_SIZE 0x8060
 #define GL_TEXTURE_INTENSITY_SIZE 0x8061
+
+#define GL_PROXY_TEXTURE_1D 0x8063
+#define GL_PROXY_TEXTURE_2D 0x8064
+
+#endif
+
+#if NGL_VERISON >= 110
+#define GL_V2F 0x2A20
+#define GL_V3F 0x2A21
+#define GL_C4UB_V2F 0x2A22
+#define GL_C4UB_V3F 0x2A23
+#define GL_C3F_V3F 0x2A24
+#define GL_N3F_V3F 0x2A25
+#define GL_C4F_N3F_V3F 0x2A26
+#define GL_T2F_V3F 0x2A27
+#define GL_T4F_V4F 0x2A28
+#define GL_T2F_C4UB_V3F 0x2A29
+#define GL_T2F_C3F_V3F 0x2A2A
+#define GL_T2F_N3F_V3F 0x2A2B
+#define GL_T2F_C4F_N3F_V3F 0x2A2C
+#define GL_T4F_C4F_N3F_V4F 0x2A2D
+
+#define GL_POLYGON_OFFSET_POINT 0x2A01
+#define GL_POLYGON_OFFSET_LINE 0x2A02
+
+#define GL_TEXTURE_PRIORITY 0x8066
+#define GL_TEXTURE_RESIDENT 0x8067
+
+#define GL_COLOR_LOGIC_OP 0x0BF2
 
 #define GL_SELECTION_BUFFER_POINTER 0x0DF3
 #define GL_FEEDBACK_BUFFER_POINTER 0x0DF0
