@@ -279,7 +279,7 @@ EXPORT BOOL WINAPI wglShareLists(HGLRC c1, HGLRC c2)
 
 EXPORT BOOL WINAPI wglCopyContext(HGLRC hglrcSrc, HGLRC hlglrcDst, UINT mask)
 {
-	gl_log("wglCopyContext(%p, %p, %X)\n", hglrcSrc, hlglrcDstm, mask);
+	gl_log("wglCopyContext(%p, %p, %X)\n", hglrcSrc, hlglrcDst, mask);
 	return 0;
 }
 
