@@ -235,14 +235,16 @@ struct gl_display_list_call
 #if NGL_VERISON >= 110 || GL_EXT_polygon_offset
 		tPolygonOffset,//2f
 #endif
+#if NGL_VERISON >= 110 || GL_EXT_subtexture
+		tTexSubImage2D,//1f+7i+n	big i[7] size
+		tTexSubImage1D,//6i+n		big i[6] size
+#endif
 #if GL_EXT_blend_logic_op
 		tBlendEquation,//1i
 #endif
 #if NGL_VERISON >= 110
 		tCopyTexImage2D,//8i
 		tCopyTexImage1D,//7i
-		tTexSubImage2D,//1f+7i+n	big i[7] size
-		tTexSubImage1D,//6i+n		big i[6] size
 		tCopyTexSubImage2D,//8i
 		tCopyTexSubImage1D,//6i
 		tBindTexture,//2i

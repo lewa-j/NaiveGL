@@ -677,6 +677,9 @@ void APIENTRY glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat
 	}
 	gl_copyTexImage(gs, __FUNCTION__, target, level, internalformat, x, y, width, 1, border);
 }
+#endif
+
+#if NGL_VERISON >= 110 || GL_EXT_subtexture
 
 #define VALIDATE_TEX_SUB_IMAGE(FUNC,TARGET,LEVEL,W,H) \
 if (target != TARGET) \
@@ -767,6 +770,26 @@ void APIENTRY glTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLsizei
 	gl_texSubImage(gs, ta, xoffset, 0, width, 1, format, type, (const uint8_t *)pixels);
 }
 
+#if GL_EXT_subtexture
+void APIENTRY glTexSubImage1DEXT(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const void *pixels)
+{
+	glTexSubImage1D(target, level, xoffset, width, format, type, pixels);
+}
+void APIENTRY glTexSubImage2DEXT(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels)
+{
+	glTexSubImage2D(target, level, xoffset, yoffset, width, height, format, type, pixels);
+}
+#if GL_EXT_texture3D
+void APIENTRY glTexSubImage3DEXT(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void *pixels)
+{
+#error "glTexSubImage3DEXT unimplemented"
+}
+#endif
+#endif
+
+#endif
+
+#if NGL_VERISON >= 110
 void APIENTRY glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	gl_state *gs = gl_current_state();

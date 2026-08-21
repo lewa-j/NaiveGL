@@ -13,5 +13,11 @@
 
 #define GL_EXT_polygon_offset 1
 #define GL_EXT_texture 1
+#define GL_EXT_subtexture 1
 #define GL_EXT_vertex_array 1
 #define GL_EXT_blend_logic_op 1
+
+// checks
+#if GL_EXT_subtexture && !GL_EXT_texture
+#error "GL_EXT_subtexture depends on GL_EXT_texture"
+#endif

@@ -13,6 +13,14 @@
 void APIENTRY glPolygonOffsetEXT(GLfloat factor, GLfloat bias);
 #endif
 
+#if GL_EXT_subtexture
+void APIENTRY glTexSubImage1DEXT(GLenum target, GLint level, GLint xoffset, GLsizei width, GLenum format, GLenum type, const void *pixels);
+void APIENTRY glTexSubImage2DEXT(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
+#if GL_EXT_texture3D
+void APIENTRY glTexSubImage3DEXT(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLsizei width, GLsizei height, GLsizei depth, GLenum format, GLenum type, const void *pixels);
+#endif
+#endif
+
 #if GL_EXT_vertex_array
 void APIENTRY glArrayElementEXT(GLint i);
 void APIENTRY glDrawArraysEXT(GLenum mode, GLint first, GLsizei count);

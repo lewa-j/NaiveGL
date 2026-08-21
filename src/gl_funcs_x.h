@@ -351,6 +351,14 @@ X(glPopClientAttrib)
 X(glPolygonOffsetEXT)
 #endif
 
+#if GL_EXT_subtexture
+X(glTexSubImage1DEXT)
+X(glTexSubImage2DEXT)
+#if GL_EXT_texture3D
+X(glTexSubImage3DEXT)
+#endif
+#endif
+
 #if GL_EXT_vertex_array
 X(glArrayElementEXT)
 X(glDrawArraysEXT)
