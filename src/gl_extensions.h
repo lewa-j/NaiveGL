@@ -21,6 +21,18 @@ void APIENTRY glTexSubImage3DEXT(GLenum target, GLint level, GLint xoffset, GLin
 #endif
 #endif
 
+#if GL_EXT_copy_texture
+void APIENTRY glCopyTexImage1DEXT(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border);
+void APIENTRY glCopyTexImage2DEXT(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
+#if GL_EXT_subtexture
+void APIENTRY glCopyTexSubImage1DEXT(GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width);
+void APIENTRY glCopyTexSubImage2DEXT(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height);
+#if GL_EXT_texture3D
+void APIENTRY glCopyTexSubImage3DEXT(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height);
+#endif
+#endif
+#endif
+
 #if GL_EXT_vertex_array
 void APIENTRY glArrayElementEXT(GLint i);
 void APIENTRY glDrawArraysEXT(GLenum mode, GLint first, GLsizei count);

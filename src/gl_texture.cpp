@@ -606,7 +606,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 	tex.is_complete = gl_is_texture_complete(tex_params);
 }
 
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_copy_texture
 static void gl_copyTexImage(gl_state *gs, const char *func, GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
 {
 	if (gs->begin_primitive_mode != -1)
@@ -677,6 +677,18 @@ void APIENTRY glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat
 	}
 	gl_copyTexImage(gs, __FUNCTION__, target, level, internalformat, x, y, width, 1, border);
 }
+
+#if GL_EXT_copy_texture
+void APIENTRY glCopyTexImage1DEXT(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border)
+{
+	glCopyTexImage1D(target, level, internalformat, x, y, width, border);
+}
+void APIENTRY glCopyTexImage2DEXT(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border)
+{
+	glCopyTexImage2D(target, level, internalformat, x, y, width, height, border);
+}
+#endif
+
 #endif
 
 #if NGL_VERISON >= 110 || GL_EXT_subtexture
@@ -789,7 +801,7 @@ void APIENTRY glTexSubImage3DEXT(GLenum target, GLint level, GLint xoffset, GLin
 
 #endif
 
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || (GL_EXT_subtexture && GL_EXT_copy_texture)
 void APIENTRY glCopyTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
 {
 	gl_state *gs = gl_current_state();
@@ -859,6 +871,23 @@ void APIENTRY glCopyTexSubImage1D(GLenum target, GLint level, GLint xoffset, GLi
 	gs->pixel_pack = save_pack;
 	gs->pixel_unpack = save_unpack;
 }
+
+#if GL_EXT_copy_texture && GL_EXT_subtexture
+void APIENTRY glCopyTexSubImage1DEXT(GLenum target, GLint level, GLint xoffset, GLint x, GLint y, GLsizei width)
+{
+	glCopyTexSubImage1D(target, level, xoffset, x, y, width);
+}
+void APIENTRY glCopyTexSubImage2DEXT(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint x, GLint y, GLsizei width, GLsizei height)
+{
+	glCopyTexSubImage2D(target, level, xoffset, yoffset, x, y, width, height);
+}
+#if GL_EXT_texture3D
+void APIENTRY glCopyTexSubImage3DEXT(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLint zoffset, GLint x, GLint y, GLsizei width, GLsizei height)
+{
+#error "glCopyTexSubImage3DEXT unimplemented"
+}
+#endif
+#endif
 #endif
 
 void APIENTRY glGetTexImage(GLenum target, GLint level, GLenum format, GLenum type, void *pixels)

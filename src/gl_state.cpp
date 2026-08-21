@@ -507,6 +507,9 @@ const char *APIENTRY glGetString(GLenum name)
 #if GL_EXT_subtexture
 			"GL_EXT_subtexture "
 #endif
+#if GL_EXT_copy_texture
+			"GL_EXT_copy_texture "
+#endif
 #if GL_EXT_vertex_array
 			"GL_EXT_vertex_array "
 #endif
