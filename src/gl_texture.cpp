@@ -485,7 +485,7 @@ void APIENTRY glTexImage2D(GLenum target, GLint level, GLint internalformat, GLs
 #if NGL_VERISON >= 110 || GL_EXT_texture
 	gl_texture_base &tex = target == GL_PROXY_TEXTURE_2D ? gs->proxy_texture_2d : tex_params;
 #else
-	gl_texture &tex = gs->texture_2d;
+	gl_texture_base &tex = tex_params;
 #endif
 	gl_texture_array& ta = tex.arrays[level];
 
@@ -573,7 +573,7 @@ void APIENTRY glTexImage1D(GLenum target, GLint level, GLint internalformat, GLs
 #if NGL_VERISON >= 110 || GL_EXT_texture
 	gl_texture_base &tex = target == GL_PROXY_TEXTURE_1D ? gs->proxy_texture_1d : tex_params;
 #else
-	gl_texture &tex = gs->texture_1d;
+	gl_texture_base &tex = tex_params;
 #endif
 	gl_texture_array &ta = tex.arrays[level];
 
@@ -972,7 +972,7 @@ void APIENTRY glGetTexImage(GLenum target, GLint level, GLenum format, GLenum ty
 	}
 }
 
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture_object
 #define VALIDATE_TEX_PARAMETER_PNAME_CHECK_ \
 (pname < GL_TEXTURE_MAG_FILTER || pname > GL_TEXTURE_WRAP_T) && pname != GL_TEXTURE_BORDER_COLOR && pname != GL_TEXTURE_PRIORITY
 #define VALIDATE_GET_TEX_PARAMETER_PNAME_CHECK_ \
@@ -1037,7 +1037,7 @@ void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param)
 		p.wrap_s = to_int(param);
 	else if (pname == GL_TEXTURE_WRAP_T)
 		p.wrap_t = to_int(param);
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture_object
 	else if (pname == GL_TEXTURE_PRIORITY)
 		tex.params.priority = glm::clamp(param, 0.f, 1.f);
 #endif
@@ -1052,7 +1052,7 @@ static int gl_texParameterv_size(GLenum pname)
 		return 1;
 	if (pname == GL_TEXTURE_BORDER_COLOR)
 		return 4;
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture_object
 	if (pname == GL_TEXTURE_PRIORITY)
 		return 1;
 #endif
@@ -1077,7 +1077,7 @@ void gl_texParameterv(gl_state *gs, GLenum target, GLenum pname, const T* params
 		tex.params.wrap_t = to_int(params[0]);
 	else if (pname == GL_TEXTURE_BORDER_COLOR)
 		tex.params.border_color = glm::clamp(glm::vec4(GLtof(params[0]), GLtof(params[1]), GLtof(params[2]), GLtof(params[3])), glm::vec4(0), glm::vec4(1));
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture_object
 	else if (pname == GL_TEXTURE_PRIORITY)
 		tex.params.priority = (float)params[0];
 #endif
@@ -1130,7 +1130,7 @@ void gl_getTexParameterv(GLenum target, GLenum pname, T *params)
 		*params = (T)tex.params.wrap_t;
 	else if (pname == GL_TEXTURE_BORDER_COLOR)
 		copy_color(params, &tex.params.border_color.x);
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture_object
 	else if (pname == GL_TEXTURE_PRIORITY)
 		*params = (T)tex.params.priority;
 	else if (pname == GL_TEXTURE_RESIDENT)
@@ -1238,7 +1238,7 @@ void APIENTRY glGetTexLevelParameterfv(GLenum target, GLint level, GLenum pname,
 	gl_getTexLevelParameterv(target, level, pname, params);
 }
 
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture_object
 void APIENTRY glBindTexture(GLenum target, GLuint texture)
 {
 	gl_state *gs = gl_current_state();
@@ -1409,6 +1409,34 @@ GLboolean APIENTRY glIsTexture(GLuint texture)
 
 	return GL_TRUE;
 }
+
+#if GL_EXT_texture_object
+void APIENTRY glGenTexturesEXT(GLsizei n, GLuint *textures)
+{
+	glGenTextures(n, textures);
+}
+void APIENTRY glDeleteTexturesEXT(GLsizei n, const GLuint *textures)
+{
+	glDeleteTextures(n, textures);
+}
+void APIENTRY glBindTextureEXT(GLenum target, GLuint texture)
+{
+	glBindTexture(target, texture);
+}
+void APIENTRY glPrioritizeTexturesEXT(GLsizei n, const GLuint *textures, const GLfloat *priorities)
+{
+	glPrioritizeTextures(n, textures, priorities);
+}
+GLboolean APIENTRY glAreTexturesResidentEXT(GLsizei n, const GLuint *textures, GLboolean *residences)
+{
+	return glAreTexturesResident(n, textures, residences);
+}
+GLboolean APIENTRY glIsTextureEXT(GLuint texture)
+{
+	return glIsTexture(texture);
+}
+#endif
+
 #endif
 
 #define VALIDATE_TEX_ENV \
@@ -1547,7 +1575,7 @@ gl_texture &gl_state::get_texture(GLenum target)
 
 gl_texture &gl_state::get_texture_1d()
 {
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture_object
 	if (texture_binding_1d)
 	{
 		return texture_objects[texture_binding_1d].data;
@@ -1558,7 +1586,7 @@ gl_texture &gl_state::get_texture_1d()
 
 gl_texture &gl_state::get_texture_2d()
 {
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture_object
 	if (texture_binding_2d)
 	{
 		return texture_objects[texture_binding_2d].data;

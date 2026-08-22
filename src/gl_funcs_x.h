@@ -371,6 +371,15 @@ X(glCopyTexSubImage3DEXT)
 #endif
 #endif
 
+#if GL_EXT_texture_object
+X(glGenTexturesEXT)
+X(glDeleteTexturesEXT)
+X(glBindTextureEXT)
+X(glPrioritizeTexturesEXT)
+X(glAreTexturesResidentEXT)
+X(glIsTextureEXT)
+#endif
+
 #if GL_EXT_vertex_array
 X(glArrayElementEXT)
 X(glDrawArraysEXT)

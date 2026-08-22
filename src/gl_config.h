@@ -15,6 +15,7 @@
 #define GL_EXT_texture 1
 #define GL_EXT_subtexture 1
 #define GL_EXT_copy_texture 1
+#define GL_EXT_texture_object 1
 #define GL_EXT_vertex_array 1
 #define GL_EXT_blend_logic_op 1
 

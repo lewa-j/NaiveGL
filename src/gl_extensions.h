@@ -33,6 +33,15 @@ void APIENTRY glCopyTexSubImage3DEXT(GLenum target, GLint level, GLint xoffset, 
 #endif
 #endif
 
+#if GL_EXT_texture_object
+void APIENTRY glGenTexturesEXT(GLsizei n, GLuint *textures);
+void APIENTRY glDeleteTexturesEXT(GLsizei n, const GLuint *textures);
+void APIENTRY glBindTextureEXT(GLenum target, GLuint texture);
+void APIENTRY glPrioritizeTexturesEXT(GLsizei n, const GLuint *textures, const GLfloat *priorities);
+GLboolean APIENTRY glAreTexturesResidentEXT(GLsizei n, const GLuint *textures, GLboolean *residences);
+GLboolean APIENTRY glIsTextureEXT(GLuint texture);
+#endif
+
 #if GL_EXT_vertex_array
 void APIENTRY glArrayElementEXT(GLint i);
 void APIENTRY glDrawArraysEXT(GLenum mode, GLint first, GLsizei count);

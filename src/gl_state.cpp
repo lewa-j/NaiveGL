@@ -134,7 +134,7 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 void gl_state::destroy()
 {
 	display_list_indices.clear();
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture_object
 	texture_objects.clear();
 #endif
 }
@@ -509,6 +509,9 @@ const char *APIENTRY glGetString(GLenum name)
 #endif
 #if GL_EXT_copy_texture
 			"GL_EXT_copy_texture "
+#endif
+#if GL_EXT_texture_object
+			"GL_EXT_texture_object "
 #endif
 #if GL_EXT_vertex_array
 			"GL_EXT_vertex_array "

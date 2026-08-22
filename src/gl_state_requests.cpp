@@ -198,6 +198,8 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 #if NGL_VERISON >= 110
 	else if (pname == GL_POLYGON_OFFSET_UNITS)
 		copy_vals(data, &gs.polygon.offset_units, 1);
+#endif
+#if NGL_VERISON >= 110 || GL_EXT_texture_object
 	else if (pname == GL_TEXTURE_BINDING_1D)
 		copy_vals(data, &gs.texture_binding_1d, 1);
 	else if (pname == GL_TEXTURE_BINDING_2D)

@@ -120,7 +120,7 @@ struct gl_texture : gl_texture_base
 		int mag_filter = GL_LINEAR;
 		int wrap_s = GL_REPEAT;
 		int wrap_t = GL_REPEAT;
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture_object
 		float priority = 1;
 #endif
 	} params;
@@ -247,12 +247,12 @@ struct gl_display_list_call
 		tCopyTexSubImage2D,//8i
 		tCopyTexSubImage1D,//6i
 #endif
-#if GL_EXT_blend_logic_op
-		tBlendEquation,//1i
-#endif
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture_object
 		tBindTexture,//2i
 		tPrioritizeTextures,//1i+n	big [1] size
+#endif
+#if GL_EXT_blend_logic_op
+		tBlendEquation,//1i
 #endif
 	};
 
@@ -419,7 +419,7 @@ struct gl_state
 	gl_texture_base proxy_texture_1d;
 	gl_texture_base proxy_texture_2d;
 #endif
-#if NGL_VERISON >= 110
+#if NGL_VERISON >= 110 || GL_EXT_texture_object
 	struct texture_object_t
 	{
 		GLenum target = 0;
