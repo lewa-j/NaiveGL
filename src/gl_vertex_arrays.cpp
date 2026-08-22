@@ -4,7 +4,7 @@
 #include "gl_state.h"
 #include "gl_pixels.h"
 
-#if NGL_VERISON >= 110 || GL_EXT_vertex_array
+#if NGL_VERSION >= 110 || GL_EXT_vertex_array
 void APIENTRY glEdgeFlagPointerEXT(GLsizei stride, GLsizei count, const void *pointer)
 {
 	gl_state *gs = gl_current_state();
@@ -105,7 +105,7 @@ void APIENTRY glIndexPointerEXT(GLenum type, GLsizei stride, GLsizei count, cons
 	VALIDATE_NOT_BEGIN_MODE;
 
 	if (type != GL_SHORT && type != GL_INT && type != GL_FLOAT && type != GL_DOUBLE
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 		&& type != GL_UNSIGNED_BYTE
 #endif
 		)
@@ -405,7 +405,7 @@ void APIENTRY glEdgeFlagPointer(GLsizei stride, const void *pointer)
 }
 #endif
 
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 
 void APIENTRY glEnableClientState(GLenum array)
 {

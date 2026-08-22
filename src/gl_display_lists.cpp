@@ -45,7 +45,7 @@ void APIENTRY glEndList(void)
 		return;
 	}
 
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	// can generate GL_OUT_OF_MEMORY
 	// no changes to gs->display_list_indices[gs->display_list_begun] in that case
 #endif
@@ -454,7 +454,7 @@ void gl_callList(gl_state *gs, GLuint list)
 		case gl_display_list_call::tPopAttrib:
 			glPopAttrib();
 			break;
-#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
+#if NGL_VERSION >= 110 || GL_EXT_polygon_offset
 		case gl_display_list_call::tPolygonOffset:
 			glPolygonOffset(call.argsf[0], call.argsf[1]);
 			break;
@@ -464,7 +464,7 @@ void gl_callList(gl_state *gs, GLuint list)
 			glBlendEquationEXT(call.argsi[0]);
 			break;
 #endif
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 		case gl_display_list_call::tCopyTexImage2D:
 			glCopyTexImage2D(call.argsi[0], call.argsi[1], call.argsi[2], call.argsi[3], call.argsi[4], call.argsi[5], call.argsi[6], call.argsi[7]);
 			break;

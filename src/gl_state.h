@@ -81,7 +81,7 @@ struct gl_texture_array
 	int width = 0;
 	int height = 0;
 	int border = 0;
-#if NGL_VERISON >= 110 || GL_EXT_texture
+#if NGL_VERSION >= 110 || GL_EXT_texture
 	int internal_format = 1;
 	/* deduced from internal fromat (8 or 0)
 	int red_bits = 0;
@@ -120,7 +120,7 @@ struct gl_texture : gl_texture_base
 		int mag_filter = GL_LINEAR;
 		int wrap_s = GL_REPEAT;
 		int wrap_t = GL_REPEAT;
-#if NGL_VERISON >= 110 || GL_EXT_texture_object
+#if NGL_VERSION >= 110 || GL_EXT_texture_object
 		float priority = 1;
 #endif
 	} params;
@@ -232,22 +232,22 @@ struct gl_display_list_call
 		tHint,//2i
 		tPushAttrib,//1i
 		tPopAttrib,
-#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
+#if NGL_VERSION >= 110 || GL_EXT_polygon_offset
 		tPolygonOffset,//2f
 #endif
-#if NGL_VERISON >= 110 || GL_EXT_subtexture
+#if NGL_VERSION >= 110 || GL_EXT_subtexture
 		tTexSubImage2D,//1f+7i+n	big i[7] size
 		tTexSubImage1D,//6i+n		big i[6] size
 #endif
-#if NGL_VERISON >= 110 || GL_EXT_copy_texture
+#if NGL_VERSION >= 110 || GL_EXT_copy_texture
 		tCopyTexImage2D,//8i
 		tCopyTexImage1D,//7i
 #endif
-#if NGL_VERISON >= 110 || (GL_EXT_copy_texture && GL_EXT_subtexture)
+#if NGL_VERSION >= 110 || (GL_EXT_copy_texture && GL_EXT_subtexture)
 		tCopyTexSubImage2D,//8i
 		tCopyTexSubImage1D,//6i
 #endif
-#if NGL_VERISON >= 110 || GL_EXT_texture_object
+#if NGL_VERSION >= 110 || GL_EXT_texture_object
 		tBindTexture,//2i
 		tPrioritizeTextures,//1i+n	big [1] size
 #endif
@@ -290,7 +290,7 @@ struct gl_state
 		bool edge_flag = true;
 	} current;
 
-#if NGL_VERISON >= 110 || GL_EXT_vertex_array
+#if NGL_VERSION >= 110 || GL_EXT_vertex_array
 	struct vertex_array_t
 	{
 		uint8_t enabled;
@@ -402,7 +402,7 @@ struct gl_state
 		bool front_face_ccw = true;
 		bool smooth = false;
 		GLenum mode[2]{ GL_FILL,GL_FILL };//front and back
-#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
+#if NGL_VERSION >= 110 || GL_EXT_polygon_offset
 		float offset_factor = 0;
 		float offset_units = 0;
 		uint8_t offset_enabled = 0;//point, line, fill
@@ -415,11 +415,11 @@ struct gl_state
 	bool texture_2d_enabled = false;
 	gl_texture texture_1d;
 	gl_texture texture_2d;
-#if NGL_VERISON >= 110 || GL_EXT_texture
+#if NGL_VERSION >= 110 || GL_EXT_texture
 	gl_texture_base proxy_texture_1d;
 	gl_texture_base proxy_texture_2d;
 #endif
-#if NGL_VERISON >= 110 || GL_EXT_texture_object
+#if NGL_VERSION >= 110 || GL_EXT_texture_object
 	struct texture_object_t
 	{
 		GLenum target = 0;
@@ -475,7 +475,7 @@ struct gl_state
 		GLenum blend_equation = GL_FUNC_ADD_EXT;
 #endif
 		bool index_logic_op = false;
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 		bool color_logic_op = false;
 #endif
 		GLenum logic_op_mode = GL_COPY;
@@ -613,7 +613,7 @@ struct gl_state
 	gl_state_attribs attrib_stack[gl_max_attrib_stack_depth];
 	int attrib_sp = 0;
 
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	struct gl_client_state_attribs
 	{
 		GLbitfield attrib_mask;

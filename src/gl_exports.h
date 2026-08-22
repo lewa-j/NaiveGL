@@ -134,7 +134,7 @@ EXPORT void APIENTRY glIndexf(GLfloat c);
 EXPORT void APIENTRY glIndexfv(const GLfloat *c);
 EXPORT void APIENTRY glIndexd(GLdouble c);
 EXPORT void APIENTRY glIndexdv(const GLdouble *c);
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 EXPORT void APIENTRY glIndexub(GLubyte c);
 EXPORT void APIENTRY glIndexubv(const GLubyte *c);
 
@@ -240,7 +240,7 @@ EXPORT void APIENTRY glLineStipple(GLint factor, GLushort pattern);
 EXPORT void APIENTRY glCullFace(GLenum mode);
 EXPORT void APIENTRY glPolygonStipple(const GLubyte *mask);
 EXPORT void APIENTRY glPolygonMode(GLenum face, GLenum mode);
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 EXPORT void APIENTRY glPolygonOffset(GLfloat factor, GLfloat units);
 #elif GL_EXT_polygon_offset
 void APIENTRY glPolygonOffset(GLfloat factor, GLfloat units);
@@ -258,7 +258,7 @@ EXPORT void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, 
 EXPORT void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove, const GLubyte* bitmap);
 EXPORT void APIENTRY glTexImage2D(GLenum target, GLint level, GLint components, GLsizei width, GLsizei height, GLint border, GLenum format, GLenum type, const void *data);
 EXPORT void APIENTRY glTexImage1D(GLenum target, GLint level, GLint components, GLsizei width, GLint border, GLenum format, GLenum type, const void* data);
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 EXPORT void APIENTRY glCopyTexImage2D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLsizei height, GLint border);
 EXPORT void APIENTRY glCopyTexImage1D(GLenum target, GLint level, GLenum internalformat, GLint x, GLint y, GLsizei width, GLint border);
 EXPORT void APIENTRY glTexSubImage2D(GLenum target, GLint level, GLint xoffset, GLint yoffset, GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels);
@@ -270,7 +270,7 @@ EXPORT void APIENTRY glTexParameteri(GLenum target, GLenum pname, GLint param);
 EXPORT void APIENTRY glTexParameterf(GLenum target, GLenum pname, GLfloat param);
 EXPORT void APIENTRY glTexParameteriv(GLenum target, GLenum pname, const GLint* params);
 EXPORT void APIENTRY glTexParameterfv(GLenum target, GLenum pname, const GLfloat* params);
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 EXPORT void APIENTRY glBindTexture(GLenum target, GLuint texture);
 EXPORT void APIENTRY glDeleteTextures(GLsizei n, const GLuint *textures);
 EXPORT void APIENTRY glGenTextures(GLsizei n, GLuint *textures);
@@ -381,7 +381,7 @@ EXPORT void APIENTRY glGetPolygonStipple(GLubyte *mask);
 EXPORT const char *APIENTRY glGetString(GLenum name);
 EXPORT void APIENTRY glPushAttrib(GLbitfield mask);
 EXPORT void APIENTRY glPopAttrib(void);
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 EXPORT GLboolean APIENTRY glIsTexture(GLuint texture);
 EXPORT void APIENTRY glGetPointerv(GLenum pname, void **params);
 EXPORT void APIENTRY glPushClientAttrib(GLbitfield mask);

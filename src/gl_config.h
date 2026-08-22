@@ -1,7 +1,7 @@
 #pragma once
 
-#ifndef NGL_VERISON
-	#define NGL_VERISON 110
+#ifndef NGL_VERSION
+	#define NGL_VERSION 110
 #endif
 
 #define NGL_MINIMAL 0

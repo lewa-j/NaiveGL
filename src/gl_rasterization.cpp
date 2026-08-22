@@ -175,7 +175,7 @@ void APIENTRY glPolygonMode(GLenum face, GLenum mode)
 		gs->polygon.mode[1] = mode;
 }
 
-#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
+#if NGL_VERSION >= 110 || GL_EXT_polygon_offset
 void APIENTRY glPolygonOffset(GLfloat factor, GLfloat units)
 {
 	gl_state *gs = gl_current_state();
@@ -210,7 +210,7 @@ static void gl_fog_scalar(const char *func, gl_state *gs, GLenum pname, GLfloat 
 			return;
 		}
 	}
-#if NGL_VERISON < 110
+#if NGL_VERSION < 110
 	if ((pname == GL_FOG_START || pname == GL_FOG_END) && param < 0)
 	{
 		gl_set_error_(GL_INVALID_VALUE, func);
@@ -323,7 +323,7 @@ static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &da
 	}
 	else if (st.texture_env.mode == GL_BLEND)
 	{
-#if NGL_VERISON >= 110 || GL_EXT_texture
+#if NGL_VERSION >= 110 || GL_EXT_texture
 		int fmt = tex.arrays[0].base_internal_format;
 		if (fmt == GL_ALPHA)
 			color.a *= tex_color.a;
@@ -346,7 +346,7 @@ static void apply_texture(gl_state& st, glm::vec4& color, const gl_frag_data &da
 		else
 			color *= tex_color;
 	}
-#if NGL_VERISON >= 110 || GL_EXT_texture
+#if NGL_VERSION >= 110 || GL_EXT_texture
 	else if (st.texture_env.mode == GL_REPLACE ||
 #if GL_EXT_texture
 		st.texture_env.mode == GL_REPLACE_EXT
@@ -591,7 +591,7 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 		color = st.get_fog_color(color, data.fog_z);
 
 	int ci = pi * 4;
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	if (!st.color_buffer.color_logic_op)
 #endif
 #if GL_EXT_blend_logic_op
@@ -614,13 +614,13 @@ void gl_emit_fragment(gl_state &st, int x, int y, gl_frag_data &data)
 	}
 
 	//bgra
-#if NGL_VERISON >= 110 || GL_EXT_blend_logic_op
+#if NGL_VERSION >= 110 || GL_EXT_blend_logic_op
 	bool color_logic = false;
 #if GL_EXT_blend_logic_op
 	if (st.color_buffer.blend && st.color_buffer.blend_equation == GL_LOGIC_OP)
 		color_logic = true;
 #endif
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	if (st.color_buffer.color_logic_op)
 		color_logic = true;
 #endif
@@ -674,7 +674,7 @@ void gl_emit_point(gl_state& st, const gl_processed_vertex &vertex, float depth_
 	gl_frag_data data;
 	data.color = vertex.color;
 	data.tex_coord = vertex.tex_coord;
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	data.tex_coord /= data.tex_coord.q;
 	// GL_POLYGON_OFFSET_POINT
 	win_c.z += depth_offset;
@@ -756,7 +756,7 @@ void gl_rasterize_line(gl_state& st, const gl_processed_vertex& v0, const gl_pro
 		return;
 	}
 
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	// GL_POLYGON_OFFSET_LINE
 	win_c0.z += depth_offset;
 	win_c1.z += depth_offset;
@@ -930,7 +930,7 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 
 	if (pmode == GL_LINE)
 	{
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 		if (st.render_mode == GL_FEEDBACK ||
 			!(st.depth.test && st.framebuffer->depth && (st.polygon.offset_enabled & 2))) // GL_POLYGON_OFFSET_LINE
 #endif
@@ -980,7 +980,7 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 			bbmin[j] = glm::clamp(ic[j], rect[j], bbmin[j]);
 			bbmax[j] = glm::clamp(ic[j], bbmax[j], rect[j] + rect[j + 2]);
 		}
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 		int z = (int)lroundf(win_c[i].z * 0xFFFF);
 		bbmin.z = glm::clamp(z, 0, bbmin.z);
 		bbmax.z = glm::clamp(z, bbmax.z, 0xFFFF);
@@ -988,10 +988,10 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 	}
 
 	float o = 0;
-#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
+#if NGL_VERSION >= 110 || GL_EXT_polygon_offset
 	if (st.depth.test && st.framebuffer->depth &&
 		(  ((st.polygon.offset_enabled & 4) && pmode == GL_FILL) // GL_POLYGON_OFFSET_FILL
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 		|| ((st.polygon.offset_enabled & 2) && pmode == GL_LINE) // GL_POLYGON_OFFSET_LINE
 		|| ((st.polygon.offset_enabled & 1) && pmode == GL_POINT) // GL_POLYGON_OFFSET_POINT
 #endif
@@ -1002,7 +1002,7 @@ void gl_rasterize_triangle(gl_state& st, gl_processed_vertex& v0, gl_processed_v
 		float m = glm::sqrt(dz.x * dz.x + dz.y * dz.y);
 		o = m * st.polygon.offset_factor + r * st.polygon.offset_units;
 
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 		if (st.polygon.mode[st.last_side] == GL_LINE)
 		{
 			if (v0.edge) gl_rasterize_line(st, v0, v1, o);
@@ -1113,7 +1113,7 @@ void gl_emit_triangle(gl_state& st, gl_full_vertex &v0, gl_full_vertex&v1, gl_fu
 
 	if (st.polygon.mode[st.last_side] == GL_POINT)
 	{
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 		if (st.render_mode != GL_FEEDBACK &&
 			(st.depth.test && st.framebuffer->depth && (st.polygon.offset_enabled & 1))) // GL_POLYGON_OFFSET_POINT
 		{

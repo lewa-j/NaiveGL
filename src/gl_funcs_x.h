@@ -314,7 +314,7 @@ X(glGetString)
 X(glPushAttrib)
 X(glPopAttrib)
 
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 X(glIndexub)
 X(glIndexubv)
 X(glEdgeFlagPointer)

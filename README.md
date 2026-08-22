@@ -12,7 +12,7 @@ Almost complete 1.1 feature set, except
 * ReadPixels BITMAP
 * Index color mode
 
-To build only specific version, set define `NGL_VERISON` to `100` for 1.0 or `110` for 1.1  
+To build only specific version, set define `NGL_VERSION` to `100` for 1.0 or `110` for 1.1  
 Also for 1.0 set Module Definition File to `win/opengl32_100.def` in Linker > Input.
 
 ## Extensions

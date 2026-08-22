@@ -598,7 +598,7 @@ static void set_bit(T &set, int bit, bool val)
 #define GL_RENDER_MODE 0x0C40
 
 //gl 1.1
-#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
+#if NGL_VERSION >= 110 || GL_EXT_polygon_offset
 #define GL_POLYGON_OFFSET_FILL 0x8037
 #define GL_POLYGON_OFFSET_FACTOR 0x8038
 #endif
@@ -607,7 +607,7 @@ static void set_bit(T &set, int bit, bool val)
 #define GL_POLYGON_OFFSET_BIAS_EXT 0x8039
 #endif
 
-#if NGL_VERISON >= 110 || GL_EXT_vertex_array
+#if NGL_VERSION >= 110 || GL_EXT_vertex_array
 #define GL_DOUBLE 0x140A
 
 #define GL_VERTEX_ARRAY 0x8074
@@ -664,7 +664,7 @@ static void set_bit(T &set, int bit, bool val)
 #define GL_TEXTURE_TOO_LARGE_EXT 0x8065
 #endif
 
-#if NGL_VERISON >= 110 || GL_EXT_texture
+#if NGL_VERSION >= 110 || GL_EXT_texture
 #define GL_TEXTURE_INTERNAL_FORMAT 0x1003
 
 #define GL_ALPHA4 0x803B
@@ -688,7 +688,7 @@ static void set_bit(T &set, int bit, bool val)
 #if GL_EXT_texture
 #define GL_RGB2_EXT 0x804E
 #endif
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 #define GL_R3_G3_B2 0x2A10
 #endif
 #define GL_RGB4 0x804F
@@ -719,7 +719,7 @@ static void set_bit(T &set, int bit, bool val)
 
 #endif
 
-#if NGL_VERISON >= 110 || GL_EXT_texture_object
+#if NGL_VERSION >= 110 || GL_EXT_texture_object
 #define GL_TEXTURE_PRIORITY 0x8066
 #define GL_TEXTURE_RESIDENT 0x8067
 
@@ -727,7 +727,7 @@ static void set_bit(T &set, int bit, bool val)
 #define GL_TEXTURE_BINDING_2D 0x8069
 #endif
 
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 #define GL_V2F 0x2A20
 #define GL_V3F 0x2A21
 #define GL_C4UB_V2F 0x2A22

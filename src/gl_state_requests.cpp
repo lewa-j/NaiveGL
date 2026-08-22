@@ -157,7 +157,7 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 		copy_vals(data, &gs.lighting.light_model_local_viewer, 1);
 	else if (pname == GL_LIGHT_MODEL_TWO_SIDE)
 		copy_vals(data, &gs.lighting.light_model_two_side, 1);
-#if NGL_VERISON == 100 // moved to GetMaterialfv
+#if NGL_VERSION == 100 // moved to GetMaterialfv
 	else if (pname == GL_COLOR_INDEXES) {}
 #endif
 	else if (pname == GL_POINT_SIZE)
@@ -184,7 +184,7 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 
 	if (pname == GL_POLYGON_MODE)
 		copy_vals(data, gs.polygon.mode, 2);
-#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
+#if NGL_VERSION >= 110 || GL_EXT_polygon_offset
 	else if (pname == GL_POLYGON_OFFSET_FACTOR)
 		copy_vals(data, &gs.polygon.offset_factor, 1);
 #endif
@@ -195,11 +195,11 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 		copy_vals(data, &bias, 1);
 	}
 #endif
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	else if (pname == GL_POLYGON_OFFSET_UNITS)
 		copy_vals(data, &gs.polygon.offset_units, 1);
 #endif
-#if NGL_VERISON >= 110 || GL_EXT_texture_object
+#if NGL_VERSION >= 110 || GL_EXT_texture_object
 	else if (pname == GL_TEXTURE_BINDING_1D)
 		copy_vals(data, &gs.texture_binding_1d, 1);
 	else if (pname == GL_TEXTURE_BINDING_2D)
@@ -368,7 +368,7 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 		copy_vals(data, gl_max_viewport_dims, 2);
 	else if (pname == GL_MAX_ATTRIB_STACK_DEPTH)
 		copy_vals(data, &gl_max_attrib_stack_depth, 1);
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	else if (pname == GL_MAX_CLIENT_ATTRIB_STACK_DEPTH)
 		copy_vals(data, &gl_max_client_attrib_stack_depth, 1);
 #endif
@@ -436,7 +436,7 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 	else if (pname == GL_RENDER_MODE)
 		copy_vals(data, &gs.render_mode, 1);
 	else
-#if NGL_VERISON >= 110 || GL_EXT_vertex_array
+#if NGL_VERSION >= 110 || GL_EXT_vertex_array
 		keep_going = true;
 	// Break up else if chain to avoid exceeding `error C1061: compiler limit: blocks nested too deeply`
 	if (!keep_going)
@@ -485,7 +485,7 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 	else if (pname == GL_EDGE_FLAG_ARRAY_COUNT_EXT)
 		copy_vals(data, &gs.va.edge_flag.count, 1);
 #endif
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	else if (pname == GL_CLIENT_ATTRIB_STACK_DEPTH)
 		copy_vals(data, &gs.client_attrib_sp, 1);
 	else if (pname == GL_SELECTION_BUFFER_SIZE)
@@ -502,7 +502,7 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 	return true;
 }
 
-#if NGL_VERISON >= 110 || GL_EXT_vertex_array
+#if NGL_VERSION >= 110 || GL_EXT_vertex_array
 void APIENTRY glGetPointervEXT(GLenum pname, void **params)
 {
 	gl_state *gs = gl_current_state();
@@ -529,7 +529,7 @@ void APIENTRY glGetPointervEXT(GLenum pname, void **params)
 }
 #endif
 
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 void APIENTRY glGetPointerv(GLenum pname, void **params)
 {
 	if (pname >= GL_VERTEX_ARRAY_POINTER && pname <= GL_EDGE_FLAG_ARRAY_POINTER)
@@ -615,7 +615,7 @@ static void gl_copyAttribs(DT &d, const ST &s, GLbitfield mask)
 	{
 		d.texture_1d_enabled = s.texture_1d_enabled;
 		d.texture_2d_enabled = s.texture_2d_enabled;
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 		d.texture_binding_1d = s.texture_binding_1d;
 		d.texture_binding_2d = s.texture_binding_2d;
 #endif
@@ -655,7 +655,7 @@ static void gl_copyAttribs(DT &d, const ST &s, GLbitfield mask)
 	d.line.stipple = s.line.stipple;
 	d.polygon.cull_face = s.polygon.cull_face;
 	d.polygon.smooth = s.polygon.smooth;
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	d.polygon.offset_enabled = s.polygon.offset_enabled;
 #endif
 	d.polygon.stipple = s.polygon.stipple;
@@ -669,12 +669,12 @@ static void gl_copyAttribs(DT &d, const ST &s, GLbitfield mask)
 	d.depth.test = s.depth.test;
 	d.color_buffer.blend = s.color_buffer.blend;
 	d.color_buffer.index_logic_op = s.color_buffer.index_logic_op;
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	d.color_buffer.color_logic_op = s.color_buffer.color_logic_op;
 #endif
 	d.color_buffer.dither = s.color_buffer.dither;
 	d.eval.enabled_maps = s.eval.enabled_maps;
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	d.eval.auto_normal = s.eval.auto_normal;
 #endif
 }
@@ -729,7 +729,7 @@ void APIENTRY glPopAttrib(void)
 	}
 }
 
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 template<typename DT, typename ST>
 static void gl_copyClientAttribs(DT &d, const ST &s, GLbitfield mask)
 {

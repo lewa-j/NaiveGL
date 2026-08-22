@@ -10,7 +10,7 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	line_stipple_counter = 0;
 
 	current = {};
-#if NGL_VERISON >= 110 || GL_EXT_vertex_array
+#if NGL_VERSION >= 110 || GL_EXT_vertex_array
 	va = {};
 #endif
 
@@ -108,7 +108,7 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 	display_list_nesting = 0;
 
 	attrib_sp = 0;
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	client_attrib_sp = 0;
 #endif
 	select_name_sp = 0;
@@ -134,7 +134,7 @@ void gl_state::init(int window_w, int window_h, bool doublebuffer)
 void gl_state::destroy()
 {
 	display_list_indices.clear();
-#if NGL_VERISON >= 110 || GL_EXT_texture_object
+#if NGL_VERSION >= 110 || GL_EXT_texture_object
 	texture_objects.clear();
 #endif
 }
@@ -281,7 +281,7 @@ bool &gl_get_enabled_ref(gl_state &gs, GLenum cap, bool &fail)
 	{
 		return gs.color_buffer.index_logic_op;
 	}
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	else if (cap == GL_COLOR_LOGIC_OP)
 	{
 		return gs.color_buffer.color_logic_op;
@@ -325,13 +325,13 @@ bool gl_setable(gl_state &gs, GLenum cap, bool val)
 	{
 		set_bit(gs.eval.enabled_maps, cap - GL_MAP2_COLOR_4 + 9, val);
 	}
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	else if (cap == GL_POLYGON_OFFSET_POINT || cap == GL_POLYGON_OFFSET_LINE)
 	{
 		set_bit(gs.polygon.offset_enabled, cap - GL_POLYGON_OFFSET_POINT, val);
 	}
 #endif
-#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
+#if NGL_VERSION >= 110 || GL_EXT_polygon_offset
 	else if (cap == GL_POLYGON_OFFSET_FILL)
 	{
 		set_bit(gs.polygon.offset_enabled, 2, val);
@@ -411,19 +411,19 @@ int gl_isEnabled(gl_state &gs, GLenum cap)
 	{
 		return (gs.eval.enabled_maps & (1 << (cap - GL_MAP2_COLOR_4 + 9))) ? 1 : 0;
 	}
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	else if (cap == GL_POLYGON_OFFSET_POINT || cap == GL_POLYGON_OFFSET_LINE)
 	{
 		return (gs.polygon.offset_enabled & (1 << (cap - GL_POLYGON_OFFSET_POINT))) ? 1 : 0;
 	}
 #endif
-#if NGL_VERISON >= 110 || GL_EXT_polygon_offset
+#if NGL_VERSION >= 110 || GL_EXT_polygon_offset
 	else if (cap == GL_POLYGON_OFFSET_FILL)
 	{
 		return (gs.polygon.offset_enabled & 0x4) ? 1 : 0;
 	}
 #endif
-#if NGL_VERISON >= 110 || GL_EXT_vertex_array
+#if NGL_VERSION >= 110 || GL_EXT_vertex_array
 	else if (cap >= GL_VERTEX_ARRAY && cap <= GL_EDGE_FLAG_ARRAY)
 	{
 		return (gs.va.enabled & (1 << (cap - GL_VERTEX_ARRAY))) ? 1 : 0;
@@ -491,7 +491,7 @@ const char *APIENTRY glGetString(GLenum name)
 	case GL_RENDERER:
 		return "NaiveGL";
 	case GL_VERSION:
-#if NGL_VERISON < 110
+#if NGL_VERSION < 110
 		return "1.0.0";
 #else
 		return "1.1.0";

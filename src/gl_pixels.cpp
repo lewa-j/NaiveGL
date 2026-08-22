@@ -555,7 +555,7 @@ void APIENTRY glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum 
 	gl_frag_data fdata;
 	fdata.color = gs->current.raster.color;
 	fdata.tex_coord = gs->current.raster.tex_coord;
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	fdata.tex_coord /= fdata.tex_coord.q;
 #endif
 	fdata.z = gs->current.raster.position.z;
@@ -743,7 +743,7 @@ void APIENTRY glBitmap(GLsizei width, GLsizei height, GLfloat xorig, GLfloat yor
 	gl_frag_data fdata;
 	fdata.color = gs->current.raster.color;
 	fdata.tex_coord = gs->current.raster.tex_coord;
-#if NGL_VERISON >= 110
+#if NGL_VERSION >= 110
 	fdata.tex_coord /= fdata.tex_coord.q;
 #endif
 	fdata.z = gs->current.raster.position.z;
