@@ -58,3 +58,7 @@ void APIENTRY glGetPointervEXT(GLenum pname, void **params);
 //originally from GL_EXT_blend_minmax but not required
 void APIENTRY glBlendEquationEXT(GLenum mode);
 #endif
+
+#if GL_EXT_draw_range_elements
+void APIENTRY glDrawRangeElementsEXT(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const void *indices);
+#endif

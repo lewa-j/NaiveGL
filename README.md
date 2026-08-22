@@ -24,6 +24,7 @@ Also for 1.0 set Module Definition File to `win/opengl32_100.def` in Linker > In
 * [GL_EXT_subtexture](https://registry.khronos.org/OpenGL/extensions/EXT/EXT_subtexture.txt)
 * [GL_EXT_copy_texture](https://registry.khronos.org/OpenGL/extensions/EXT/EXT_copy_texture.txt)
 * [GL_EXT_texture_object](https://registry.khronos.org/OpenGL/extensions/EXT/EXT_texture_object.txt)
+* [GL_EXT_draw_range_elements](https://registry.khronos.org/OpenGL/extensions/EXT/EXT_draw_range_elements.txt)
 
 ## Acknowledgments
 

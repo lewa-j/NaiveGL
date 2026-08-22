@@ -40,6 +40,10 @@ constexpr int gl_max_attrib_stack_depth = 16;
 constexpr int gl_max_client_attrib_stack_depth = 16;
 constexpr int gl_subpixel_bits = 8;
 
+//completely arbitrary. might as well be INT_MAX
+constexpr int gl_max_elements_indices = 0xFFFF;
+constexpr int gl_max_elements_vertices = 0xFFFF;
+
 struct gl_framebuffer
 {
 	int width = 0;

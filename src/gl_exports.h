@@ -387,6 +387,9 @@ EXPORT void APIENTRY glGetPointerv(GLenum pname, void **params);
 EXPORT void APIENTRY glPushClientAttrib(GLbitfield mask);
 EXPORT void APIENTRY glPopClientAttrib(void);
 #endif
+#if NGL_VERSION >= 120
+EXPORT void APIENTRY glDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const void *indices);
+#endif
 
 #ifdef __cplusplus
 }

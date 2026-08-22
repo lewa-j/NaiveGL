@@ -763,3 +763,8 @@ static void set_bit(T &set, int bit, bool val)
 #define GL_FEEDBACK_BUFFER_SIZE 0x0DF1
 #define GL_FEEDBACK_BUFFER_TYPE 0x0DF2
 #endif
+
+#if NGL_VERSION >= 120 || GL_EXT_draw_range_elements
+#define GL_MAX_ELEMENTS_VERTICES 0x80E8
+#define GL_MAX_ELEMENTS_INDICES 0x80E9
+#endif

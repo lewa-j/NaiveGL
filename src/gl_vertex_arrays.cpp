@@ -479,6 +479,24 @@ void APIENTRY glDrawElements(GLenum mode, GLsizei count, GLenum type, const void
 	glEnd();
 }
 
+#if NGL_VERSION >= 120 || GL_EXT_draw_range_elements
+void APIENTRY glDrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const void *indices)
+{
+	if (end < start)
+	{
+		gl_set_error(GL_INVALID_VALUE);
+		return;
+	}
+
+	glDrawElements(mode, count, type, indices);
+}
+
+void APIENTRY glDrawRangeElementsEXT(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, const void *indices)
+{
+	glDrawRangeElements(mode, start, end, count, type, indices);
+}
+#endif
+
 const int sf = sizeof(float);
 const int sc = sizeof(uint8_t[4]);
 static int intr_table[][11]

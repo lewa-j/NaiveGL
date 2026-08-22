@@ -519,6 +519,9 @@ const char *APIENTRY glGetString(GLenum name)
 #if GL_EXT_blend_logic_op
 			"GL_EXT_blend_logic_op "
 #endif
+#if GL_EXT_draw_range_elements
+			"GL_EXT_draw_range_elements "
+#endif
 			;
 	default:
 		gl_set_error_a(GL_INVALID_ENUM, name);

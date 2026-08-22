@@ -347,6 +347,10 @@ X(glPushClientAttrib)
 X(glPopClientAttrib)
 #endif
 
+#if NGL_VERSION >= 120
+X(glDrawRangeElements)
+#endif
+
 #if GL_EXT_polygon_offset
 X(glPolygonOffsetEXT)
 #endif
@@ -394,4 +398,8 @@ X(glGetPointervEXT)
 
 #if GL_EXT_blend_logic_op
 X(glBlendEquationEXT)
+#endif
+
+#if GL_EXT_draw_range_elements
+X(glDrawRangeElementsEXT)
 #endif

@@ -399,6 +399,12 @@ static bool gl_get(gl_state &gs, GLenum pname, T *data)
 		copy_vals(data, gl_line_width_range, 2);
 	else if (pname == GL_LINE_WIDTH_GRANULARITY)
 		copy_vals(data, &gl_line_width_granularity, 1);
+#if NGL_VERSION >= 120 || GL_EXT_draw_range_elements
+	else if (pname == GL_MAX_ELEMENTS_VERTICES)
+		copy_vals(data, &gl_max_elements_vertices, 1);
+	else if (pname == GL_MAX_ELEMENTS_INDICES)
+		copy_vals(data, &gl_max_elements_indices, 1);
+#endif
 	else if (pname >= GL_RED_BITS && pname <= GL_ALPHA_BITS)
 	{
 		int bits = 8;

@@ -18,6 +18,7 @@
 #define GL_EXT_texture_object 1
 #define GL_EXT_vertex_array 1
 #define GL_EXT_blend_logic_op 1
+#define GL_EXT_draw_range_elements 1
 
 // checks
 #if GL_EXT_subtexture && !GL_EXT_texture
@@ -25,4 +26,7 @@
 #endif
 #if GL_EXT_copy_texture && !GL_EXT_texture
 #error "GL_EXT_copy_texture depends on GL_EXT_texture"
+#endif
+#if GL_EXT_draw_range_elements && NGL_VERSION < 110
+#error "GL_EXT_draw_range_elements depends on GL 1.1""
 #endif
