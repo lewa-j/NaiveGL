@@ -205,6 +205,12 @@ bool &gl_get_enabled_ref(gl_state &gs, GLenum cap, bool &fail)
 	{
 		return gs.transform.normalize;
 	}
+#if NGL_VERSION >= 120 || GL_EXT_rescale_normal
+	if (cap == GL_RESCALE_NORMAL)
+	{
+		return gs.transform.rescale_normal;
+	}
+#endif
 	else if (cap >= GL_TEXTURE_GEN_S && cap <= GL_TEXTURE_GEN_Q)
 	{
 		return gs.texgen[cap - GL_TEXTURE_GEN_S].enabled;
@@ -512,6 +518,9 @@ const char *APIENTRY glGetString(GLenum name)
 #endif
 #if GL_EXT_texture_object
 			"GL_EXT_texture_object "
+#endif
+#if GL_EXT_rescale_normal
+			"GL_EXT_rescale_normal "
 #endif
 #if GL_EXT_vertex_array
 			"GL_EXT_vertex_array "

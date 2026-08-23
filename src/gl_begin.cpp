@@ -5,8 +5,13 @@
 glm::vec3 gl_state::get_eye_normal(const glm::vec3 &norm)
 {
 	//TODO cache. May be used twice per vertex when spheremap and lighting are enabled
-	glm::vec3 eye_normal = norm * glm::mat3(get_inv_modelview());
-
+	glm::mat3 m = get_inv_modelview();
+	glm::vec3 eye_normal = norm * m;
+#if NGL_VERSION >= 120 || GL_EXT_rescale_normal
+	//TODO cache. Recalculate only when modelview changes
+	if (transform.rescale_normal)
+		eye_normal /= glm::length(glm::vec3(m[2][0], m[2][1], m[2][2]));
+#endif
 	if (transform.normalize)
 		eye_normal = glm::normalize(eye_normal);
 	return eye_normal;

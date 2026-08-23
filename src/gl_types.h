@@ -768,3 +768,7 @@ static void set_bit(T &set, int bit, bool val)
 #define GL_MAX_ELEMENTS_VERTICES 0x80E8
 #define GL_MAX_ELEMENTS_INDICES 0x80E9
 #endif
+
+#if NGL_VERSION >= 120 || GL_EXT_rescale_normal
+#define GL_RESCALE_NORMAL 0x803A
+#endif

@@ -338,6 +338,9 @@ struct gl_state
 	{
 		GLenum matrix_mode = GL_MODELVIEW;
 		bool normalize = false;
+#if NGL_VERSION >= 120 || GL_EXT_rescale_normal
+		bool rescale_normal = false;
+#endif
 		glm::vec4 clip_planes[gl_max_user_clip_planes];
 		uint32_t enabled_clip_planes = 0;
 	} transform;

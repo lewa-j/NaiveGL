@@ -651,6 +651,9 @@ static void gl_copyAttribs(DT &d, const ST &s, GLbitfield mask)
 		return;
 
 	d.transform.normalize = s.transform.normalize;
+#if NGL_VERSION >= 120 || GL_EXT_rescale_normal
+	d.transform.rescale_normal = s.transform.rescale_normal;
+#endif
 	d.transform.enabled_clip_planes = s.transform.enabled_clip_planes;
 	d.fog.enabled = s.fog.enabled;
 	d.lighting.enabled = s.lighting.enabled;
